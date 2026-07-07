@@ -1,70 +1,420 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Prosody Trainer</title>
   <style>
+    :root {
+      --paper: #EFF2F1;
+      --card: #FFFFFF;
+      --ink: #242936;
+      --muted: #5C6472;
+      --line: #D8DEDC;
+      --accent: #A03052;
+      --accent-soft: #F6E7EC;
+      --green: #2E6E6A;
+      --serif: Georgia, "Iowan Old Style", serif;
+      --sans: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      font-family: system-ui, sans-serif;
-      max-width: 900px;
-      margin: 4rem auto;
-      padding: 0 1.5rem;
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
       line-height: 1.6;
-      background: #EFF2F1;
-      color: #242936;
     }
+
+    header, main, footer {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 0 1.25rem;
+    }
+
+    nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 1.2rem 0;
+      font-size: .95rem;
+    }
+
+    nav a {
+      color: var(--muted);
+      text-decoration: none;
+      margin-left: 1rem;
+    }
+
+    nav a:hover { color: var(--accent); }
+
+    .brand {
+      font-weight: 700;
+      color: var(--ink);
+    }
+
+    .hero {
+      padding: 5rem 0 4rem;
+      max-width: 850px;
+    }
+
+    .kicker {
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: var(--green);
+      font-weight: 700;
+      font-size: .78rem;
+    }
+
     h1 {
-      font-family: Georgia, serif;
-      font-size: 3rem;
-      margin-bottom: .25rem;
+      font-family: var(--serif);
+      font-size: clamp(3rem, 8vw, 6.2rem);
+      line-height: .98;
+      letter-spacing: -.04em;
+      margin: .7rem 0 1rem;
     }
-    .tagline {
-      font-size: 1.35rem;
-      color: #5C6472;
-      max-width: 650px;
+
+    .dot { color: var(--accent); }
+
+    .hero p {
+      font-size: clamp(1.2rem, 2vw, 1.55rem);
+      color: var(--muted);
+      max-width: 720px;
     }
+
+    .reveal {
+      margin-top: 2.5rem;
+      display: grid;
+      gap: .45rem;
+      font-family: var(--serif);
+      font-size: clamp(1.45rem, 3vw, 2.35rem);
+      line-height: 1.25;
+    }
+
+    .reveal span {
+      display: block;
+    }
+
+    .cta-row {
+      margin-top: 2rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: .8rem;
+    }
+
+    .button {
+      display: inline-block;
+      padding: .8rem 1.05rem;
+      border-radius: 999px;
+      text-decoration: none;
+      font-weight: 700;
+      border: 1.5px solid var(--line);
+      color: var(--ink);
+      background: var(--card);
+    }
+
+    .button.primary {
+      background: var(--accent);
+      color: white;
+      border-color: var(--accent);
+    }
+
+    section {
+      margin: 3rem 0;
+    }
+
+    h2 {
+      font-family: var(--serif);
+      font-size: 2.25rem;
+      margin-bottom: .5rem;
+    }
+
+    .section-lede {
+      color: var(--muted);
+      max-width: 700px;
+      font-size: 1.1rem;
+    }
+
     .cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 1rem;
-      margin-top: 2rem;
+      margin-top: 1.5rem;
     }
+
     .card {
-      background: white;
-      border: 1px solid #D8DEDC;
-      border-radius: 14px;
+      background: var(--card);
+      border: 1px solid var(--line);
+      border-radius: 18px;
       padding: 1.25rem;
       text-decoration: none;
       color: inherit;
+      min-height: 190px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
     }
+
     .card:hover {
-      border-color: #A03052;
+      border-color: var(--accent);
+      transform: translateY(-2px);
+      transition: .15s ease;
     }
-    .card h2 {
-      margin-top: 0;
-      color: #A03052;
+
+    .card h3 {
+      margin: 0 0 .4rem;
+      font-family: var(--serif);
+      font-size: 1.45rem;
+    }
+
+    .card p {
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .tag {
+      display: inline-block;
+      margin-bottom: .8rem;
+      color: var(--accent);
+      font-weight: 700;
+      font-size: .82rem;
+    }
+
+    .coming {
+      color: var(--green);
+    }
+
+    .pup {
+      background: linear-gradient(135deg, #fff, var(--accent-soft));
+    }
+
+    .quote {
+      margin: 4rem 0;
+      padding: 2rem;
+      background: var(--card);
+      border-left: 5px solid var(--accent);
+      border-radius: 0 18px 18px 0;
+      font-family: var(--serif);
+      font-size: clamp(1.4rem, 3vw, 2.1rem);
+      line-height: 1.3;
+    }
+
+    .grid-two {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 1.5rem;
+      margin-top: 1.5rem;
+    }
+
+    footer {
+      padding: 3rem 1.25rem;
+      color: var(--muted);
+      border-top: 1px solid var(--line);
+      margin-top: 4rem;
+      font-size: .95rem;
+    }
+
+    @media (max-width: 700px) {
+      nav {
+        align-items: flex-start;
+        gap: 1rem;
+        flex-direction: column;
+      }
+
+      nav a {
+        margin-left: 0;
+        margin-right: 1rem;
+      }
+
+      .hero {
+        padding-top: 3rem;
+      }
     }
   </style>
 </head>
+
 <body>
-  <h1>Prosody Trainer</h1>
-  <p class="tagline">Helping readers hear the rhythm of written English.</p>
+  <header>
+    <nav>
+      <a class="brand" href="./">Prosody Trainer<span class="dot">●</span></a>
+      <div>
+        <a href="#tools">Tools</a>
+        <a href="#science">Science</a>
+        <a href="#teach">Teach</a>
+        <a href="#about">About</a>
+      </div>
+    </nav>
 
-  <p>
-    Prosody Trainer provides research-based tools for visualizing stress,
-    rhythm, phrasing, and implicit prosodic structure during reading.
-  </p>
+    <div class="hero">
+      <div class="kicker">An interactive laboratory for reading prosody</div>
 
-  <div class="cards">
-    <a class="card" href="rhythm-reader/">
-      <h2>Rhythm Reader</h2>
-      <p>A simple, accessible interface for exploring lexical stress and reading rhythm.</p>
-    </a>
+      <h1>Every skilled reader hears a voice that isn’t there<span class="dot">.</span></h1>
 
-    <a class="card" href="rhythm-reader-pro/">
-      <h2>Rhythm Reader Pro</h2>
-      <p>An advanced interface for researchers, teachers, and clinicians.</p>
-    </a>
-  </div>
+      <p>
+        Not through the ears. Through the mind. Prosody Trainer makes that
+        inner voice visible.
+      </p>
+
+      <div class="reveal" aria-label="Features of the inner voice">
+        <span>That voice has stress.</span>
+        <span>It has rhythm.</span>
+        <span>It has phrasing.</span>
+        <span>It has intonation.</span>
+      </div>
+
+      <div class="cta-row">
+        <a class="button primary" href="rhythm-reader/">Try Rhythm Reader</a>
+        <a class="button" href="rhythm-reader-pro/">Open Rhythm Reader Pro</a>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section id="tools">
+      <h2>Explore the tools</h2>
+      <p class="section-lede">
+        Prosody Trainer is a growing suite of research-based tools for exploring
+        how written language carries stress, rhythm, phrasing, and intonation.
+      </p>
+
+      <div class="cards">
+        <a class="card" href="rhythm-reader/">
+          <div>
+            <span class="tag">Available now</span>
+            <h3>Rhythm Reader</h3>
+            <p>
+              A simple interface for visualizing stress and rhythm in English text.
+            </p>
+          </div>
+          <strong>Launch →</strong>
+        </a>
+
+        <a class="card" href="rhythm-reader-pro/">
+          <div>
+            <span class="tag">Available now</span>
+            <h3>Rhythm Reader Pro</h3>
+            <p>
+              Advanced analysis, phrase structure, meter detection, editing, and export.
+            </p>
+          </div>
+          <strong>Launch →</strong>
+        </a>
+
+        <div class="card pup">
+          <div>
+            <span class="tag coming">Coming soon</span>
+            <h3>Prosody Pup</h3>
+            <p>
+              A gentle guide for learning stress, rhythm, and fluent reading —
+              one step at a time.
+            </p>
+          </div>
+          <strong>Meet the guide →</strong>
+        </div>
+
+        <div class="card">
+          <div>
+            <span class="tag coming">Coming soon</span>
+            <h3>WALL-E Intonation Game</h3>
+            <p>
+              An interactive game for discovering how intonation changes meaning
+              during reading.
+            </p>
+          </div>
+          <strong>Preview soon →</strong>
+        </div>
+      </div>
+    </section>
+
+    <div class="quote">
+      See what you’ve been hearing all along.
+    </div>
+
+    <section id="science">
+      <h2>The science</h2>
+      <p class="section-lede">
+        When people read silently, they often construct an internal prosodic
+        representation — sometimes called the inner voice of reading, or
+        implicit prosody.
+      </p>
+
+      <div class="grid-two">
+        <div>
+          <h3>Why prosody matters</h3>
+          <p>
+            Prosody helps readers organize words into meaningful phrases,
+            distinguish emphasis, anticipate structure, and support comprehension.
+          </p>
+        </div>
+
+        <div>
+          <h3>What we make visible</h3>
+          <p>
+            Prosody Trainer reveals patterns of lexical stress, rhythm, phrasing,
+            meter, and intonation that normally remain hidden during silent reading.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section id="teach">
+      <h2>For teachers, clinicians, and researchers</h2>
+      <p class="section-lede">
+        The project is designed to support classroom demonstrations, reading
+        intervention, psycholinguistic research, and public understanding of the
+        cognitive science of reading.
+      </p>
+
+      <div class="cards">
+        <div class="card">
+          <div>
+            <span class="tag">Learn</span>
+            <h3>Accessible explanations</h3>
+            <p>
+              Plain-language introductions to stress, rhythm, phrasing,
+              intonation, and implicit prosody.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div>
+            <span class="tag">Research</span>
+            <h3>Publications</h3>
+            <p>
+              Peer-reviewed studies, conference presentations, and open materials
+              supporting the Prosody Trainer project.
+            </p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div>
+            <span class="tag">Teach</span>
+            <h3>Classroom resources</h3>
+            <p>
+              Demonstrations, sample activities, and guided lessons for helping
+              learners notice the prosody of written language.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="about">
+      <h2>About Prosody Trainer</h2>
+      <p class="section-lede">
+        Prosody Trainer is developed by Jennifer Gross at Grand Valley State
+        University. The project brings together research in cognitive psychology,
+        psycholinguistics, reading, and educational technology.
+      </p>
+    </section>
+  </main>
+
+  <footer>
+    <strong>Prosody Trainer</strong> — making the prosody of written language visible.
+  </footer>
 </body>
 </html>
