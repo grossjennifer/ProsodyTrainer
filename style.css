@@ -1,0 +1,466 @@
+/* ==========================================================================
+   The Hidden Architecture of Reading — opening exhibit
+   Language is the exhibit. Everything else exists to reveal its structure.
+   ========================================================================== */
+
+:root {
+  --paper:        #FAF6EF;   /* warm off-white */
+  --ink:          #2E2B27;   /* dark charcoal */
+  --ink-soft:     #6E675E;   /* captions, counters */
+  --glow:         #C98A2E;   /* warm lamplight for stressed syllables */
+  --glow-halo:    rgba(214, 158, 74, 0.38);
+  --boundary:     #A89C8C;   /* soft phrase divider */
+  --line:         #D9D0C2;   /* hairlines in melody maps */
+
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans:  system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
+
+  --ease: cubic-bezier(0.33, 0.0, 0.2, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--sans);
+}
+
+/* --------------------------------------------------------------------------
+   Stage
+   -------------------------------------------------------------------------- */
+
+.opening-exhibit {
+  min-height: 100dvh;
+  display: grid;
+  place-items: center;
+  padding: 3rem 1.5rem 9rem;   /* room for the fixed controls */
+}
+
+.exhibit-panel {
+  display: none;
+  max-width: 42rem;
+  width: 100%;
+  text-align: center;
+}
+
+.exhibit-panel.is-active {
+  display: block;
+  animation: panel-in 900ms var(--ease) both;
+}
+
+@keyframes panel-in {
+  from { opacity: 0; transform: translateY(0.5rem); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --------------------------------------------------------------------------
+   Reveals within a panel
+   -------------------------------------------------------------------------- */
+
+[data-reveal] {
+  opacity: 0;
+  transform: translateY(0.4rem);
+  transition: opacity 1100ms var(--ease), transform 1100ms var(--ease);
+}
+
+[data-reveal].is-shown {
+  opacity: 1;
+  transform: none;
+}
+
+/* A plain line that yields to its marked twin (panels 5 and 7) */
+[data-swap-out].is-hidden-away {
+  opacity: 0.14;
+  transform: none;
+}
+
+/* --------------------------------------------------------------------------
+   Type
+   -------------------------------------------------------------------------- */
+
+.display-line {
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 4.5vw, 2.6rem);
+  font-weight: 400;
+  line-height: 1.35;
+  margin: 0 0 1rem;
+  text-wrap: balance;
+}
+
+.display-line.small {
+  font-size: clamp(1.3rem, 3.5vw, 1.9rem);
+}
+
+.invitation {
+  color: var(--ink);
+}
+
+.demo-word {
+  font-family: var(--serif);
+  font-size: clamp(2rem, 6vw, 3.2rem);
+  line-height: 1.3;
+  margin: 0.4em 0;
+  letter-spacing: 0.01em;
+}
+
+.demo-sentence {
+  font-family: var(--serif);
+  font-size: clamp(1.4rem, 4vw, 2.1rem);
+  line-height: 1.65;
+  margin: 0.8em 0;
+  text-wrap: balance;
+}
+
+.dot {
+  color: var(--ink-soft);
+  padding: 0 0.02em;
+}
+
+.takeaway {
+  font-family: var(--sans);
+  font-size: clamp(1rem, 2.5vw, 1.15rem);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  margin-top: 2.4rem;
+}
+
+.takeaway.inline { margin-top: 0.9rem; }
+
+.caption {
+  font-family: var(--sans);
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+/* --------------------------------------------------------------------------
+   Stress: warm glow + weight change (never color alone)
+   -------------------------------------------------------------------------- */
+
+.stress {
+  font-weight: 700;
+  color: var(--ink);
+  text-shadow:
+    0 0 14px var(--glow-halo),
+    0 0 30px var(--glow-halo);
+  transition: text-shadow 900ms var(--ease);
+}
+
+/* Rhythmic beats pulse gently, like breathing */
+.beat.is-pulsing {
+  animation: beat-breathe 1400ms var(--ease);
+}
+
+@keyframes beat-breathe {
+  0%   { text-shadow: 0 0 14px var(--glow-halo), 0 0 30px var(--glow-halo); }
+  35%  { text-shadow: 0 0 22px var(--glow-halo), 0 0 46px var(--glow-halo);
+         color: #4A3A20; }
+  100% { text-shadow: 0 0 14px var(--glow-halo), 0 0 30px var(--glow-halo); }
+}
+
+/* --------------------------------------------------------------------------
+   Phrase boundaries
+   -------------------------------------------------------------------------- */
+
+.phrase-boundary {
+  color: var(--boundary);
+  font-weight: 300;
+  padding: 0 0.18em;
+}
+
+/* --------------------------------------------------------------------------
+   Panel 6 — rhythmic contrast
+   -------------------------------------------------------------------------- */
+
+.rhythm-example { margin: 1.6rem 0; }
+
+/* --------------------------------------------------------------------------
+   Panel 9 — audio
+   -------------------------------------------------------------------------- */
+
+.audio-row {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 1.6rem;
+}
+
+.audio-button {
+  font-family: var(--serif);
+  font-size: clamp(1.2rem, 3vw, 1.6rem);
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--boundary);
+  border-radius: 999px;
+  padding: 0.55em 1.1em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55em;
+  transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+}
+
+.audio-button:hover,
+.audio-button:focus-visible {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
+.audio-button.was-played .play-glyph { color: var(--glow); }
+
+.play-glyph {
+  font-family: var(--sans);
+  font-size: 0.7em;
+  color: var(--ink-soft);
+}
+
+.audio-transcript { max-width: 34rem; margin: 0 auto; }
+
+.audio-takeaway[hidden] { display: none; }
+
+/* --------------------------------------------------------------------------
+   Panel 10 — melody maps
+   -------------------------------------------------------------------------- */
+
+.melody-row {
+  display: flex;
+  gap: 1.4rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.melody-map {
+  margin: 0;
+  width: min(200px, 60vw);
+}
+
+.melody-map svg { width: 100%; height: auto; display: block; }
+
+.melody-label {
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.melody-lines line {
+  stroke: var(--line);
+  stroke-width: 1.5;
+}
+
+.melody-level-labels text,
+.melody-syll-labels text {
+  font-family: var(--sans);
+  font-size: 11px;
+  fill: var(--ink-soft);
+  text-anchor: end;
+}
+
+.melody-syll-labels text { text-anchor: middle; }
+
+.melody-contour {
+  fill: none;
+  stroke: var(--glow);
+  stroke-width: 2;
+  opacity: 0.55;
+}
+
+.melody-dot { fill: var(--ink); }
+
+/* --------------------------------------------------------------------------
+   Panel 11 — hidden architecture
+   -------------------------------------------------------------------------- */
+
+.architecture {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15rem;
+}
+
+.arch-level {
+  font-family: var(--serif);
+  font-size: clamp(1.3rem, 3.4vw, 1.8rem);
+  margin: 0.1em 0;
+}
+
+.arch-level:first-child { font-weight: 700; }  /* Meaning crowns the stack */
+
+.arch-arrow {
+  color: var(--ink-soft);
+  font-size: 1rem;
+  margin: 0;
+}
+
+/* --------------------------------------------------------------------------
+   Panel 12 — brand
+   -------------------------------------------------------------------------- */
+
+.brand {
+  font-family: var(--serif);
+  font-size: clamp(2.4rem, 7vw, 4rem);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  margin: 0 0 1rem;
+}
+
+.brand-subtitle {
+  font-family: var(--sans);
+  font-size: clamp(1rem, 2.6vw, 1.2rem);
+  color: var(--ink-soft);
+  max-width: 30rem;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* --------------------------------------------------------------------------
+   Panel 13 — Sputnik
+   -------------------------------------------------------------------------- */
+
+.sputnik-scene {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2.4rem;
+  flex-wrap: wrap;
+}
+
+.sputnik {
+  width: min(170px, 40vw);
+  height: auto;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+
+.sputnik-collar { stroke: var(--glow); }
+
+.sputnik-speech { text-align: left; max-width: 22rem; }
+
+@media (max-width: 560px) {
+  .sputnik-speech { text-align: center; }
+}
+
+/* --------------------------------------------------------------------------
+   Controls
+   -------------------------------------------------------------------------- */
+
+.exhibit-controls {
+  position: fixed;
+  inset-inline: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 1.2rem 1.5rem 1.6rem;
+  background: linear-gradient(to top, var(--paper) 65%, transparent);
+}
+
+.panel-counter {
+  letter-spacing: 0.06em;
+}
+
+.continue-button {
+  font-family: var(--sans);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--paper);
+  background: var(--ink);
+  border: none;
+  border-radius: 999px;
+  padding: 0.75em 2.6em;
+  cursor: pointer;
+  transition: background 300ms var(--ease), box-shadow 300ms var(--ease);
+}
+
+.continue-button:hover,
+.continue-button:focus-visible {
+  background: #171512;
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
+.skip-link {
+  font-family: var(--sans);
+  font-size: 0.85rem;
+  color: var(--ink-soft);
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  padding: 0.2em 0.5em;
+}
+
+.skip-link:hover,
+.skip-link:focus-visible { color: var(--ink); }
+
+:focus-visible {
+  outline: 2px solid var(--glow);
+  outline-offset: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion: everything appears at once, nothing pulses
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .exhibit-panel.is-active { animation: none; }
+  [data-reveal] { transition: none; transform: none; }
+  .beat.is-pulsing { animation: none; }
+  .stress { transition: none; }
+  .audio-button, .continue-button { transition: none; }
+}
+
+/* --------------------------------------------------------------------------
+   Transport — the exhibit plays itself; these keep the visitor in charge
+   -------------------------------------------------------------------------- */
+
+.transport {
+  display: flex;
+  align-items: center;
+  gap: 0.9rem;
+}
+
+.transport-button {
+  width: 2.9rem;
+  height: 2.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--boundary);
+  border-radius: 50%;
+  cursor: pointer;
+  transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+}
+
+.transport-button:hover,
+.transport-button:focus-visible {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
+.transport-button:disabled {
+  opacity: 0.3;
+  cursor: default;
+  border-color: var(--boundary);
+  box-shadow: none;
+}
+
+.transport-button[hidden] { display: none; }
+
+/* --------------------------------------------------------------------------
+   Panel 13 — Sputnik's portrait (a photograph now, not a line drawing)
+   -------------------------------------------------------------------------- */
+
+img.sputnik {
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(46, 43, 39, 0.18);
+}
