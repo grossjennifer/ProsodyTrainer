@@ -298,24 +298,32 @@
   </section>
 
   <!-- ================================================================
-       Panel 5 — Sentences have different beat patterns
+       Panel 5 — beat patterns, unfolding in two quiet steps
+       (No title: the words carry the panel, like its neighbors.
+        Each step follows the pattern of panel 4 — a plain sentence
+        yields to its marked twin, then a soft beat cue, then a
+        takeaway. Step one settles back before step two begins, so
+        only one example holds the room at full size at a time.
+        The cue line uses quiet interpuncts, never tall bars that
+        could be mistaken for phrase boundaries.)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="5" data-duration="15000">
-    <h2 class="panel-title" data-reveal data-delay="0">Sentences Have Different Beat Patterns</h2>
+  <section class="exhibit-panel" data-panel="5" data-duration="20500">
 
-    <div class="rhythm-example pattern-a">
-      <p class="demo-sentence" data-reveal data-delay="1200">the <span class="stress beat" data-beat="1">BAND</span> <span class="foot-divider">│</span> will <span class="stress beat" data-beat="2">PLAY</span> <span class="foot-divider">│</span> to<span class="dot">&middot;</span><span class="stress beat" data-beat="3">NIGHT</span> <span class="foot-divider">│</span> at <span class="stress beat" data-beat="4">SCHOOL</span></p>
-      <p class="beat-cue" data-reveal data-delay="2000">ta-DUM │ ta-DUM │ ta-DUM │ ta-DUM</p>
-      <p class="caption beat-caption" data-reveal data-delay="2800">Here, the beat comes after a lighter syllable.</p>
+    <div class="rhythm-example pattern-a" data-recede="8600">
+      <p class="demo-sentence" data-swap-out="2600">The band will play tonight at school.</p>
+      <p class="demo-sentence" data-reveal data-delay="2350">the <span class="stress beat" data-beat="1">BAND</span> will <span class="stress beat" data-beat="2">PLAY</span> to<span class="dot">&middot;</span><span class="stress beat" data-beat="3">NIGHT</span> at <span class="stress beat" data-beat="4">SCHOOL</span></p>
+      <p class="beat-cue" data-reveal data-delay="4400">ta-DUM &middot; ta-DUM &middot; ta-DUM &middot; ta-DUM</p>
+      <p class="takeaway inline" data-reveal data-delay="6200">A lighter syllable can lead into the beat.</p>
     </div>
 
     <div class="rhythm-example pattern-b">
-      <p class="demo-sentence" data-reveal data-delay="5600"><span class="stress beat" data-beat="1">DRA</span><span class="dot">&middot;</span>ma <span class="foot-divider">│</span> <span class="stress beat" data-beat="2">STU</span><span class="dot">&middot;</span>dents <span class="foot-divider">│</span> <span class="stress beat" data-beat="3">PRAC</span><span class="dot">&middot;</span>ticed <span class="foot-divider">│</span> <span class="stress beat" data-beat="4">LOUD</span><span class="dot">&middot;</span>ly</p>
-      <p class="beat-cue" data-reveal data-delay="6400">DUM-ta │ DUM-ta │ DUM-ta │ DUM-ta</p>
-      <p class="caption beat-caption" data-reveal data-delay="7200">Here, the beat comes first.</p>
+      <p class="demo-sentence" data-reveal data-delay="8800" data-swap-out="11400">Drama students practiced loudly.</p>
+      <p class="demo-sentence" data-reveal data-delay="11150"><span class="stress beat" data-beat="1">DRA</span><span class="dot">&middot;</span>ma <span class="stress beat" data-beat="2">STU</span><span class="dot">&middot;</span>dents <span class="stress beat" data-beat="3">PRAC</span><span class="dot">&middot;</span>ticed <span class="stress beat" data-beat="4">LOUD</span><span class="dot">&middot;</span>ly</p>
+      <p class="beat-cue" data-reveal data-delay="13200">DUM-ta &middot; DUM-ta &middot; DUM-ta &middot; DUM-ta</p>
+      <p class="takeaway inline" data-reveal data-delay="15000">The beat can also come first.</p>
     </div>
 
-    <p class="takeaway" data-reveal data-delay="9400">Sentences can have different beat patterns.</p>
+    <p class="takeaway" data-reveal data-delay="17400">Sentences can have different beat patterns.</p>
   </section>
 
   <!-- ================================================================
@@ -611,35 +619,47 @@
 
 <script>
   /*
-    Fallback transition from the opening exhibit to the main site.
-    This is intentionally small and safe: it only reveals #site-content
-    when the visitor clicks Begin Exploring or Skip intro.
+    Safety net for the exhibit -> homepage handoff.
+    The one real handler is completeExhibit() in script.js, wired to
+    both Begin Exploring and Skip intro and exposed on window. These
+    listeners exist only in case script.js failed to initialize: they
+    call the same function if it exists, or perform the same handoff
+    inline if it does not. completeExhibit() is idempotent, so this
+    double wiring can never fire the handoff twice.
   */
   (function () {
-    function showMainSite() {
-      var exhibit = document.getElementById('opening-exhibit');
-      var controls = document.querySelector('.exhibit-controls');
-      var site = document.getElementById('site-content');
-
+    function fallback() {
+      if (typeof window.completeExhibit === "function") {
+        window.completeExhibit();
+        return;
+      }
+      if (document.body.classList.contains("exhibit-complete")) return;
+      var exhibit = document.getElementById("opening-exhibit");
+      var controls = document.querySelector(".exhibit-controls");
+      var site = document.getElementById("site-content");
       if (exhibit) exhibit.hidden = true;
       if (controls) controls.hidden = true;
-      if (site) site.hidden = false;
-
+      if (site) {
+        site.hidden = false;
+        site.removeAttribute("hidden");
+        site.setAttribute("tabindex", "-1");
+      }
+      document.body.classList.add("exhibit-complete");
       try { window.scrollTo(0, 0); } catch (e) { /* older engines */ }
-
-      var heading = document.getElementById('site-heading') || site;
+      var heading = document.getElementById("site-heading") || site;
       if (heading && heading.focus) {
         try { heading.focus(); } catch (e) { /* focus is a courtesy */ }
       }
+      document.dispatchEvent(new CustomEvent("exhibit:complete"));
     }
 
-    var begin = document.getElementById('begin-button');
-    var skip = document.getElementById('skip-intro');
+    var begin = document.getElementById("begin-button");
+    var skip = document.getElementById("skip-intro");
+    if (begin) begin.addEventListener("click", fallback);
+    if (skip) skip.addEventListener("click", fallback);
 
-    if (begin) begin.addEventListener('click', showMainSite);
-    if (skip) skip.addEventListener('click', showMainSite);
-
-    window.showProsodyTrainerMainSite = showMainSite;
+    /* Kept for compatibility with anything that called the old name. */
+    window.showProsodyTrainerMainSite = fallback;
   })();
 </script>
 

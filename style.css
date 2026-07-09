@@ -182,16 +182,22 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   Panel 5 — beat patterns
+   Panel 5 — beat patterns, in two quiet steps
+   No dividers inside the lines: tall bars could be mistaken for phrase
+   boundaries, so the cue line separates beat groups with interpuncts.
    -------------------------------------------------------------------------- */
 
-.rhythm-example { margin: 1.6rem 0 2rem; }
+.rhythm-example {
+  margin: 1.6rem 0 2rem;
+  transition: opacity 1100ms var(--ease), transform 1100ms var(--ease);
+  transform-origin: center top;
+}
 
-/* Divides beat groups within a line; quieter than a phrase boundary. */
-.foot-divider {
-  color: var(--boundary);
-  font-weight: 300;
-  padding: 0 0.18em;
+/* A step that has had its moment settles back — smaller and fainter —
+   so only one example holds the room at full size at a time. */
+.rhythm-example.is-receded {
+  opacity: 0.32;
+  transform: scale(0.82);
 }
 
 /* The ta-DUM / DUM-ta line: only there to help learners notice the beat. */
@@ -202,8 +208,6 @@ html, body {
   color: var(--ink-soft);
   margin: 0.35em 0 0.45em;
 }
-
-.beat-caption { margin: 0; }
 
 /* --------------------------------------------------------------------------
    Panel 8 — intonation (sound is the exhibit; visuals only guide)
@@ -419,6 +423,23 @@ html, body {
   .beat.is-pulsing { animation: none; }
   .stress { transition: none; }
   .audio-button, .continue-button { transition: none; }
+  .rhythm-example { transition: none; }
+  .rhythm-example.is-receded { transform: none; }   /* fainter, but not moved */
+}
+
+/* --------------------------------------------------------------------------
+   Completion safety rules — once the exhibit is complete, no stray
+   attribute or script hiccup can leave it on screen; and the homepage
+   can never leak through while it is still marked hidden.
+   -------------------------------------------------------------------------- */
+
+body.exhibit-complete #opening-exhibit,
+body.exhibit-complete .exhibit-controls {
+  display: none;
+}
+
+#site-content[hidden] {
+  display: none;
 }
 
 /* --------------------------------------------------------------------------

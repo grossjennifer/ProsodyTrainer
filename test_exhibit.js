@@ -22,7 +22,10 @@ function loadDom(beforeScript) {
   const plays = [];
   window.Audio = function (src) { return { play: () => { plays.push(src); return Promise.resolve(); } }; };
   const scrolls = [];
-  window.scrollTo = function (x, y) { scrolls.push([x, y]); };
+  window.scrollTo = function (a, b) {
+    if (a && typeof a === "object") scrolls.push([a.left || 0, a.top || 0]);
+    else scrolls.push([a, b]);
+  };
   if (beforeScript) beforeScript(window.document);
   const js = fs.readFileSync(path.join(__dirname, "script.js"), "utf8");
   window.eval(js);
@@ -70,16 +73,23 @@ console.log("Brief \u2014 wording checks");
         text.replace(/\s+/g, " ").includes("The hippopotamus \u2502 snorted loudly \u2502 at the water\u2019s edge."));
   check("no leaning-forward / stepping-down phrasing",
         !text.includes("lean forward") && !text.includes("step down"));
-  check("beat-pattern title present", text.includes("Sentences Have Different Beat Patterns"));
+  check("beat-pattern panel has no large title",
+        !text.includes("Sentences Have Different Beat Patterns") &&
+        !document.querySelector('[data-panel="5"] .panel-title'));
   check("beat-pattern takeaway present", text.includes("Sentences can have different beat patterns."));
-  check("Example A line present",
+  check("Step 1 plain sentence present", text.includes("The band will play tonight at school."));
+  check("Step 1 marked line present",
         text.includes("BAND") && text.includes("PLAY") && text.includes("NIGHT") && text.includes("SCHOOL"));
-  check("ta-DUM cue present", text.includes("ta-DUM \u2502 ta-DUM \u2502 ta-DUM \u2502 ta-DUM"));
-  check("Example A caption present", text.includes("Here, the beat comes after a lighter syllable."));
-  check("Example B line present",
+  check("ta-DUM cue uses quiet interpuncts", text.includes("ta-DUM \u00B7 ta-DUM \u00B7 ta-DUM \u00B7 ta-DUM"));
+  check("Step 1 takeaway present", text.includes("A lighter syllable can lead into the beat."));
+  check("Step 2 plain sentence present", text.includes("Drama students practiced loudly."));
+  check("Step 2 marked line present",
         text.includes("DRA") && text.includes("STU") && text.includes("PRAC"));
-  check("DUM-ta cue present", text.includes("DUM-ta \u2502 DUM-ta \u2502 DUM-ta \u2502 DUM-ta"));
-  check("Example B caption present", text.includes("Here, the beat comes first."));
+  check("DUM-ta cue uses quiet interpuncts", text.includes("DUM-ta \u00B7 DUM-ta \u00B7 DUM-ta \u00B7 DUM-ta"));
+  check("Step 2 takeaway present", text.includes("The beat can also come first."));
+  check("no tall bars inside the beat-pattern panel",
+        !document.querySelector('[data-panel="5"]').textContent.includes("\u2502") &&
+        !document.querySelector('[data-panel="5"] .foot-divider'));
   check("intonation heading present", text.includes("One word, three voices."));
   check("intonation instruction present", text.includes("Listen to each one."));
   check("no melody maps remain", document.querySelectorAll(".melody-map").length === 0);
@@ -93,9 +103,52 @@ console.log("Brief \u2014 wording checks");
         text.includes("I\u2019ve been listening all along.") && text.includes("Now you can hear it too."));
 }
 
+console.log("Beat patterns \u2014 two quiet steps");
+{
+  const { document } = loadDom();
+  const panel = document.querySelector('[data-panel="5"]');
+  const a = panel.querySelector(".rhythm-example.pattern-a");
+  const b = panel.querySelector(".rhythm-example.pattern-b");
+  check("two steps present", !!a && !!b);
+
+  const aDelays = Array.from(a.querySelectorAll("[data-reveal]"))
+    .map(el => Number(el.getAttribute("data-delay")));
+  check("step one unfolds marked line \u2192 cue \u2192 takeaway",
+        aDelays.length === 3 && aDelays[0] < aDelays[1] && aDelays[1] < aDelays[2]);
+  check("step one plain sentence yields to its marked twin",
+        a.querySelector("[data-swap-out]") !== null);
+
+  const bDelays = Array.from(b.querySelectorAll("[data-reveal]"))
+    .map(el => Number(el.getAttribute("data-delay")));
+  check("step two unfolds plain \u2192 marked \u2192 cue \u2192 takeaway",
+        bDelays.length === 4 && bDelays[0] < bDelays[1] &&
+        bDelays[1] < bDelays[2] && bDelays[2] < bDelays[3]);
+
+  const recedeAt = Number(a.getAttribute("data-recede"));
+  check("step one settles back before step two begins",
+        recedeAt > 0 && recedeAt <= Math.min(...bDelays));
+  check("closing line arrives after both steps",
+        Number(panel.querySelector(":scope > .takeaway").getAttribute("data-delay")) > Math.max(...bDelays));
+}
+{
+  // Shrink the recede timer so the settling-back can be observed quickly.
+  const { document } = loadDom(doc => {
+    doc.querySelector('[data-panel="5"] .pattern-a').setAttribute("data-recede", "20");
+  });
+  const forward = document.getElementById("forward-button");
+  for (let i = 0; i < 4; i++) forward.click();            // 1 -> 5
+  check("panel 5 active", document.querySelectorAll(".exhibit-panel")[4].classList.contains("is-active"));
+  await sleep(300);
+  const stepA = document.querySelector('[data-panel="5"] .pattern-a');
+  check("step one receded on its timer", stepA.classList.contains("is-receded"));
+  forward.click();                                        // leave...
+  document.getElementById("back-button").click();         // ...and revisit
+  check("revisiting resets the receded step", !stepA.classList.contains("is-receded"));
+}
+
 console.log("Transition \u2014 Begin Exploring reveals the homepage at the top");
 {
-  const { document, scrolls } = loadDom();
+  const { document, window, scrolls } = loadDom();
   const forward = document.getElementById("forward-button");
   const begin = document.getElementById("begin-button");
   const panels = document.querySelectorAll(".exhibit-panel");
@@ -105,18 +158,27 @@ console.log("Transition \u2014 Begin Exploring reveals the homepage at the top")
   check("Begin Exploring shown on final panel", begin.hidden === false);
   check("skip hidden on final panel", document.getElementById("skip-intro").hidden === true);
   check("forward disabled on final panel", forward.disabled === true);
+  check("completeExhibit exposed on window", typeof window.completeExhibit === "function");
 
-  let completed = false;
-  document.addEventListener("exhibit:complete", () => { completed = true; });
+  let completions = 0;
+  document.addEventListener("exhibit:complete", () => { completions++; });
   begin.click();
 
   check("exhibit hidden after Begin Exploring", document.getElementById("opening-exhibit").hidden === true);
   check("exhibit controls hidden", document.querySelector(".exhibit-controls").hidden === true);
-  check("site content revealed", document.getElementById("site-content").hidden === false);
+  check("site content revealed, hidden attribute removed",
+        document.getElementById("site-content").hidden === false &&
+        !document.getElementById("site-content").hasAttribute("hidden"));
+  check("site content made programmatically focusable",
+        document.getElementById("site-content").getAttribute("tabindex") === "-1");
+  check("body carries exhibit-complete", document.body.classList.contains("exhibit-complete"));
   check("window scrolled to top", scrolls.some(c => c[0] === 0 && c[1] === 0));
   check("focus moved to homepage heading",
         document.activeElement === document.getElementById("site-heading"));
-  check("exhibit:complete dispatched", completed);
+  check("exhibit:complete dispatched", completions === 1);
+
+  begin.click();                                          // a second press must be harmless
+  check("completion is idempotent \u2014 the handoff fires exactly once", completions === 1);
 }
 
 console.log("Transition \u2014 Skip intro behaves identically");
@@ -131,6 +193,19 @@ console.log("Transition \u2014 Skip intro behaves identically");
         scrolls.some(c => c[0] === 0 && c[1] === 0));
   check("skip moves focus to homepage heading",
         document.activeElement === document.getElementById("site-heading"));
+  check("skip also marks the body exhibit-complete",
+        document.body.classList.contains("exhibit-complete"));
+}
+
+console.log("Stylesheet \u2014 completion safety rules");
+{
+  const css = fs.readFileSync(path.join(__dirname, "style.css"), "utf8").replace(/\s+/g, " ");
+  check("exhibit and controls forced hidden once complete",
+        css.includes("body.exhibit-complete #opening-exhibit") &&
+        css.includes("body.exhibit-complete .exhibit-controls") &&
+        /body\.exhibit-complete \.exhibit-controls \{ display: none; \}/.test(css));
+  check("#site-content[hidden] forced to display none",
+        css.includes("#site-content[hidden] { display: none; }"));
 }
 
 console.log("Intonation \u2014 the three voices play themselves");

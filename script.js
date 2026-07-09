@@ -160,6 +160,9 @@
     panel.querySelectorAll("[data-swap-out]").forEach(function (el) {
       el.classList.remove("is-hidden-away");
     });
+    panel.querySelectorAll("[data-recede]").forEach(function (el) {
+      el.classList.remove("is-receded");
+    });
 
     // Schedule this panel's reveals.
     panel.querySelectorAll("[data-reveal]").forEach(function (el) {
@@ -167,18 +170,26 @@
       later(function () { el.classList.add("is-shown"); }, delay + 250);
     });
 
-    // Plain lines that yield to their marked twin (panels 4 and 7).
+    // Plain lines that yield to their marked twin (panels 4 and 5).
     panel.querySelectorAll("[data-swap-out]").forEach(function (el) {
       const at = Number(el.getAttribute("data-swap-out"));
       later(function () { el.classList.add("is-hidden-away"); }, at);
     });
 
+    // Whole steps that settle back once their moment has passed
+    // (panel 5: the first example recedes before the second begins,
+    // so only one example holds full size at a time).
+    panel.querySelectorAll("[data-recede]").forEach(function (el) {
+      const at = Number(el.getAttribute("data-recede"));
+      later(function () { el.classList.add("is-receded"); }, at);
+    });
+
     // Panel-specific choreography.
     const n = panel.getAttribute("data-panel");
     if (n === "4") pulseBeats(panel, 3600, 900);            // POT → SNORT → LOUD → WA → EDGE
-    if (n === "5") {                                        // beat patterns: A, then B
-      pulseBeats(panel.querySelector(".pattern-a"), 3400, 700);
-      pulseBeats(panel.querySelector(".pattern-b"), 8200, 700);
+    if (n === "5") {                                        // beat patterns: step one, then step two
+      pulseBeats(panel.querySelector(".pattern-a"), 3000, 700);
+      pulseBeats(panel.querySelector(".pattern-b"), 11800, 700);
     }
     if (n === "8" && !reducedMotion) {                      // the three voices play themselves
       panel.querySelectorAll(".audio-button").forEach(function (button) {
@@ -230,36 +241,63 @@
     showPanel(current);
   }
 
-  function finish() {
+  /* The one and only handoff from exhibit to homepage. Both Begin
+     Exploring and Skip intro call it (and the inline safety net in
+     index.html delegates to it). Idempotent: however many wired
+     listeners fire, the handoff happens exactly once. */
+  function completeExhibit() {
+    if (document.body.classList.contains("exhibit-complete")) return;
+
     clearTimers();
     cancelAdvance();
 
-    // Hide the exhibit and its controls; reveal the homepage.
-    exhibit.hidden = true;
-    document.querySelector(".exhibit-controls").hidden = true;
-    if (siteContent) siteContent.hidden = false;
+    // 1–2. Hide the exhibit and its controls completely.
+    const controls = document.querySelector(".exhibit-controls");
+    if (exhibit) exhibit.hidden = true;
+    if (controls) controls.hidden = true;
 
-    // The visitor should arrive at the top of the homepage —
-    // no scrolling required to discover it.
-    try { window.scrollTo(0, 0); } catch (e) { /* older engines */ }
-
-    // Keyboard focus moves to the homepage heading (or the start of
-    // the site content), so keyboard and screen-reader visitors land
-    // where sighted visitors are looking.
-    var heading = document.getElementById("site-heading") || siteContent;
-    if (heading) {
-      if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
-      try { heading.focus(); } catch (e) { /* focus is a courtesy */ }
+    // 3–4. Reveal the homepage.
+    if (siteContent) {
+      siteContent.hidden = false;
+      siteContent.removeAttribute("hidden");
+      siteContent.setAttribute("tabindex", "-1");
     }
 
+    // Belt and braces: the stylesheet also hides the exhibit and
+    // shows the site whenever this class is present on <body>.
+    document.body.classList.add("exhibit-complete");
+
+    // 5. The visitor arrives at the top of the homepage —
+    //    no scrolling required to discover it.
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch (e) {
+      try { window.scrollTo(0, 0); } catch (e2) { /* older engines */ }
+    }
+
+    // 6. Keyboard focus moves to the homepage heading (falling back
+    //    to #site-content), so keyboard and screen-reader visitors
+    //    land where sighted visitors are looking.
+    const target = document.getElementById("site-heading") || siteContent;
+    if (target) {
+      if (!target.hasAttribute("tabindex")) target.setAttribute("tabindex", "-1");
+      try { target.focus({ preventScroll: true }); }
+      catch (e) { try { target.focus(); } catch (e2) { /* focus is a courtesy */ } }
+    }
+
+    // 7. Announce completion for anything listening.
     document.dispatchEvent(new CustomEvent("exhibit:complete"));
   }
+
+  // Exposed so the inline safety net (and anything else) can call
+  // the same single function.
+  window.completeExhibit = completeExhibit;
 
   backButton.addEventListener("click", prev);
   forwardButton.addEventListener("click", next);
   playPauseButton.addEventListener("click", function () { setPaused(!paused); });
-  beginButton.addEventListener("click", finish);
-  skipButton.addEventListener("click", finish);
+  beginButton.addEventListener("click", completeExhibit);
+  skipButton.addEventListener("click", completeExhibit);
 
   // Keyboard: arrows step, space pauses (when focus isn't on a button).
   document.addEventListener("keydown", function (e) {
