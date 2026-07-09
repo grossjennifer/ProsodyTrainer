@@ -2,8 +2,8 @@
    The Hidden Architecture of Reading — self-playing exhibit
    The exhibit now plays itself: each panel carries a data-duration, and
    the tour advances when a panel's choreography has had time to land.
-   The visitor keeps full control through a transport — rewind (◀),
-   pause/resume, and forward (▶) — plus Skip intro.
+   The visitor keeps full control through a transport — Back,
+   pause/resume, and Continue, all plain text — plus Skip intro.
 
    Courtesies:
    - Pausing freezes everything mid-gesture (reveals, pulses, the advance).
@@ -13,7 +13,7 @@
      muted until the visitor's first interaction with the page.)
    - Under prefers-reduced-motion, nothing moves and nothing self-advances:
      each panel appears complete, clips play only when pressed, and
-     ◀ / ▶ step through at the reader's pace.
+     Back / Continue step through at the reader's pace.
    - The final panel (Sputnik) never auto-advances; the tour rests there
      until the visitor presses Begin Exploring.
    ========================================================================== */
@@ -33,8 +33,8 @@
 
   const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  const PAUSE_GLYPH = "\u275A\u275A";   /* ❚❚ */
-  const PLAY_GLYPH = "\u25B7";          /* ▷  */
+  const PAUSE_LABEL = "Pause";
+  const RESUME_LABEL = "Resume";
 
   let current = -1;
   let paused = false;
@@ -134,8 +134,10 @@
       thawTimers();
       if (advance.remaining > 0 && advance.id === null) armAdvance();
     }
-    playPauseButton.textContent = paused ? PLAY_GLYPH : PAUSE_GLYPH;
-    playPauseButton.setAttribute("aria-label", paused ? "Resume" : "Pause");
+    // The visible text is the button's accessible name — and never
+    // a triangle: play icons belong to the intonation panel's audio
+    // buttons alone.
+    playPauseButton.textContent = paused ? RESUME_LABEL : PAUSE_LABEL;
     playPauseButton.setAttribute("aria-pressed", paused ? "true" : "false");
   }
 
@@ -160,8 +162,8 @@
     panel.querySelectorAll("[data-swap-out]").forEach(function (el) {
       el.classList.remove("is-hidden-away");
     });
-    panel.querySelectorAll("[data-recede]").forEach(function (el) {
-      el.classList.remove("is-receded");
+    panel.querySelectorAll("[data-clear]").forEach(function (el) {
+      el.classList.remove("is-cleared");
     });
 
     // Schedule this panel's reveals.
@@ -170,28 +172,32 @@
       later(function () { el.classList.add("is-shown"); }, delay + 250);
     });
 
-    // Plain lines that yield to their marked twin (panels 4 and 5).
+    // Plain lines that yield to their marked twin (panel 4).
     panel.querySelectorAll("[data-swap-out]").forEach(function (el) {
       const at = Number(el.getAttribute("data-swap-out"));
       later(function () { el.classList.add("is-hidden-away"); }, at);
     });
 
-    // Whole steps that settle back once their moment has passed
-    // (panel 5: the first example recedes before the second begins,
-    // so only one example holds full size at a time).
-    panel.querySelectorAll("[data-recede]").forEach(function (el) {
-      const at = Number(el.getAttribute("data-recede"));
-      later(function () { el.classList.add("is-receded"); }, at);
-    });
+    // Steps that clear away entirely once their moment has passed
+    // (panel 5: a finished example leaves the stage before the next
+    // begins — the learner sees one rhythm at a time). Under reduced
+    // motion nothing is cleared: the steps simply flow down the page,
+    // all present at once, at the reader's own pace.
+    if (!reducedMotion) {
+      panel.querySelectorAll("[data-clear]").forEach(function (el) {
+        const at = Number(el.getAttribute("data-clear"));
+        later(function () { el.classList.add("is-cleared"); }, at);
+      });
+    }
 
     // Panel-specific choreography.
     const n = panel.getAttribute("data-panel");
     if (n === "4") pulseBeats(panel, 3600, 900);            // POT → SNORT → LOUD → WA → EDGE
     if (n === "5") {                                        // beat patterns: step one, then step two
-      pulseBeats(panel.querySelector(".pattern-a"), 3000, 700);
-      pulseBeats(panel.querySelector(".pattern-b"), 11800, 700);
+      pulseBeats(panel.querySelector(".pattern-a"), 800, 700);
+      pulseBeats(panel.querySelector(".pattern-b"), 9000, 700);
     }
-    if (n === "8" && !reducedMotion) {                      // the three voices play themselves
+    if (n === "7" && !reducedMotion) {                      // the three voices play themselves
       panel.querySelectorAll(".audio-button").forEach(function (button) {
         const at = Number(button.getAttribute("data-play-at") || 0);
         later(function () { playClip(button); }, at);
@@ -308,7 +314,7 @@
   });
 
   /* ------------------------------------------------------------------ */
-  /* Panel 8 — the three voices                                         */
+  /* Panel 7 — the three voices                                         */
   /* The clips play by themselves, one after another, when the panel   */
   /* arrives (scheduled in showPanel). The buttons replay any voice;   */
   /* pressing one pauses the tour: listening deserves stillness.       */

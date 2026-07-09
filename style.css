@@ -182,35 +182,50 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   Panel 5 — beat patterns, in two quiet steps
-   No dividers inside the lines: tall bars could be mistaken for phrase
-   boundaries, so the cue line separates beat groups with interpuncts.
+   Panel 5 — beat patterns, one at a time
+   The two steps share one stage (a single grid cell): step one clears
+   away completely before step two begins, so the learner sees exactly
+   one beat pattern at a time — never a faded example lingering in the
+   background. No dividers inside the lines: tall bars could be mistaken
+   for phrase boundaries, so the cue lines separate beat groups with
+   interpuncts.
    -------------------------------------------------------------------------- */
 
-.rhythm-example {
-  margin: 1.6rem 0 2rem;
-  transition: opacity 1100ms var(--ease), transform 1100ms var(--ease);
-  transform-origin: center top;
+.rhythm-steps {
+  display: grid;
 }
 
-/* A step that has had its moment settles back — smaller and fainter —
-   so only one example holds the room at full size at a time. */
-.rhythm-example.is-receded {
-  opacity: 0.32;
-  transform: scale(0.82);
+.rhythm-step {
+  grid-area: 1 / 1;             /* both steps occupy the same spot */
+  align-self: center;
+  transition: opacity 1100ms var(--ease), visibility 0s linear 1100ms;
+}
+
+.rhythm-step.is-cleared {
+  opacity: 0;
+  visibility: hidden;           /* gone, not faded-in-the-background */
+  pointer-events: none;
+}
+
+/* The sentences sit a step below the default demo size, so the beat
+   cue beneath them is easy to see. */
+.rhythm-step .demo-sentence {
+  font-size: clamp(1.25rem, 3.2vw, 1.75rem);
 }
 
 /* The ta-DUM / DUM-ta line: only there to help learners notice the beat. */
 .beat-cue {
   font-family: var(--sans);
-  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  font-size: clamp(1rem, 2.6vw, 1.25rem);
   letter-spacing: 0.05em;
   color: var(--ink-soft);
-  margin: 0.35em 0 0.45em;
+  margin: 0.5em 0 0.45em;
 }
 
+.beat-caption { margin: 0.6rem 0 0; }
+
 /* --------------------------------------------------------------------------
-   Panel 8 — intonation (sound is the exhibit; visuals only guide)
+   Panel 7 — intonation (sound is the exhibit; visuals only guide)
    -------------------------------------------------------------------------- */
 
 .audio-row {
@@ -281,7 +296,7 @@ html, body {
 #audio-takeaway p { margin: 0.25em 0; }
 
 /* --------------------------------------------------------------------------
-   Panel 9 — hidden architecture
+   Panel 8 — hidden architecture
    -------------------------------------------------------------------------- */
 
 .architecture {
@@ -306,7 +321,7 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   Panel 10 — brand
+   Panel 9 — brand
    -------------------------------------------------------------------------- */
 
 .brand {
@@ -327,7 +342,7 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   Panel 11 — Sputnik
+   Panel 10 — Sputnik
    -------------------------------------------------------------------------- */
 
 .sputnik-scene {
@@ -422,9 +437,13 @@ html, body {
   [data-reveal] { transition: none; transform: none; }
   .beat.is-pulsing { animation: none; }
   .stress { transition: none; }
-  .audio-button, .continue-button { transition: none; }
-  .rhythm-example { transition: none; }
-  .rhythm-example.is-receded { transform: none; }   /* fainter, but not moved */
+  .audio-button, .continue-button, .transport-button { transition: none; }
+  /* The three beat-pattern steps flow down the page in order, all
+     present at once — nothing moves, nothing vanishes. (The script
+     also skips scheduling any clears under reduced motion.) */
+  .rhythm-steps { display: block; }
+  .rhythm-step { transition: none; }
+  .rhythm-step.is-cleared { opacity: 1; visibility: visible; }
 }
 
 /* --------------------------------------------------------------------------
@@ -453,17 +472,19 @@ body.exhibit-complete .exhibit-controls {
 }
 
 .transport-button {
-  width: 2.9rem;
-  height: 2.9rem;
+  min-height: 2.6rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-family: var(--sans);
-  font-size: 0.95rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--boundary);
-  border-radius: 50%;
+  border-radius: 999px;
+  padding: 0.45em 1.2em;
   cursor: pointer;
   transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
 }
@@ -484,7 +505,7 @@ body.exhibit-complete .exhibit-controls {
 .transport-button[hidden] { display: none; }
 
 /* --------------------------------------------------------------------------
-   Panel 11 — Sputnik's portrait (a photograph now, not a line drawing)
+   Panel 10 — Sputnik's portrait (a photograph now, not a line drawing)
    -------------------------------------------------------------------------- */
 
 img.sputnik {

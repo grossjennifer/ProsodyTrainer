@@ -298,60 +298,57 @@
   </section>
 
   <!-- ================================================================
-       Panel 5 — beat patterns, unfolding in two quiet steps
-       (No title: the words carry the panel, like its neighbors.
-        Each step follows the pattern of panel 4 — a plain sentence
-        yields to its marked twin, then a soft beat cue, then a
-        takeaway. Step one settles back before step two begins, so
-        only one example holds the room at full size at a time.
-        The cue line uses quiet interpuncts, never tall bars that
-        could be mistaken for phrase boundaries.)
+       Panel 5 — beat patterns, one at a time
+       (No title, no ghost lines: each step opens directly on its
+        marked sentence, then the cue, then the caption. The two
+        steps share one stage — a single grid cell — and step one
+        clears away completely before step two begins, so the
+        learner sees exactly one beat pattern at a time, never a
+        faded example lingering in the background. The takeaway
+        arrives last, beneath the second pattern. Cue lines use
+        quiet interpuncts, never tall bars that could be mistaken
+        for phrase boundaries.)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="5" data-duration="20500">
+  <section class="exhibit-panel" data-panel="5" data-duration="18000">
+    <div class="rhythm-steps">
 
-    <div class="rhythm-example pattern-a" data-recede="8600">
-      <p class="demo-sentence" data-swap-out="2600">The band will play tonight at school.</p>
-      <p class="demo-sentence" data-reveal data-delay="2350">the <span class="stress beat" data-beat="1">BAND</span> will <span class="stress beat" data-beat="2">PLAY</span> to<span class="dot">&middot;</span><span class="stress beat" data-beat="3">NIGHT</span> at <span class="stress beat" data-beat="4">SCHOOL</span></p>
-      <p class="beat-cue" data-reveal data-delay="4400">ta-DUM &middot; ta-DUM &middot; ta-DUM &middot; ta-DUM</p>
-      <p class="takeaway inline" data-reveal data-delay="6200">A lighter syllable can lead into the beat.</p>
+      <div class="rhythm-step pattern-a" data-clear="7000">
+        <p class="demo-sentence" data-reveal data-delay="0">the <span class="stress beat" data-beat="1">BAND</span> will <span class="stress beat" data-beat="2">PLAY</span> to<span class="dot">&middot;</span><span class="stress beat" data-beat="3">NIGHT</span> at <span class="stress beat" data-beat="4">SCHOOL</span></p>
+        <p class="beat-cue" data-reveal data-delay="2200">ta-DUM &middot; ta-DUM &middot; ta-DUM &middot; ta-DUM</p>
+        <p class="caption beat-caption" data-reveal data-delay="4000">A lighter syllable can lead into the beat.</p>
+      </div>
+
+      <div class="rhythm-step pattern-b">
+        <p class="demo-sentence" data-reveal data-delay="8200"><span class="stress beat" data-beat="1">DRA</span><span class="dot">&middot;</span>ma <span class="stress beat" data-beat="2">STU</span><span class="dot">&middot;</span>dents <span class="stress beat" data-beat="3">PRAC</span><span class="dot">&middot;</span>ticed <span class="stress beat" data-beat="4">LOUD</span><span class="dot">&middot;</span>ly</p>
+        <p class="beat-cue" data-reveal data-delay="10400">DUM-ta &middot; DUM-ta &middot; DUM-ta &middot; DUM-ta</p>
+        <p class="caption beat-caption" data-reveal data-delay="12200">The beat can also come first.</p>
+      </div>
+
     </div>
-
-    <div class="rhythm-example pattern-b">
-      <p class="demo-sentence" data-reveal data-delay="8800" data-swap-out="11400">Drama students practiced loudly.</p>
-      <p class="demo-sentence" data-reveal data-delay="11150"><span class="stress beat" data-beat="1">DRA</span><span class="dot">&middot;</span>ma <span class="stress beat" data-beat="2">STU</span><span class="dot">&middot;</span>dents <span class="stress beat" data-beat="3">PRAC</span><span class="dot">&middot;</span>ticed <span class="stress beat" data-beat="4">LOUD</span><span class="dot">&middot;</span>ly</p>
-      <p class="beat-cue" data-reveal data-delay="13200">DUM-ta &middot; DUM-ta &middot; DUM-ta &middot; DUM-ta</p>
-      <p class="takeaway inline" data-reveal data-delay="15000">The beat can also come first.</p>
-    </div>
-
-    <p class="takeaway" data-reveal data-delay="17400">Sentences can have different beat patterns.</p>
+    <p class="takeaway" data-reveal data-delay="14600">Sentences can have different beat patterns.</p>
   </section>
 
   <!-- ================================================================
-       Panel 6 — Phrasing (plain line yields to marked twin)
+       Panel 6 — Grandma: phrasing, and why it matters
+       (One sentence carries the whole lesson. The unbroken line, the
+        line with a boundary, then the comma. The humor comes from
+        the language itself — no illustration needed.)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="6" data-duration="10500">
-    <p class="demo-sentence" data-swap-out="2600">The hippopotamus snorted loudly at the water&rsquo;s edge.</p>
-    <p class="demo-sentence" data-reveal data-delay="2350">The hippopotamus <span class="phrase-boundary">│</span> snorted loudly <span class="phrase-boundary">│</span> at the water&rsquo;s edge.</p>
-    <p class="takeaway" data-reveal data-delay="6400">Readers group words into meaningful phrases.</p>
-  </section>
-
-  <!-- ================================================================
-       Panel 7 — Grouping changes meaning
-       ================================================================ -->
-  <section class="exhibit-panel" data-panel="7" data-duration="11000">
+  <section class="exhibit-panel" data-panel="6" data-duration="12000">
     <p class="demo-sentence" data-reveal data-delay="0">Let&rsquo;s eat Grandma.</p>
     <p class="demo-sentence" data-reveal data-delay="2000">Let&rsquo;s eat <span class="phrase-boundary">│</span> Grandma.</p>
-    <p class="demo-sentence" data-reveal data-delay="4000">Let&rsquo;s eat, Grandma.</p>
-    <p class="takeaway" data-reveal data-delay="6300">Grouping changes meaning.</p>
+    <p class="caption" data-reveal data-delay="4200">Readers group words into meaningful phrases.</p>
+    <p class="demo-sentence" data-reveal data-delay="6200">Let&rsquo;s eat, Grandma.</p>
+    <p class="takeaway" data-reveal data-delay="8600">Grouping can change meaning.</p>
   </section>
 
   <!-- ================================================================
-       Panel 8 — Intonation: one word, three voices
+       Panel 7 — Intonation: one word, three voices
        (Sound is the exhibit. The three voices play by themselves, one
        after another; the buttons replay any of them. Pressing a clip
        pauses the tour so listening is never rushed.)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="8" data-duration="15500">
+  <section class="exhibit-panel" data-panel="7" data-duration="15500">
     <h2 class="panel-title" data-reveal data-delay="0">One word, three voices.</h2>
     <p class="caption" data-reveal data-delay="900">Listen to each one.</p>
     <div class="audio-row" data-reveal data-delay="1600">
@@ -370,9 +367,9 @@
   </section>
 
   <!-- ================================================================
-       Panel 9 — The hidden architecture (revealed from the ground up)
+       Panel 8 — The hidden architecture (revealed from the ground up)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="9" data-duration="13000">
+  <section class="exhibit-panel" data-panel="8" data-duration="13000">
     <div class="architecture">
       <p class="arch-level" data-reveal data-delay="4500">Meaning</p>
       <p class="arch-arrow" data-reveal data-delay="4200" aria-hidden="true">&uarr;</p>
@@ -390,17 +387,17 @@
   </section>
 
   <!-- ================================================================
-       Panel 10 — Brand
+       Panel 9 — Brand
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="10" data-duration="7500">
+  <section class="exhibit-panel" data-panel="9" data-duration="7500">
     <h1 class="brand" data-reveal data-delay="0">Prosody Trainer</h1>
     <p class="brand-subtitle" data-reveal data-delay="1600">An interactive laboratory where people discover how the mind brings written language to life.</p>
   </section>
 
   <!-- ================================================================
-       Panel 11 — Sputnik (the tour rests here)
+       Panel 10 — Sputnik (the tour rests here)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="11" data-duration="0">
+  <section class="exhibit-panel" data-panel="10" data-duration="0">
     <div class="sputnik-scene">
       <img class="sputnik" src="sputnik.png" data-reveal data-delay="0"
            alt="Sputnik, a husky-mix puppy with one white ear and one brown ear, sitting on a black-and-white tiled floor and gazing up attentively.">
@@ -415,14 +412,17 @@
 
 <!-- ==================================================================
      Transport controls: the exhibit plays itself; the visitor can
-     rewind, pause, resume, or step forward at any time.
+     go back, pause, resume, or continue at any time. Plain text
+     labels, deliberately: triangle play icons are reserved for the
+     audio buttons on the intonation panel, so navigation must never
+     wear one.
      ================================================================== -->
 <div class="exhibit-controls">
-  <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 11</p>
+  <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 10</p>
   <div class="transport" role="group" aria-label="Exhibit playback controls">
-    <button id="back-button" class="transport-button" type="button" aria-label="Back one panel">&#9664;</button>
-    <button id="play-pause-button" class="transport-button" type="button" aria-label="Pause" aria-pressed="false">&#10074;&#10074;</button>
-    <button id="forward-button" class="transport-button" type="button" aria-label="Forward one panel">&#9654;</button>
+    <button id="back-button" class="transport-button" type="button">Back</button>
+    <button id="play-pause-button" class="transport-button" type="button" aria-pressed="false">Pause</button>
+    <button id="forward-button" class="transport-button" type="button">Continue</button>
   </div>
   <button id="begin-button" class="continue-button" type="button" hidden>Begin Exploring</button>
   <button id="skip-intro" class="skip-link" type="button">Skip intro</button>
