@@ -8,9 +8,10 @@
   --ink:          #2E2B27;   /* dark charcoal */
   --ink-soft:     #6E675E;   /* captions, counters */
   --glow:         #C98A2E;   /* warm lamplight for stressed syllables */
+  --glow-deep:    #8C5A12;   /* the same lamplight, deep enough to read by */
   --glow-halo:    rgba(214, 158, 74, 0.38);
   --boundary:     #A89C8C;   /* soft phrase divider */
-  --line:         #D9D0C2;   /* hairlines in melody maps */
+  --line:         #D9D0C2;   /* hairlines and card borders */
 
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   --sans:  system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -136,6 +137,15 @@ html, body {
   color: var(--ink-soft);
 }
 
+.panel-title {
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 4vw, 2.1rem);
+  font-weight: 400;
+  line-height: 1.3;
+  margin: 0 0 1.4rem;
+  text-wrap: balance;
+}
+
 /* --------------------------------------------------------------------------
    Stress: warm glow + weight change (never color alone)
    -------------------------------------------------------------------------- */
@@ -172,13 +182,31 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   Panel 6 — rhythmic contrast
+   Panel 5 — beat patterns
    -------------------------------------------------------------------------- */
 
-.rhythm-example { margin: 1.6rem 0; }
+.rhythm-example { margin: 1.6rem 0 2rem; }
+
+/* Divides beat groups within a line; quieter than a phrase boundary. */
+.foot-divider {
+  color: var(--boundary);
+  font-weight: 300;
+  padding: 0 0.18em;
+}
+
+/* The ta-DUM / DUM-ta line: only there to help learners notice the beat. */
+.beat-cue {
+  font-family: var(--sans);
+  font-size: clamp(0.95rem, 2.4vw, 1.15rem);
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  margin: 0.35em 0 0.45em;
+}
+
+.beat-caption { margin: 0; }
 
 /* --------------------------------------------------------------------------
-   Panel 9 — audio
+   Panel 8 — intonation (sound is the exhibit; visuals only guide)
    -------------------------------------------------------------------------- */
 
 .audio-row {
@@ -212,66 +240,44 @@ html, body {
 
 .audio-button.was-played .play-glyph { color: var(--glow); }
 
+/* The voice currently sounding wears the same warm ring as a press. */
+.audio-button.is-sounding {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
 .play-glyph {
   font-family: var(--sans);
   font-size: 0.7em;
   color: var(--ink-soft);
 }
 
-.audio-transcript { max-width: 34rem; margin: 0 auto; }
-
-.audio-takeaway[hidden] { display: none; }
-
-/* --------------------------------------------------------------------------
-   Panel 10 — melody maps
-   -------------------------------------------------------------------------- */
-
-.melody-row {
-  display: flex;
-  gap: 1.4rem;
-  justify-content: center;
-  flex-wrap: wrap;
+/* The transcript stays available for accessibility without
+   dominating the screen: folded into a small disclosure. */
+.audio-transcript-details {
+  max-width: 34rem;
+  margin: 1.6rem auto 0;
 }
 
-.melody-map {
-  margin: 0;
-  width: min(200px, 60vw);
-}
-
-.melody-map svg { width: 100%; height: auto; display: block; }
-
-.melody-label {
-  font-family: var(--serif);
-  font-size: 1.25rem;
-  margin-bottom: 0.5rem;
-}
-
-.melody-lines line {
-  stroke: var(--line);
-  stroke-width: 1.5;
-}
-
-.melody-level-labels text,
-.melody-syll-labels text {
+.audio-transcript-details summary {
+  cursor: pointer;
   font-family: var(--sans);
-  font-size: 11px;
-  fill: var(--ink-soft);
-  text-anchor: end;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
 }
 
-.melody-syll-labels text { text-anchor: middle; }
-
-.melody-contour {
-  fill: none;
-  stroke: var(--glow);
-  stroke-width: 2;
-  opacity: 0.55;
+.audio-transcript-details summary:hover,
+.audio-transcript-details summary:focus-visible {
+  color: var(--ink);
 }
 
-.melody-dot { fill: var(--ink); }
+.audio-transcript-details p { margin: 0.5rem 0 0; }
+
+#audio-takeaway { margin-top: 1.4rem; }
+#audio-takeaway p { margin: 0.25em 0; }
 
 /* --------------------------------------------------------------------------
-   Panel 11 — hidden architecture
+   Panel 9 — hidden architecture
    -------------------------------------------------------------------------- */
 
 .architecture {
@@ -296,7 +302,7 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   Panel 12 — brand
+   Panel 10 — brand
    -------------------------------------------------------------------------- */
 
 .brand {
@@ -317,7 +323,7 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   Panel 13 — Sputnik
+   Panel 11 — Sputnik
    -------------------------------------------------------------------------- */
 
 .sputnik-scene {
@@ -457,7 +463,7 @@ html, body {
 .transport-button[hidden] { display: none; }
 
 /* --------------------------------------------------------------------------
-   Panel 13 — Sputnik's portrait (a photograph now, not a line drawing)
+   Panel 11 — Sputnik's portrait (a photograph now, not a line drawing)
    -------------------------------------------------------------------------- */
 
 img.sputnik {

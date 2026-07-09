@@ -7,11 +7,16 @@
   <link rel="stylesheet" href="style.css">
 
   <style>
-    /* Main Prosody Trainer homepage shown after the opening exhibit */
+    /* ------------------------------------------------------------------
+       Prosody Trainer homepage — shown after the opening exhibit.
+       Harmonized with the exhibit: the same paper, ink, and lamplight
+       amber. The exhibit is the museum room; the homepage is the
+       workshop — more structured, but the same building.
+       ------------------------------------------------------------------ */
     .site-shell {
-      background: #EFF2F1;
-      color: #242936;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: var(--sans);
       line-height: 1.6;
       min-height: 100vh;
     }
@@ -33,23 +38,23 @@
     }
 
     .site-shell nav a {
-      color: #5C6472;
+      color: var(--ink-soft);
       text-decoration: none;
       margin-left: 1rem;
     }
 
     .site-shell nav a:hover {
-      color: #A03052;
+      color: var(--glow-deep);
     }
 
     .site-shell .brand-link {
       font-weight: 700;
-      color: #242936;
+      color: var(--ink);
       margin-left: 0;
     }
 
     .site-shell .dot {
-      color: #A03052;
+      color: var(--glow);
     }
 
     .site-hero {
@@ -60,22 +65,26 @@
     .site-kicker {
       text-transform: uppercase;
       letter-spacing: .14em;
-      color: #2E6E6A;
+      color: var(--glow-deep);
       font-weight: 700;
       font-size: .78rem;
     }
 
     .site-hero h1 {
-      font-family: Georgia, "Iowan Old Style", serif;
-      font-size: clamp(3rem, 8vw, 6.2rem);
-      line-height: .98;
-      letter-spacing: -.04em;
+      font-family: var(--serif);
+      font-size: clamp(2.8rem, 7.5vw, 5.6rem);
+      line-height: 1.02;
+      letter-spacing: -.02em;
       margin: .7rem 0 1rem;
+    }
+
+    .site-hero h1:focus {
+      outline: none;
     }
 
     .site-hero p {
       font-size: clamp(1.2rem, 2vw, 1.55rem);
-      color: #5C6472;
+      color: var(--ink-soft);
       max-width: 720px;
     }
 
@@ -83,7 +92,7 @@
       margin-top: 2.5rem;
       display: grid;
       gap: .45rem;
-      font-family: Georgia, "Iowan Old Style", serif;
+      font-family: var(--serif);
       font-size: clamp(1.45rem, 3vw, 2.35rem);
       line-height: 1.25;
     }
@@ -97,19 +106,33 @@
 
     .site-button {
       display: inline-block;
-      padding: .8rem 1.05rem;
+      padding: .8rem 1.6rem;
       border-radius: 999px;
       text-decoration: none;
-      font-weight: 700;
-      border: 1.5px solid #D8DEDC;
-      color: #242936;
-      background: #FFFFFF;
+      font-weight: 600;
+      letter-spacing: .02em;
+      border: 1px solid var(--boundary);
+      color: var(--ink);
+      background: transparent;
+      transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease), background 300ms var(--ease);
+    }
+
+    .site-button:hover,
+    .site-button:focus-visible {
+      border-color: var(--glow);
+      box-shadow: 0 0 0 4px var(--glow-halo);
     }
 
     .site-button.primary {
-      background: #A03052;
-      color: #FFFFFF;
-      border-color: #A03052;
+      background: var(--ink);
+      color: var(--paper);
+      border-color: var(--ink);
+    }
+
+    .site-button.primary:hover,
+    .site-button.primary:focus-visible {
+      background: #171512;
+      box-shadow: 0 0 0 4px var(--glow-halo);
     }
 
     .site-shell section {
@@ -117,13 +140,13 @@
     }
 
     .site-shell h2 {
-      font-family: Georgia, "Iowan Old Style", serif;
+      font-family: var(--serif);
       font-size: 2.25rem;
       margin-bottom: .5rem;
     }
 
     .site-section-lede {
-      color: #5C6472;
+      color: var(--ink-soft);
       max-width: 700px;
       font-size: 1.1rem;
     }
@@ -137,7 +160,7 @@
 
     .site-card {
       background: #FFFFFF;
-      border: 1px solid #D8DEDC;
+      border: 1px solid var(--line);
       border-radius: 18px;
       padding: 1.25rem;
       text-decoration: none;
@@ -146,48 +169,49 @@
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease), transform 150ms var(--ease);
     }
 
     .site-card:hover {
-      border-color: #A03052;
+      border-color: var(--glow);
+      box-shadow: 0 10px 26px rgba(201, 138, 46, 0.14);
       transform: translateY(-2px);
-      transition: .15s ease;
     }
 
     .site-card h3 {
       margin: 0 0 .4rem;
-      font-family: Georgia, "Iowan Old Style", serif;
+      font-family: var(--serif);
       font-size: 1.45rem;
     }
 
     .site-card p {
-      color: #5C6472;
+      color: var(--ink-soft);
       margin: 0;
     }
 
     .site-tag {
       display: inline-block;
       margin-bottom: .8rem;
-      color: #A03052;
+      color: var(--glow-deep);
       font-weight: 700;
       font-size: .82rem;
     }
 
     .site-coming {
-      color: #2E6E6A;
+      color: var(--ink-soft);
     }
 
     .site-pup {
-      background: linear-gradient(135deg, #FFFFFF, #F6E7EC);
+      background: linear-gradient(135deg, #FFFFFF, #F6ECDB);
     }
 
     .site-quote {
       margin: 4rem 0;
       padding: 2rem;
       background: #FFFFFF;
-      border-left: 5px solid #A03052;
+      border-left: 5px solid var(--glow);
       border-radius: 0 18px 18px 0;
-      font-family: Georgia, "Iowan Old Style", serif;
+      font-family: var(--serif);
       font-size: clamp(1.4rem, 3vw, 2.1rem);
       line-height: 1.3;
     }
@@ -201,8 +225,8 @@
 
     .site-shell footer {
       padding: 3rem 1.25rem;
-      color: #5C6472;
-      border-top: 1px solid #D8DEDC;
+      color: var(--ink-soft);
+      border-top: 1px solid var(--line);
       margin-top: 4rem;
       font-size: .95rem;
     }
@@ -222,6 +246,11 @@
       .site-hero {
         padding-top: 3rem;
       }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .site-button, .site-card { transition: none; }
+      .site-card:hover { transform: none; }
     }
   </style>
 
@@ -265,42 +294,43 @@
   <section class="exhibit-panel" data-panel="4" data-duration="13500">
     <p class="demo-sentence" data-swap-out="2600">The hippopotamus snorted loudly at the water&rsquo;s edge.</p>
     <p class="demo-sentence" data-reveal data-delay="2350">The hip<span class="dot">&middot;</span>po<span class="dot">&middot;</span><span class="stress beat" data-beat="1">POT</span><span class="dot">&middot;</span>a<span class="dot">&middot;</span>mus <span class="stress beat" data-beat="2">SNORT</span><span class="dot">&middot;</span>ed <span class="stress beat" data-beat="3">LOUD</span><span class="dot">&middot;</span>ly at the <span class="stress beat" data-beat="4">WA</span><span class="dot">&middot;</span>ter&rsquo;s <span class="stress beat" data-beat="5">EDGE</span>.</p>
-    <p class="takeaway" data-reveal data-delay="9400">Stress creates a beat across connected language.</p>
+    <p class="takeaway" data-reveal data-delay="9400">Stress creates a beat across connected words.</p>
   </section>
 
   <!-- ================================================================
-       Panel 5 — A rhythm that leans forward
+       Panel 5 — Sentences have different beat patterns
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="5" data-duration="9500">
-    <div class="rhythm-example rise">
-      <p class="demo-sentence" data-reveal data-delay="0">the <span class="stress beat" data-beat="1">SMALL</span> dog <span class="stress beat" data-beat="2">CHASED</span> the <span class="stress beat" data-beat="3">BIG</span> cat <span class="stress beat" data-beat="4">HOME</span></p>
+  <section class="exhibit-panel" data-panel="5" data-duration="15000">
+    <h2 class="panel-title" data-reveal data-delay="0">Sentences Have Different Beat Patterns</h2>
+
+    <div class="rhythm-example pattern-a">
+      <p class="demo-sentence" data-reveal data-delay="1200">the <span class="stress beat" data-beat="1">BAND</span> <span class="foot-divider">│</span> will <span class="stress beat" data-beat="2">PLAY</span> <span class="foot-divider">│</span> to<span class="dot">&middot;</span><span class="stress beat" data-beat="3">NIGHT</span> <span class="foot-divider">│</span> at <span class="stress beat" data-beat="4">SCHOOL</span></p>
+      <p class="beat-cue" data-reveal data-delay="2000">ta-DUM │ ta-DUM │ ta-DUM │ ta-DUM</p>
+      <p class="caption beat-caption" data-reveal data-delay="2800">Here, the beat comes after a lighter syllable.</p>
     </div>
-    <p class="takeaway" data-reveal data-delay="4600">Some rhythms seem to lean forward.</p>
-  </section>
 
-  <!-- ================================================================
-       Panel 6 — A rhythm that steps down
-       ================================================================ -->
-  <section class="exhibit-panel" data-panel="6" data-duration="9500">
-    <div class="rhythm-example fall">
-      <p class="demo-sentence" data-reveal data-delay="0"><span class="stress beat" data-beat="1">DRA</span><span class="dot">&middot;</span>ma <span class="stress beat" data-beat="2">STU</span><span class="dot">&middot;</span>dents <span class="stress beat" data-beat="3">PRAC</span><span class="dot">&middot;</span>ticed <span class="stress beat" data-beat="4">LOUD</span><span class="dot">&middot;</span>ly</p>
+    <div class="rhythm-example pattern-b">
+      <p class="demo-sentence" data-reveal data-delay="5600"><span class="stress beat" data-beat="1">DRA</span><span class="dot">&middot;</span>ma <span class="foot-divider">│</span> <span class="stress beat" data-beat="2">STU</span><span class="dot">&middot;</span>dents <span class="foot-divider">│</span> <span class="stress beat" data-beat="3">PRAC</span><span class="dot">&middot;</span>ticed <span class="foot-divider">│</span> <span class="stress beat" data-beat="4">LOUD</span><span class="dot">&middot;</span>ly</p>
+      <p class="beat-cue" data-reveal data-delay="6400">DUM-ta │ DUM-ta │ DUM-ta │ DUM-ta</p>
+      <p class="caption beat-caption" data-reveal data-delay="7200">Here, the beat comes first.</p>
     </div>
-    <p class="takeaway" data-reveal data-delay="4600">Some rhythms seem to step down.</p>
+
+    <p class="takeaway" data-reveal data-delay="9400">Sentences can have different beat patterns.</p>
   </section>
 
   <!-- ================================================================
-       Panel 7 — Phrasing (plain line yields to marked twin)
+       Panel 6 — Phrasing (plain line yields to marked twin)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="7" data-duration="10500">
+  <section class="exhibit-panel" data-panel="6" data-duration="10500">
     <p class="demo-sentence" data-swap-out="2600">The hippopotamus snorted loudly at the water&rsquo;s edge.</p>
     <p class="demo-sentence" data-reveal data-delay="2350">The hippopotamus <span class="phrase-boundary">│</span> snorted loudly <span class="phrase-boundary">│</span> at the water&rsquo;s edge.</p>
     <p class="takeaway" data-reveal data-delay="6400">Readers group words into meaningful phrases.</p>
   </section>
 
   <!-- ================================================================
-       Panel 8 — Grouping changes meaning
+       Panel 7 — Grouping changes meaning
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="8" data-duration="11000">
+  <section class="exhibit-panel" data-panel="7" data-duration="11000">
     <p class="demo-sentence" data-reveal data-delay="0">Let&rsquo;s eat Grandma.</p>
     <p class="demo-sentence" data-reveal data-delay="2000">Let&rsquo;s eat <span class="phrase-boundary">│</span> Grandma.</p>
     <p class="demo-sentence" data-reveal data-delay="4000">Let&rsquo;s eat, Grandma.</p>
@@ -308,99 +338,33 @@
   </section>
 
   <!-- ================================================================
-       Panel 9 — Intonation: hear it first
-       (Pressing any clip pauses the tour so all three can be heard.)
+       Panel 8 — Intonation: one word, three voices
+       (Sound is the exhibit. The three voices play by themselves, one
+       after another; the buttons replay any of them. Pressing a clip
+       pauses the tour so listening is never rushed.)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="9" data-duration="16000">
-    <p class="caption" data-reveal data-delay="0">One word, three voices. Press each one.</p>
-    <div class="audio-row" data-reveal data-delay="900">
-      <button class="audio-button" type="button" data-audio="really-statement.mp3">Really. <span class="play-glyph" aria-hidden="true">&#9654;</span></button>
-      <button class="audio-button" type="button" data-audio="really-question.mp3">Really? <span class="play-glyph" aria-hidden="true">&#9654;</span></button>
-      <button class="audio-button" type="button" data-audio="really-exclamation.mp3">Really! <span class="play-glyph" aria-hidden="true">&#9654;</span></button>
+  <section class="exhibit-panel" data-panel="8" data-duration="15500">
+    <h2 class="panel-title" data-reveal data-delay="0">One word, three voices.</h2>
+    <p class="caption" data-reveal data-delay="900">Listen to each one.</p>
+    <div class="audio-row" data-reveal data-delay="1600">
+      <button class="audio-button" type="button" data-audio="really-statement.mp3" data-play-at="2800">Really. <span class="play-glyph" aria-hidden="true">&#9654;</span></button>
+      <button class="audio-button" type="button" data-audio="really-question.mp3" data-play-at="5400">Really? <span class="play-glyph" aria-hidden="true">&#9654;</span></button>
+      <button class="audio-button" type="button" data-audio="really-exclamation.mp3" data-play-at="8000">Really! <span class="play-glyph" aria-hidden="true">&#9654;</span></button>
     </div>
-    <p class="caption audio-transcript" data-reveal data-delay="2200">Transcript: the same word, <i>really</i>, spoken three ways &mdash; as a settled statement, as a rising question, and as a surprised exclamation.</p>
-    <p class="takeaway inline" id="audio-takeaway" hidden>One word. Three tunes. Three meanings.</p>
+    <div class="takeaway inline" id="audio-takeaway" data-reveal data-delay="10000">
+      <p>Same word. Different voice.</p>
+      <p>Punctuation helps shape the voice.</p>
+    </div>
+    <details class="audio-transcript-details" data-reveal data-delay="2400">
+      <summary>Transcript</summary>
+      <p class="caption">The same word, <i>really</i>, spoken three ways &mdash; settling like a statement, rising like a question, and jumping with surprise.</p>
+    </details>
   </section>
 
   <!-- ================================================================
-       Panel 10 — Melody maps: print hints at the tune
+       Panel 9 — The hidden architecture (revealed from the ground up)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="10" data-duration="13000">
-    <div class="melody-row">
-      <figure class="melody-map" data-reveal data-delay="0">
-        <figcaption class="melody-label">Really.</figcaption>
-        <svg viewBox="0 0 200 130" role="img" aria-label="Melody map for Really as a statement: the voice starts in the middle and settles low.">
-          <g class="melody-lines">
-            <line x1="46" y1="30" x2="192" y2="30"></line>
-            <line x1="46" y1="60" x2="192" y2="60"></line>
-            <line x1="46" y1="90" x2="192" y2="90"></line>
-          </g>
-          <g class="melody-level-labels">
-            <text x="40" y="34">high</text>
-            <text x="40" y="64">mid</text>
-            <text x="40" y="94">low</text>
-          </g>
-          <path class="melody-contour" d="M 90 55 C 112 62, 134 78, 155 88"></path>
-          <circle class="melody-dot" cx="90" cy="55" r="5"></circle>
-          <circle class="melody-dot" cx="155" cy="88" r="5"></circle>
-          <g class="melody-syll-labels">
-            <text x="90" y="118">REA</text>
-            <text x="155" y="118">lly</text>
-          </g>
-        </svg>
-      </figure>
-      <figure class="melody-map" data-reveal data-delay="1400">
-        <figcaption class="melody-label">Really?</figcaption>
-        <svg viewBox="0 0 200 130" role="img" aria-label="Melody map for Really as a question: the voice starts in the middle and rises high.">
-          <g class="melody-lines">
-            <line x1="46" y1="30" x2="192" y2="30"></line>
-            <line x1="46" y1="60" x2="192" y2="60"></line>
-            <line x1="46" y1="90" x2="192" y2="90"></line>
-          </g>
-          <g class="melody-level-labels">
-            <text x="40" y="34">high</text>
-            <text x="40" y="64">mid</text>
-            <text x="40" y="94">low</text>
-          </g>
-          <path class="melody-contour" d="M 90 72 C 112 66, 134 48, 155 32"></path>
-          <circle class="melody-dot" cx="90" cy="72" r="5"></circle>
-          <circle class="melody-dot" cx="155" cy="32" r="5"></circle>
-          <g class="melody-syll-labels">
-            <text x="90" y="118">REA</text>
-            <text x="155" y="118">lly</text>
-          </g>
-        </svg>
-      </figure>
-      <figure class="melody-map" data-reveal data-delay="2800">
-        <figcaption class="melody-label">Really!</figcaption>
-        <svg viewBox="0 0 200 130" role="img" aria-label="Melody map for Really as an exclamation: the voice leaps high and then drops.">
-          <g class="melody-lines">
-            <line x1="46" y1="30" x2="192" y2="30"></line>
-            <line x1="46" y1="60" x2="192" y2="60"></line>
-            <line x1="46" y1="90" x2="192" y2="90"></line>
-          </g>
-          <g class="melody-level-labels">
-            <text x="40" y="34">high</text>
-            <text x="40" y="64">mid</text>
-            <text x="40" y="94">low</text>
-          </g>
-          <path class="melody-contour" d="M 90 28 C 112 34, 134 52, 155 66"></path>
-          <circle class="melody-dot" cx="90" cy="28" r="5"></circle>
-          <circle class="melody-dot" cx="155" cy="66" r="5"></circle>
-          <g class="melody-syll-labels">
-            <text x="90" y="118">REA</text>
-            <text x="155" y="118">lly</text>
-          </g>
-        </svg>
-      </figure>
-    </div>
-    <p class="takeaway" data-reveal data-delay="5600">Print gives readers clues about how a voice might move.</p>
-  </section>
-
-  <!-- ================================================================
-       Panel 11 — The hidden architecture (revealed from the ground up)
-       ================================================================ -->
-  <section class="exhibit-panel" data-panel="11" data-duration="13000">
+  <section class="exhibit-panel" data-panel="9" data-duration="13000">
     <div class="architecture">
       <p class="arch-level" data-reveal data-delay="4500">Meaning</p>
       <p class="arch-arrow" data-reveal data-delay="4200" aria-hidden="true">&uarr;</p>
@@ -410,25 +374,25 @@
       <p class="arch-arrow" data-reveal data-delay="2400" aria-hidden="true">&uarr;</p>
       <p class="arch-level" data-reveal data-delay="1800">Rhythm</p>
       <p class="arch-arrow" data-reveal data-delay="1500" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="900">Lexical Stress</p>
+      <p class="arch-level" data-reveal data-delay="900">Stress</p>
       <p class="arch-arrow" data-reveal data-delay="600" aria-hidden="true">&uarr;</p>
       <p class="arch-level" data-reveal data-delay="0">Syllables</p>
     </div>
-    <p class="takeaway" data-reveal data-delay="6800">This is the hidden architecture of reading.</p>
+    <p class="takeaway" data-reveal data-delay="6800">With stress, rhythm, phrasing, and intonation, readers turn print back into a voice.</p>
   </section>
 
   <!-- ================================================================
-       Panel 12 — Brand
+       Panel 10 — Brand
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="12" data-duration="7500">
+  <section class="exhibit-panel" data-panel="10" data-duration="7500">
     <h1 class="brand" data-reveal data-delay="0">Prosody Trainer</h1>
     <p class="brand-subtitle" data-reveal data-delay="1600">An interactive laboratory where people discover how the mind brings written language to life.</p>
   </section>
 
   <!-- ================================================================
-       Panel 13 — Sputnik (the tour rests here)
+       Panel 11 — Sputnik (the tour rests here)
        ================================================================ -->
-  <section class="exhibit-panel" data-panel="13" data-duration="0">
+  <section class="exhibit-panel" data-panel="11" data-duration="0">
     <div class="sputnik-scene">
       <img class="sputnik" src="sputnik.png" data-reveal data-delay="0"
            alt="Sputnik, a husky-mix puppy with one white ear and one brown ear, sitting on a black-and-white tiled floor and gazing up attentively.">
@@ -446,7 +410,7 @@
      rewind, pause, resume, or step forward at any time.
      ================================================================== -->
 <div class="exhibit-controls">
-  <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 13</p>
+  <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 11</p>
   <div class="transport" role="group" aria-label="Exhibit playback controls">
     <button id="back-button" class="transport-button" type="button" aria-label="Back one panel">&#9664;</button>
     <button id="play-pause-button" class="transport-button" type="button" aria-label="Pause" aria-pressed="false">&#10074;&#10074;</button>
@@ -473,7 +437,7 @@
       <div class="site-hero">
         <div class="site-kicker">An interactive laboratory for reading prosody</div>
 
-        <h1>Reading may look silent, but the mind often gives it a voice<span class="dot">.</span></h1>
+        <h1 id="site-heading" tabindex="-1">Reading may look silent, but the mind often gives it a voice<span class="dot">.</span></h1>
 
         <p>
           Not through the ears. Through the mind. Prosody Trainer makes that
@@ -661,7 +625,12 @@
       if (controls) controls.hidden = true;
       if (site) site.hidden = false;
 
-      window.scrollTo({ top: 0, behavior: 'instant' });
+      try { window.scrollTo(0, 0); } catch (e) { /* older engines */ }
+
+      var heading = document.getElementById('site-heading') || site;
+      if (heading && heading.focus) {
+        try { heading.focus(); } catch (e) { /* focus is a courtesy */ }
+      }
     }
 
     var begin = document.getElementById('begin-button');

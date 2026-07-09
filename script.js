@@ -7,10 +7,13 @@
 
    Courtesies:
    - Pausing freezes everything mid-gesture (reveals, pulses, the advance).
-   - Pressing an audio clip on the intonation panel pauses the tour so all
-     three versions can be heard without being rushed. No audio autoplays.
+   - On the intonation panel the three voices play by themselves, one
+     after another; the buttons replay any of them, and pressing one
+     pauses the tour so nothing is rushed. (Browsers may keep sound
+     muted until the visitor's first interaction with the page.)
    - Under prefers-reduced-motion, nothing moves and nothing self-advances:
-     each panel appears complete, and ◀ / ▶ step through at the reader's pace.
+     each panel appears complete, clips play only when pressed, and
+     ◀ / ▶ step through at the reader's pace.
    - The final panel (Sputnik) never auto-advances; the tour rests there
      until the visitor presses Begin Exploring.
    ========================================================================== */
@@ -173,8 +176,16 @@
     // Panel-specific choreography.
     const n = panel.getAttribute("data-panel");
     if (n === "4") pulseBeats(panel, 3600, 900);            // POT → SNORT → LOUD → WA → EDGE
-    if (n === "5") pulseBeats(panel.querySelector(".rise"), 900, 650);
-    if (n === "6") pulseBeats(panel.querySelector(".fall"), 900, 650);
+    if (n === "5") {                                        // beat patterns: A, then B
+      pulseBeats(panel.querySelector(".pattern-a"), 3400, 700);
+      pulseBeats(panel.querySelector(".pattern-b"), 8200, 700);
+    }
+    if (n === "8" && !reducedMotion) {                      // the three voices play themselves
+      panel.querySelectorAll(".audio-button").forEach(function (button) {
+        const at = Number(button.getAttribute("data-play-at") || 0);
+        later(function () { playClip(button); }, at);
+      });
+    }
 
     // Transport state.
     const isFinal = index === panels.length - 1;
@@ -222,9 +233,25 @@
   function finish() {
     clearTimers();
     cancelAdvance();
+
+    // Hide the exhibit and its controls; reveal the homepage.
     exhibit.hidden = true;
     document.querySelector(".exhibit-controls").hidden = true;
     if (siteContent) siteContent.hidden = false;
+
+    // The visitor should arrive at the top of the homepage —
+    // no scrolling required to discover it.
+    try { window.scrollTo(0, 0); } catch (e) { /* older engines */ }
+
+    // Keyboard focus moves to the homepage heading (or the start of
+    // the site content), so keyboard and screen-reader visitors land
+    // where sighted visitors are looking.
+    var heading = document.getElementById("site-heading") || siteContent;
+    if (heading) {
+      if (!heading.hasAttribute("tabindex")) heading.setAttribute("tabindex", "-1");
+      try { heading.focus(); } catch (e) { /* focus is a courtesy */ }
+    }
+
     document.dispatchEvent(new CustomEvent("exhibit:complete"));
   }
 
@@ -243,36 +270,35 @@
   });
 
   /* ------------------------------------------------------------------ */
-  /* Panel 9 — audio buttons                                            */
-  /* Pressing a clip pauses the tour: listening deserves stillness.     */
+  /* Panel 8 — the three voices                                         */
+  /* The clips play by themselves, one after another, when the panel   */
+  /* arrives (scheduled in showPanel). The buttons replay any voice;   */
+  /* pressing one pauses the tour: listening deserves stillness.       */
   /* ------------------------------------------------------------------ */
 
-  const audioButtons = Array.from(document.querySelectorAll(".audio-button"));
-  const audioTakeaway = document.getElementById("audio-takeaway");
-  const played = new Set();
+  function playClip(button) {
+    const src = button.getAttribute("data-audio");
+    try {
+      const clip = new Audio(src);
+      clip.play().catch(function () {
+        /* Placeholder files may be silent or absent, and browsers may
+           block sound before the visitor's first interaction; the
+           sequence continues either way. */
+      });
+    } catch (e) { /* no audio support; the exhibit continues */ }
 
-  audioButtons.forEach(function (button) {
+    button.classList.add("was-played");
+
+    // A brief ring marks which voice is sounding (never color alone —
+    // the button's played glyph keeps the state visible afterwards).
+    button.classList.add("is-sounding");
+    window.setTimeout(function () { button.classList.remove("is-sounding"); }, 1800);
+  }
+
+  Array.from(document.querySelectorAll(".audio-button")).forEach(function (button) {
     button.addEventListener("click", function () {
       setPaused(true);
-
-      const src = button.getAttribute("data-audio");
-      try {
-        const clip = new Audio(src);
-        clip.play().catch(function () {
-          /* Placeholder files may be silent or absent; the press still counts. */
-        });
-      } catch (e) { /* no audio support; the press still counts */ }
-
-      button.classList.add("was-played");
-      played.add(button);
-
-      if (played.size === audioButtons.length && audioTakeaway.hidden) {
-        audioTakeaway.hidden = false;
-        audioTakeaway.setAttribute("data-reveal", "");
-        window.requestAnimationFrame(function () {
-          audioTakeaway.classList.add("is-shown");
-        });
-      }
+      playClip(button);
     });
   });
 
