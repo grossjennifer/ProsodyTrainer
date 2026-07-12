@@ -3,273 +3,318 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>The Hidden Architecture of Reading</title>
+  <title>Prosody Trainer | The Inner Voice of Reading</title>
+  <meta name="description" content="Interactive, research-based tools for exploring stress, rhythm, phrasing, and intonation in reading.">
   <link rel="stylesheet" href="style.css">
-
   <style>
-    /* ------------------------------------------------------------------
-       Prosody Trainer homepage — shown after the opening exhibit.
-       Harmonized with the exhibit: the same paper, ink, and lamplight
-       amber. The exhibit is the museum room; the homepage is the
-       workshop — more structured, but the same building.
-       ------------------------------------------------------------------ */
     .site-shell {
       background: var(--paper);
       color: var(--ink);
       font-family: var(--sans);
-      line-height: 1.6;
+      font-size: 1rem;
+      line-height: 1.65;
       min-height: 100vh;
     }
-
     .site-shell header,
     .site-shell main,
     .site-shell footer {
-      max-width: 1080px;
-      margin: 0 auto;
-      padding: 0 1.25rem;
+      width: min(100% - 2.5rem, 1180px);
+      margin-inline: auto;
     }
-
     .site-shell nav {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 1.2rem 0;
-      font-size: .95rem;
+      gap: 1.5rem;
+      padding: 1.35rem 0;
+      font-size: 1rem;
     }
-
-    .site-shell nav a {
+    .site-nav-links,
+    .site-footer-links,
+    .site-inline-links {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: .7rem 1.2rem;
+    }
+    .site-shell nav a,
+    .site-footer-links a,
+    .site-inline-links a {
       color: var(--ink-soft);
-      text-decoration: none;
-      margin-left: 1rem;
+      text-decoration-thickness: 1px;
+      text-underline-offset: .22em;
     }
-
-    .site-shell nav a:hover {
-      color: var(--glow-deep);
-    }
-
+    .site-shell nav a { text-decoration: none; }
+    .site-shell nav a:hover,
+    .site-shell nav a:focus-visible,
+    .site-footer-links a:hover,
+    .site-footer-links a:focus-visible,
+    .site-inline-links a:hover,
+    .site-inline-links a:focus-visible { color: var(--glow-deep); }
     .site-shell .brand-link {
-      font-weight: 700;
+      flex: 0 0 auto;
+      font-weight: 750;
       color: var(--ink);
-      margin-left: 0;
+      text-decoration: none;
     }
-
-    .site-shell .dot {
-      color: var(--glow);
-    }
-
+    .site-shell .dot { color: var(--glow); }
     .site-hero {
-      padding: 5rem 0 4rem;
-      max-width: 850px;
+      max-width: 1040px;
+      padding: clamp(3.6rem, 8vw, 6.5rem) 0 clamp(3.4rem, 7vw, 5.4rem);
     }
-
     .site-kicker {
       text-transform: uppercase;
-      letter-spacing: .14em;
+      letter-spacing: .15em;
       color: var(--glow-deep);
-      font-weight: 700;
-      font-size: .78rem;
+      font-weight: 750;
+      font-size: .82rem;
     }
-
     .site-hero h1 {
+      max-width: 990px;
       font-family: var(--serif);
-      font-size: clamp(2.8rem, 7.5vw, 5.6rem);
-      line-height: 1.02;
-      letter-spacing: -.02em;
-      margin: .7rem 0 1rem;
+      font-size: clamp(3rem, 7vw, 5.35rem);
+      line-height: 1.025;
+      letter-spacing: -.025em;
+      text-wrap: balance;
+      margin: .75rem 0 1.25rem;
     }
-
-    .site-hero h1:focus {
-      outline: none;
-    }
-
-    .site-hero p {
-      font-size: clamp(1.2rem, 2vw, 1.55rem);
+    .site-hero h1:focus { outline: none; }
+    .site-hero > p {
+      max-width: 760px;
+      margin: 0;
       color: var(--ink-soft);
-      max-width: 720px;
+      font-size: clamp(1.12rem, 2vw, 1.35rem);
+      line-height: 1.6;
     }
-
     .site-reveal {
-      margin-top: 2.5rem;
+      margin-top: 2.35rem;
       display: grid;
-      gap: .45rem;
+      gap: .25rem;
       font-family: var(--serif);
-      font-size: clamp(1.45rem, 3vw, 2.35rem);
-      line-height: 1.25;
+      font-size: clamp(1.55rem, 3vw, 2.25rem);
+      line-height: 1.3;
     }
-
     .site-cta-row {
       margin-top: 2rem;
       display: flex;
       flex-wrap: wrap;
       gap: .8rem;
     }
-
     .site-button {
-      display: inline-block;
-      padding: .8rem 1.6rem;
-      border-radius: 999px;
-      text-decoration: none;
-      font-weight: 600;
-      letter-spacing: .02em;
+      display: inline-flex;
+      align-items: center;
+      min-height: 3rem;
+      padding: .75rem 1.45rem;
       border: 1px solid var(--boundary);
-      color: var(--ink);
+      border-radius: 999px;
       background: transparent;
+      color: var(--ink);
+      font-size: 1rem;
+      font-weight: 650;
+      letter-spacing: .01em;
+      text-decoration: none;
       transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease), background 300ms var(--ease);
     }
-
     .site-button:hover,
     .site-button:focus-visible {
       border-color: var(--glow);
       box-shadow: 0 0 0 4px var(--glow-halo);
     }
-
     .site-button.primary {
       background: var(--ink);
-      color: var(--paper);
       border-color: var(--ink);
+      color: var(--paper);
     }
-
     .site-button.primary:hover,
     .site-button.primary:focus-visible {
       background: #171512;
       box-shadow: 0 0 0 4px var(--glow-halo);
     }
-
-    .site-shell section {
-      margin: 3rem 0;
+    .site-shell main > section {
+      margin: 0;
+      padding: 2.6rem 0;
+      scroll-margin-top: 1.5rem;
     }
-
     .site-shell h2 {
+      margin: 0 0 .65rem;
       font-family: var(--serif);
-      font-size: 2.25rem;
-      margin-bottom: .5rem;
+      font-size: clamp(2rem, 4vw, 2.55rem);
+      line-height: 1.2;
     }
-
+    .site-shell h3 { line-height: 1.25; }
     .site-section-lede {
+      max-width: 800px;
+      margin: 0;
       color: var(--ink-soft);
-      max-width: 700px;
-      font-size: 1.1rem;
+      font-size: 1.08rem;
+      line-height: 1.7;
     }
-
+    .site-section-lede + .site-section-lede { margin-top: .75rem; }
     .site-cards {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(245px, 1fr));
       gap: 1rem;
-      margin-top: 1.5rem;
+      margin-top: 1.6rem;
     }
-
     .site-card {
-      background: #FFFFFF;
-      border: 1px solid var(--line);
-      border-radius: 18px;
-      padding: 1.25rem;
-      text-decoration: none;
-      color: inherit;
-      min-height: 190px;
+      min-height: 220px;
+      padding: 1.4rem;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
+      gap: 1.25rem;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      color: inherit;
+      text-decoration: none;
+    }
+    a.site-card {
       transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease), transform 150ms var(--ease);
     }
-
-    .site-card:hover {
+    a.site-card:hover,
+    a.site-card:focus-visible {
       border-color: var(--glow);
-      box-shadow: 0 10px 26px rgba(201, 138, 46, 0.14);
+      box-shadow: 0 10px 26px rgba(201, 138, 46, .14);
       transform: translateY(-2px);
     }
-
     .site-card h3 {
-      margin: 0 0 .4rem;
+      margin: 0 0 .55rem;
       font-family: var(--serif);
-      font-size: 1.45rem;
+      font-size: 1.55rem;
     }
-
     .site-card p {
-      color: var(--ink-soft);
       margin: 0;
+      color: var(--ink-soft);
+      font-size: 1rem;
+      line-height: 1.6;
     }
-
     .site-tag {
       display: inline-block;
-      margin-bottom: .8rem;
+      margin-bottom: .75rem;
       color: var(--glow-deep);
-      font-weight: 700;
-      font-size: .82rem;
+      font-size: .84rem;
+      font-weight: 750;
+      letter-spacing: .01em;
     }
-
-    .site-coming {
-      color: var(--ink-soft);
-    }
-
-    .site-pup {
-      background: linear-gradient(135deg, #FFFFFF, #F6ECDB);
-    }
-
+    .site-coming { color: var(--ink-soft); }
+    .site-card-upcoming { background: rgba(255,255,255,.55); }
+    .site-pup { background: linear-gradient(135deg, #fff, #F6ECDB); }
+    .site-card-action,
+    .site-status-note { font-size: .94rem; font-weight: 700; }
+    .site-card-action { color: var(--ink); }
+    .site-status-note { color: var(--ink-soft); }
     .site-quote {
-      margin: 4rem 0;
-      padding: 2rem;
-      background: #FFFFFF;
+      margin: 2.4rem 0 1.6rem;
+      padding: 1.8rem 2rem;
+      background: #fff;
       border-left: 5px solid var(--glow);
       border-radius: 0 18px 18px 0;
       font-family: var(--serif);
-      font-size: clamp(1.4rem, 3vw, 2.1rem);
-      line-height: 1.3;
+      font-size: clamp(1.55rem, 3vw, 2.15rem);
+      line-height: 1.35;
     }
-
     .site-grid-two {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 1.5rem;
-      margin-top: 1.5rem;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem 2rem;
+      margin-top: 1.65rem;
     }
-
-    .site-shell footer {
-      padding: 3rem 1.25rem;
+    .site-grid-two h3 { margin: 0 0 .45rem; font-size: 1.08rem; }
+    .site-grid-two p {
+      margin: 0;
       color: var(--ink-soft);
+      font-size: 1rem;
+      line-height: 1.7;
+    }
+    .site-publications {
+      display: grid;
+      gap: .9rem;
+      margin-top: 1.6rem;
+    }
+    .site-publication {
+      padding: 1.3rem 1.4rem;
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+    }
+    .site-publication h3 {
+      margin: 0 0 .4rem;
+      font-family: var(--serif);
+      font-size: 1.3rem;
+    }
+    .site-publication p {
+      margin: .25rem 0;
+      color: var(--ink-soft);
+      font-size: 1rem;
+      line-height: 1.6;
+    }
+    .site-publication a {
+      display: inline-block;
+      margin-top: .5rem;
+      color: var(--glow-deep);
+      font-weight: 700;
+      text-underline-offset: .2em;
+    }
+    .site-about-panel {
+      margin-top: 1.5rem;
+      padding: clamp(1.45rem, 3vw, 2rem);
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+    }
+    .site-about-panel p {
+      max-width: 870px;
+      margin: 0;
+      color: var(--ink-soft);
+      font-size: 1.03rem;
+      line-height: 1.7;
+    }
+    .site-about-panel p + p { margin-top: .8rem; }
+    .site-about-panel address { margin-top: 1.2rem; font-style: normal; }
+    .site-shell footer {
+      margin-top: 3rem;
+      padding: 2.4rem 0 3rem;
       border-top: 1px solid var(--line);
-      margin-top: 4rem;
+      color: var(--ink-soft);
       font-size: .95rem;
     }
-
-    @media (max-width: 700px) {
-      .site-shell nav {
-        align-items: flex-start;
-        gap: 1rem;
-        flex-direction: column;
-      }
-
-      .site-shell nav a {
-        margin-left: 0;
-        margin-right: 1rem;
-      }
-
-      .site-hero {
-        padding-top: 3rem;
-      }
+    .site-footer-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 1.25rem 2rem;
+      flex-wrap: wrap;
     }
-
+    .site-footer-title { margin: 0; color: var(--ink); }
+    .site-footer-note { margin: .8rem 0 0; max-width: 760px; font-size: .9rem; }
+    @media (max-width: 800px) {
+      .site-shell nav { align-items: flex-start; flex-direction: column; }
+      .site-nav-links { gap: .55rem 1rem; }
+      .site-hero { padding-top: 3.2rem; }
+    }
+    @media (max-width: 520px) {
+      .site-shell header,
+      .site-shell main,
+      .site-shell footer { width: min(100% - 1.5rem, 1180px); }
+      .site-cards { grid-template-columns: 1fr; }
+      .site-card { min-height: 0; }
+      .site-quote { padding: 1.4rem 1.35rem; }
+    }
     @media (prefers-reduced-motion: reduce) {
-      .site-button, .site-card { transition: none; }
-      .site-card:hover { transform: none; }
+      .site-button, a.site-card { transition: none; }
+      a.site-card:hover, a.site-card:focus-visible { transform: none; }
     }
   </style>
-
 </head>
 <body>
 
 <main id="opening-exhibit" class="opening-exhibit" aria-label="Opening exhibit">
-
-  <!-- ================================================================
-       Panel 1 — Invitation
-       ================================================================ -->
   <section class="exhibit-panel" data-panel="1" data-duration="7000">
     <p class="display-line invitation" data-reveal data-delay="0">Reading may look silent, but the mind often gives it a voice.</p>
     <p class="takeaway" data-reveal data-delay="2400">Let&rsquo;s listen a little closer.</p>
   </section>
 
-  <!-- ================================================================
-       Panel 2 — Lexical stress: syllables stand out
-       ================================================================ -->
   <section class="exhibit-panel" data-panel="2" data-duration="11000">
     <p class="demo-word" data-reveal data-delay="0"><span class="stress">EL</span><span class="dot">&middot;</span>e<span class="dot">&middot;</span>phant</p>
     <p class="demo-word" data-reveal data-delay="1100">rhi<span class="dot">&middot;</span><span class="stress">NOC</span><span class="dot">&middot;</span>er<span class="dot">&middot;</span>os</p>
@@ -278,9 +323,6 @@
     <p class="takeaway" data-reveal data-delay="5400">In many words, one syllable carries the strongest beat.</p>
   </section>
 
-  <!-- ================================================================
-       Panel 3 — Stress moves within a word family
-       ================================================================ -->
   <section class="exhibit-panel" data-panel="3" data-duration="10500">
     <p class="demo-word" data-reveal data-delay="0"><span class="stress">PHO</span><span class="dot">&middot;</span>to<span class="dot">&middot;</span>graph</p>
     <p class="demo-word" data-reveal data-delay="1300">pho<span class="dot">&middot;</span><span class="stress">TOG</span><span class="dot">&middot;</span>ra<span class="dot">&middot;</span>phy</p>
@@ -288,52 +330,28 @@
     <p class="takeaway" data-reveal data-delay="4900">Even related words can carry the beat in different places.</p>
   </section>
 
-  <!-- ================================================================
-       Panel 4 — Stress across a sentence (plain line yields to marked twin)
-       ================================================================ -->
   <section class="exhibit-panel" data-panel="4" data-duration="11000">
     <p class="demo-sentence" data-swap-out="2400">The little puppy ran away.</p>
     <p class="demo-sentence" data-reveal data-delay="2100">The <span class="stress beat" data-beat="1">LIT</span><span class="dot">&middot;</span>tle <span class="stress beat" data-beat="2">PUP</span><span class="dot">&middot;</span>py <span class="stress beat" data-beat="3">RAN</span> a<span class="dot">&middot;</span><span class="stress beat" data-beat="4">WAY</span>.</p>
     <p class="takeaway" data-reveal data-delay="7000">Across a sentence, the beats form a pattern.</p>
   </section>
 
-  <!-- ================================================================
-       Panel 5 — beat patterns, one at a time
-       (No title, no ghost lines: each step opens directly on its
-        marked sentence, then the cue, then the caption. The two
-        steps share one stage — a single grid cell — and step one
-        clears away completely before step two begins, so the
-        learner sees exactly one beat pattern at a time, never a
-        faded example lingering in the background. The takeaway
-        arrives last, beneath the second pattern. Cue lines use
-        quiet interpuncts, never tall bars that could be mistaken
-        for phrase boundaries.)
-       ================================================================ -->
   <section class="exhibit-panel" data-panel="5" data-duration="18000">
     <div class="rhythm-steps">
-
       <div class="rhythm-step pattern-a" data-clear="7000">
         <p class="demo-sentence" data-reveal data-delay="0">the <span class="stress beat" data-beat="1">BAND</span> will <span class="stress beat" data-beat="2">PLAY</span> to<span class="dot">&middot;</span><span class="stress beat" data-beat="3">NIGHT</span> at <span class="stress beat" data-beat="4">SCHOOL</span></p>
         <p class="beat-cue" data-reveal data-delay="2200">ta-DUM &middot; ta-DUM &middot; ta-DUM &middot; ta-DUM</p>
         <p class="caption beat-caption" data-reveal data-delay="4000">A lighter syllable can lead into a strong beat.</p>
       </div>
-
       <div class="rhythm-step pattern-b">
         <p class="demo-sentence" data-reveal data-delay="8200"><span class="stress beat" data-beat="1">DRA</span><span class="dot">&middot;</span>ma <span class="stress beat" data-beat="2">STU</span><span class="dot">&middot;</span>dents <span class="stress beat" data-beat="3">PRAC</span><span class="dot">&middot;</span>ticed <span class="stress beat" data-beat="4">LOUD</span><span class="dot">&middot;</span>ly</p>
         <p class="beat-cue" data-reveal data-delay="10400">DUM-ta &middot; DUM-ta &middot; DUM-ta &middot; DUM-ta</p>
         <p class="caption beat-caption" data-reveal data-delay="12200">A strong beat can also come first.</p>
       </div>
-
     </div>
     <p class="takeaway" data-reveal data-delay="14600">Sentences can have different beat patterns.</p>
   </section>
 
-  <!-- ================================================================
-       Panel 6 — Grandma: phrasing, and why it matters
-       (One sentence carries the whole lesson. The unbroken line, the
-        line with a boundary, then the comma. The humor comes from
-        the language itself — no illustration needed.)
-       ================================================================ -->
   <section class="exhibit-panel" data-panel="6" data-duration="12000">
     <p class="demo-sentence" data-reveal data-delay="0">Let&rsquo;s eat Grandma.</p>
     <p class="demo-sentence" data-reveal data-delay="2000">Let&rsquo;s eat <span class="phrase-boundary">│</span> Grandma.</p>
@@ -342,12 +360,6 @@
     <p class="takeaway" data-reveal data-delay="8600">Grouping can change meaning.</p>
   </section>
 
-  <!-- ================================================================
-       Panel 7 — Intonation: one word, three voices
-       (Sound is the exhibit. The three voices play by themselves, one
-       after another; the buttons replay any of them. Pressing a clip
-       pauses the tour so listening is never rushed.)
-       ================================================================ -->
   <section class="exhibit-panel" data-panel="7" data-duration="15500">
     <h2 class="panel-title" data-reveal data-delay="0">One word, three voices.</h2>
     <p class="caption" data-reveal data-delay="900">Listen to each one.</p>
@@ -366,9 +378,6 @@
     </details>
   </section>
 
-  <!-- ================================================================
-       Panel 8 — The hidden architecture (revealed from the ground up)
-       ================================================================ -->
   <section class="exhibit-panel" data-panel="8" data-duration="13000">
     <div class="architecture">
       <p class="arch-level" data-reveal data-delay="4500">Meaning</p>
@@ -386,9 +395,6 @@
     <p class="takeaway" data-reveal data-delay="6800">Together, stress, rhythm, phrasing, and intonation help readers turn print into a voice&mdash;and a voice into meaning.</p>
   </section>
 
-  <!-- ================================================================
-       Panel 9 — Prosody Trainer + Sputnik (the tour rests here)
-       ================================================================ -->
   <section class="exhibit-panel final-panel" data-panel="9" data-duration="0">
     <div class="final-scene">
       <div class="final-brand">
@@ -396,8 +402,7 @@
         <p class="brand-subtitle" data-reveal data-delay="1100">An interactive laboratory where people discover how the mind brings written language to life.</p>
       </div>
       <div class="sputnik-scene">
-        <img class="sputnik" src="sputnik.png" data-reveal data-delay="2100"
-             alt="Sputnik, a husky-mix puppy with blue eyes, sitting and looking up attentively.">
+        <img class="sputnik" src="sputnik.png" data-reveal data-delay="2100" alt="Sputnik, a husky-mix puppy with blue eyes, sitting and looking up attentively.">
         <div class="sputnik-speech">
           <p class="display-line small" data-reveal data-delay="3100">I&rsquo;ve been listening all along.</p>
           <p class="display-line small" data-reveal data-delay="4400">Now you can hear it too.</p>
@@ -405,16 +410,8 @@
       </div>
     </div>
   </section>
-
 </main>
 
-<!-- ==================================================================
-     Transport controls: the exhibit plays itself; the visitor can
-     go back, pause, resume, or continue at any time. Plain text
-     labels, deliberately: triangle play icons are reserved for the
-     audio buttons on the intonation panel, so navigation must never
-     wear one.
-     ================================================================== -->
 <div class="exhibit-controls">
   <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 9</p>
   <div class="transport" role="group" aria-label="Exhibit playback controls">
@@ -426,37 +423,29 @@
   <button id="skip-intro" class="skip-link" type="button">Skip intro</button>
 </div>
 
-
 <div id="site-content" hidden>
   <div class="site-shell">
     <header>
       <nav aria-label="Main site navigation">
         <a class="brand-link" href="./">Prosody Trainer<span class="dot">●</span></a>
-        <div>
+        <div class="site-nav-links">
           <a href="#tools">Tools</a>
           <a href="#science">Science</a>
-          <a href="#teach">Teach</a>
+          <a href="#use">Use</a>
+          <a href="#research">Research</a>
           <a href="#about">About</a>
         </div>
       </nav>
-
       <div class="site-hero">
         <div class="site-kicker">An interactive laboratory for reading prosody</div>
-
         <h1 id="site-heading" tabindex="-1">Reading may look silent, but the mind often gives it a voice<span class="dot">.</span></h1>
-
-        <p>
-          Not through the ears. Through the mind. Prosody Trainer makes that
-          inner voice visible.
-        </p>
-
+        <p>Not aloud, but in the mind. Prosody Trainer makes that inner voice visible.</p>
         <div class="site-reveal" aria-label="Features of the inner voice">
           <span>That voice has stress.</span>
           <span>It has rhythm.</span>
           <span>It has phrasing.</span>
           <span>It has intonation.</span>
         </div>
-
         <div class="site-cta-row">
           <a class="site-button primary" href="rhythm-reader/">Try Rhythm Reader</a>
           <a class="site-button" href="rhythm-reader-pro/">Open Rhythm Reader Pro</a>
@@ -467,164 +456,105 @@
     <main>
       <section id="tools">
         <h2>Explore the tools</h2>
-        <p class="site-section-lede">
-          Prosody Trainer is a growing suite of research-based tools for exploring
-          how written language carries stress, rhythm, phrasing, and intonation.
-        </p>
-
+        <p class="site-section-lede">Prosody Trainer is a growing suite of research-based tools for exploring how written language carries stress, rhythm, phrasing, and intonation.</p>
         <div class="site-cards">
           <a class="site-card" href="rhythm-reader/">
-            <div>
-              <span class="site-tag">Available now</span>
-              <h3>Rhythm Reader</h3>
-              <p>
-                A simple interface for visualizing stress and rhythm in English text.
-              </p>
-            </div>
-            <strong>Launch →</strong>
+            <div><span class="site-tag">Available now</span><h3>Rhythm Reader</h3><p>A simple interface for visualizing stress and rhythm in English text.</p></div>
+            <span class="site-card-action">Open tool →</span>
           </a>
-
           <a class="site-card" href="rhythm-reader-pro/">
-            <div>
-              <span class="site-tag">Available now</span>
-              <h3>Rhythm Reader Pro</h3>
-              <p>
-                Advanced analysis, phrase structure, meter detection, editing, and export.
-              </p>
-            </div>
-            <strong>Launch →</strong>
+            <div><span class="site-tag">Available now</span><h3>Rhythm Reader Pro</h3><p>Advanced analysis, phrase structure, rhythm detection, editing, and export.</p></div>
+            <span class="site-card-action">Open tool →</span>
           </a>
-
-          <div class="site-card site-pup">
-            <div>
-              <span class="site-tag site-coming">Coming soon</span>
-              <h3>Prosody Pup</h3>
-              <p>
-                A gentle guide for learning stress, rhythm, and fluent reading —
-                one step at a time.
-              </p>
-            </div>
-            <strong>Meet the guide →</strong>
-          </div>
-
-          <div class="site-card">
-            <div>
-              <span class="site-tag site-coming">Coming soon</span>
-              <h3>WALL-E Intonation Game</h3>
-              <p>
-                An interactive game for discovering how intonation changes meaning
-                during reading.
-              </p>
-            </div>
-            <strong>Preview soon →</strong>
-          </div>
+          <article class="site-card site-card-upcoming site-pup">
+            <div><span class="site-tag site-coming">In development</span><h3>Prosody Pup</h3><p>A gentle guide for learning stress, rhythm, and fluent reading — one step at a time.</p></div>
+            <span class="site-status-note">Planned for a future release</span>
+          </article>
+          <article class="site-card site-card-upcoming">
+            <div><span class="site-tag site-coming">In development</span><h3>WALL-E Intonation Game</h3><p>An interactive game for discovering how intonation changes meaning during reading.</p></div>
+            <span class="site-status-note">Planned for a future release</span>
+          </article>
         </div>
       </section>
 
-      <div class="site-quote">
-        See what you&rsquo;ve been hearing all along.
-      </div>
+      <div class="site-quote">See what you&rsquo;ve been hearing all along.</div>
 
       <section id="science">
         <h2>The science</h2>
-        <p class="site-section-lede">
-          When people read silently, they often construct an internal prosodic
-          representation — sometimes called the inner voice of reading, or
-          implicit prosody.
-        </p>
-
+        <p class="site-section-lede">When people read silently, they often construct an inner voice carrying patterns of stress, rhythm, phrasing, and intonation. These patterns help readers group words, anticipate sentence structure, resolve ambiguity, and retain meaning.</p>
+        <p class="site-section-lede">Prosody Trainer turns this normally hidden structure into something readers can see, explore, and practice.</p>
         <div class="site-grid-two">
-          <div>
-            <h3>Why prosody matters</h3>
-            <p>
-              Prosody helps readers organize words into meaningful phrases,
-              distinguish emphasis, anticipate structure, and support comprehension.
-            </p>
-          </div>
-
-          <div>
-            <h3>What we make visible</h3>
-            <p>
-              Prosody Trainer reveals patterns of lexical stress, rhythm, phrasing,
-              meter, and intonation that normally remain hidden during silent reading.
-            </p>
-          </div>
+          <div><h3>Why prosody matters</h3><p>Prosody helps readers organize language into meaningful units, distinguish emphasis, and understand how words and phrases fit together.</p></div>
+          <div><h3>What the project investigates</h3><p>Our research asks how readers represent prosody, how these processes differ across readers, and whether prosodic sensitivity can be strengthened through instruction.</p></div>
         </div>
       </section>
 
-      <section id="teach">
-        <h2>For teachers, clinicians, and researchers</h2>
-        <p class="site-section-lede">
-          The project is designed to support classroom demonstrations, reading
-          intervention, psycholinguistic research, and public understanding of the
-          cognitive science of reading.
-        </p>
-
+      <section id="use">
+        <h2>Use Prosody Trainer</h2>
+        <p class="site-section-lede">The project supports classroom demonstration, reading intervention, psycholinguistic research, and public understanding of the cognitive science of reading.</p>
         <div class="site-cards">
-          <div class="site-card">
-            <div>
-              <span class="site-tag">Learn</span>
-              <h3>Accessible explanations</h3>
-              <p>
-                Plain-language introductions to stress, rhythm, phrasing,
-                intonation, and implicit prosody.
-              </p>
-            </div>
-          </div>
-
-          <div class="site-card">
-            <div>
-              <span class="site-tag">Research</span>
-              <h3>Publications</h3>
-              <p>
-                Peer-reviewed studies, conference presentations, and open materials
-                supporting the Prosody Trainer project.
-              </p>
-            </div>
-          </div>
-
-          <div class="site-card">
-            <div>
-              <span class="site-tag">Teach</span>
-              <h3>Classroom resources</h3>
-              <p>
-                Demonstrations, sample activities, and guided lessons for helping
-                learners notice the prosody of written language.
-              </p>
-            </div>
-          </div>
+          <article class="site-card"><div><span class="site-tag">Learn</span><h3>Accessible explanations</h3><p>Plain-language introductions to stress, rhythm, phrasing, intonation, and implicit prosody.</p></div></article>
+          <article class="site-card"><div><span class="site-tag">Investigate</span><h3>Research tools and measures</h3><p>Digital tools for examining how readers represent and use prosodic information in written language.</p></div></article>
+          <article class="site-card"><div><span class="site-tag">Teach</span><h3>Classroom resources</h3><p>Demonstrations, sample activities, and guided lessons for helping learners notice the prosody of written language.</p></div></article>
         </div>
+      </section>
+
+      <section id="research">
+        <h2>Selected research</h2>
+        <p class="site-section-lede">Prosody Trainer grows from a program of research on the inner voice of reading and on ways to make stress and rhythm more visible in print.</p>
+        <div class="site-publications">
+          <article class="site-publication">
+            <h3>Training with orthographic stress and rhythm markers improves adult readers&rsquo; prosodic sensitivity</h3>
+            <p>Gross, J., Roldan, M., Kiessel, T., Esselink, M., &amp; Dunlap, L. (2026). <i>Reading and Writing.</i></p>
+            <p>Two experiments examining whether visible stress and rhythm cues strengthen readers&rsquo; sensitivity to prosody.</p>
+            <a href="https://doi.org/10.1007/s11145-026-10840-2">View publication →</a>
+          </article>
+          <article class="site-publication">
+            <h3>Marking stress exPLICitly in written English fosters rhythm in the reader&rsquo;s inner voice</h3>
+            <p>Gross, J., Winegard, B., &amp; Plotkowski, A. R. (2018). <i>Reading Research Quarterly.</i></p>
+            <p>An experimental study of how visible lexical stress cues influence the rhythm readers construct during silent reading.</p>
+            <a href="https://doi.org/10.1002/rrq.198">View publication →</a>
+          </article>
+          <article class="site-publication">
+            <h3>Evidence for prosody in reading</h3>
+            <p>Gross, J., Millett, A. L., Bartek, B., Bredell, K. H., &amp; Winegard, B. (2014). <i>Reading Research Quarterly, 49</i>(2), 189–208.</p>
+            <p>Evidence that readers represent prosodic structure while processing written language.</p>
+            <a href="https://doi.org/10.1002/rrq.67">View publication →</a>
+          </article>
+        </div>
+        <p class="site-inline-links"><a href="https://www.gvsu.edu/psychology/gross-jennifer-44.htm">See additional publications on Jennifer Gross&rsquo;s university profile →</a></p>
       </section>
 
       <section id="about">
         <h2>About Prosody Trainer</h2>
-        <p class="site-section-lede">
-          Prosody Trainer is developed by Jennifer Gross at Grand Valley State
-          University. The project brings together research in cognitive psychology,
-          psycholinguistics, reading, and educational technology.
-        </p>
+        <div class="site-about-panel">
+          <p>Prosody Trainer was created by <strong>Jennifer Gross, Ph.D.</strong>, Professor of Psychology at Grand Valley State University. Her research examines how readers represent the sound structure of written language and whether stress and rhythm can be made more visible through instruction and digital tools.</p>
+          <p>Developed at the intersection of cognitive psychology, psycholinguistics, literacy research, and educational technology, the project supports classroom demonstration, reading research, and the development of evidence-based interventions.</p>
+          <address class="site-inline-links" aria-label="Professional contact information">
+            <a href="https://www.gvsu.edu/psychology/gross-jennifer-44.htm">University profile</a>
+            <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>
+          </address>
+        </div>
       </section>
     </main>
 
     <footer>
-      <strong>Prosody Trainer</strong> — making the prosody of written language visible.
+      <div class="site-footer-top">
+        <p class="site-footer-title"><strong>Prosody Trainer</strong> — making the prosody of written language visible.</p>
+        <div class="site-footer-links" aria-label="Footer navigation">
+          <a href="#tools">Tools</a>
+          <a href="#science">Science</a>
+          <a href="#research">Research</a>
+          <a href="#about">About and contact</a>
+        </div>
+      </div>
+      <p class="site-footer-note">© 2026 Jennifer Gross. Accessibility feedback is welcome at <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>.</p>
     </footer>
   </div>
 </div>
 
-
 <script src="script.js"></script>
-
 <script>
-  /*
-    Safety net for the exhibit -> homepage handoff.
-    The one real handler is completeExhibit() in script.js, wired to
-    both Begin Exploring and Skip intro and exposed on window. These
-    listeners exist only in case script.js failed to initialize: they
-    call the same function if it exists, or perform the same handoff
-    inline if it does not. completeExhibit() is idempotent, so this
-    double wiring can never fire the handoff twice.
-  */
   (function () {
     function fallback() {
       if (typeof window.completeExhibit === "function") {
@@ -643,23 +573,19 @@
         site.setAttribute("tabindex", "-1");
       }
       document.body.classList.add("exhibit-complete");
-      try { window.scrollTo(0, 0); } catch (e) { /* older engines */ }
+      try { window.scrollTo(0, 0); } catch (e) {}
       var heading = document.getElementById("site-heading") || site;
       if (heading && heading.focus) {
-        try { heading.focus(); } catch (e) { /* focus is a courtesy */ }
+        try { heading.focus(); } catch (e) {}
       }
       document.dispatchEvent(new CustomEvent("exhibit:complete"));
     }
-
     var begin = document.getElementById("begin-button");
     var skip = document.getElementById("skip-intro");
     if (begin) begin.addEventListener("click", fallback);
     if (skip) skip.addEventListener("click", fallback);
-
-    /* Kept for compatibility with anything that called the old name. */
     window.showProsodyTrainerMainSite = fallback;
   })();
 </script>
-
 </body>
 </html>

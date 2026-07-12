@@ -1,21 +1,19 @@
-/* ==========================================================================
+/* ========================================================================== 
    The Hidden Architecture of Reading — opening exhibit
    Language is the exhibit. Everything else exists to reveal its structure.
    ========================================================================== */
 
 :root {
-  --paper:        #FAF6EF;   /* warm off-white */
-  --ink:          #2E2B27;   /* dark charcoal */
-  --ink-soft:     #6E675E;   /* captions, counters */
-  --glow:         #C98A2E;   /* warm lamplight for stressed syllables */
-  --glow-deep:    #8C5A12;   /* the same lamplight, deep enough to read by */
+  --paper:        #FAF6EF;
+  --ink:          #2E2B27;
+  --ink-soft:     #6E675E;
+  --glow:         #C98A2E;
+  --glow-deep:    #8C5A12;
   --glow-halo:    rgba(214, 158, 74, 0.38);
-  --boundary:     #A89C8C;   /* soft phrase divider */
-  --line:         #D9D0C2;   /* hairlines and card borders */
-
+  --boundary:     #A89C8C;
+  --line:         #D9D0C2;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
-  --sans:  system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
-
+  --sans: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
   --ease: cubic-bezier(0.33, 0.0, 0.2, 1);
 }
 
@@ -29,15 +27,11 @@ html, body {
   font-family: var(--sans);
 }
 
-/* --------------------------------------------------------------------------
-   Stage
-   -------------------------------------------------------------------------- */
-
 .opening-exhibit {
   min-height: 100dvh;
   display: grid;
   place-items: center;
-  padding: 3rem 1.5rem 9rem;   /* room for the fixed controls */
+  padding: 3rem 1.5rem 9rem;
 }
 
 .exhibit-panel {
@@ -54,12 +48,8 @@ html, body {
 
 @keyframes panel-in {
   from { opacity: 0; transform: translateY(0.5rem); }
-  to   { opacity: 1; transform: none; }
+  to { opacity: 1; transform: none; }
 }
-
-/* --------------------------------------------------------------------------
-   Reveals within a panel
-   -------------------------------------------------------------------------- */
 
 [data-reveal] {
   opacity: 0;
@@ -72,15 +62,10 @@ html, body {
   transform: none;
 }
 
-/* A plain line that yields to its marked twin (panels 5 and 7) */
 [data-swap-out].is-hidden-away {
   opacity: 0.14;
   transform: none;
 }
-
-/* --------------------------------------------------------------------------
-   Type
-   -------------------------------------------------------------------------- */
 
 .display-line {
   font-family: var(--serif);
@@ -91,13 +76,8 @@ html, body {
   text-wrap: balance;
 }
 
-.display-line.small {
-  font-size: clamp(1.3rem, 3.5vw, 1.9rem);
-}
-
-.invitation {
-  color: var(--ink);
-}
+.display-line.small { font-size: clamp(1.3rem, 3.5vw, 1.9rem); }
+.invitation { color: var(--ink); }
 
 .demo-word {
   font-family: var(--serif);
@@ -130,12 +110,7 @@ html, body {
 }
 
 .takeaway.inline { margin-top: 0.9rem; }
-
-.caption {
-  font-family: var(--sans);
-  font-size: 0.9rem;
-  color: var(--ink-soft);
-}
+.caption { font-family: var(--sans); font-size: 0.9rem; color: var(--ink-soft); }
 
 .panel-title {
   font-family: var(--serif);
@@ -146,34 +121,20 @@ html, body {
   text-wrap: balance;
 }
 
-/* --------------------------------------------------------------------------
-   Stress: warm glow + weight change (never color alone)
-   -------------------------------------------------------------------------- */
-
 .stress {
   font-weight: 700;
   color: var(--ink);
-  text-shadow:
-    0 0 14px var(--glow-halo),
-    0 0 30px var(--glow-halo);
+  text-shadow: 0 0 14px var(--glow-halo), 0 0 30px var(--glow-halo);
   transition: text-shadow 900ms var(--ease);
 }
 
-/* Rhythmic beats pulse gently, like breathing */
-.beat.is-pulsing {
-  animation: beat-breathe 1400ms var(--ease);
-}
+.beat.is-pulsing { animation: beat-breathe 1400ms var(--ease); }
 
 @keyframes beat-breathe {
-  0%   { text-shadow: 0 0 14px var(--glow-halo), 0 0 30px var(--glow-halo); }
-  35%  { text-shadow: 0 0 22px var(--glow-halo), 0 0 46px var(--glow-halo);
-         color: #4A3A20; }
+  0% { text-shadow: 0 0 14px var(--glow-halo), 0 0 30px var(--glow-halo); }
+  35% { text-shadow: 0 0 22px var(--glow-halo), 0 0 46px var(--glow-halo); color: #4A3A20; }
   100% { text-shadow: 0 0 14px var(--glow-halo), 0 0 30px var(--glow-halo); }
 }
-
-/* --------------------------------------------------------------------------
-   Phrase boundaries
-   -------------------------------------------------------------------------- */
 
 .phrase-boundary {
   color: var(--boundary);
@@ -181,39 +142,22 @@ html, body {
   padding: 0 0.18em;
 }
 
-/* --------------------------------------------------------------------------
-   Panel 5 — beat patterns, one at a time
-   The two steps share one stage (a single grid cell): step one clears
-   away completely before step two begins, so the learner sees exactly
-   one beat pattern at a time — never a faded example lingering in the
-   background. No dividers inside the lines: tall bars could be mistaken
-   for phrase boundaries, so the cue lines separate beat groups with
-   interpuncts.
-   -------------------------------------------------------------------------- */
-
-.rhythm-steps {
-  display: grid;
-}
+.rhythm-steps { display: grid; }
 
 .rhythm-step {
-  grid-area: 1 / 1;             /* both steps occupy the same spot */
+  grid-area: 1 / 1;
   align-self: center;
   transition: opacity 1100ms var(--ease), visibility 0s linear 1100ms;
 }
 
 .rhythm-step.is-cleared {
   opacity: 0;
-  visibility: hidden;           /* gone, not faded-in-the-background */
+  visibility: hidden;
   pointer-events: none;
 }
 
-/* The sentences sit a step below the default demo size, so the beat
-   cue beneath them is easy to see. */
-.rhythm-step .demo-sentence {
-  font-size: clamp(1.25rem, 3.2vw, 1.75rem);
-}
+.rhythm-step .demo-sentence { font-size: clamp(1.25rem, 3.2vw, 1.75rem); }
 
-/* The ta-DUM / DUM-ta line: only there to help learners notice the beat. */
 .beat-cue {
   font-family: var(--sans);
   font-size: clamp(1rem, 2.6vw, 1.25rem);
@@ -223,10 +167,6 @@ html, body {
 }
 
 .beat-caption { margin: 0.6rem 0 0; }
-
-/* --------------------------------------------------------------------------
-   Panel 7 — intonation (sound is the exhibit; visuals only guide)
-   -------------------------------------------------------------------------- */
 
 .audio-row {
   display: flex;
@@ -258,21 +198,9 @@ html, body {
 }
 
 .audio-button.was-played .play-glyph { color: var(--glow); }
+.audio-button.is-sounding { border-color: var(--glow); box-shadow: 0 0 0 4px var(--glow-halo); }
+.play-glyph { font-family: var(--sans); font-size: 0.7em; color: var(--ink-soft); }
 
-/* The voice currently sounding wears the same warm ring as a press. */
-.audio-button.is-sounding {
-  border-color: var(--glow);
-  box-shadow: 0 0 0 4px var(--glow-halo);
-}
-
-.play-glyph {
-  font-family: var(--sans);
-  font-size: 0.7em;
-  color: var(--ink-soft);
-}
-
-/* The transcript stays available for accessibility without
-   dominating the screen: folded into a small disclosure. */
 .audio-transcript-details {
   max-width: 34rem;
   margin: 1.6rem auto 0;
@@ -286,18 +214,10 @@ html, body {
 }
 
 .audio-transcript-details summary:hover,
-.audio-transcript-details summary:focus-visible {
-  color: var(--ink);
-}
-
+.audio-transcript-details summary:focus-visible { color: var(--ink); }
 .audio-transcript-details p { margin: 0.5rem 0 0; }
-
 #audio-takeaway { margin-top: 1.4rem; }
 #audio-takeaway p { margin: 0.25em 0; }
-
-/* --------------------------------------------------------------------------
-   Panel 8 — hidden architecture
-   -------------------------------------------------------------------------- */
 
 .architecture {
   display: flex;
@@ -312,30 +232,12 @@ html, body {
   margin: 0.1em 0;
 }
 
-.arch-level:first-child { font-weight: 700; }  /* Meaning crowns the stack */
+.arch-level:first-child { font-weight: 700; }
+.arch-arrow { color: var(--ink-soft); font-size: 1rem; margin: 0; }
 
-.arch-arrow {
-  color: var(--ink-soft);
-  font-size: 1rem;
-  margin: 0;
-}
-
-/* --------------------------------------------------------------------------
-   Final panel — Prosody Trainer + Sputnik
-   -------------------------------------------------------------------------- */
-
-.final-panel {
-  max-width: 48rem;
-}
-
-.final-scene {
-  display: grid;
-  gap: clamp(2rem, 5vw, 3.4rem);
-}
-
-.final-brand {
-  text-align: center;
-}
+.final-panel { max-width: 48rem; }
+.final-scene { display: grid; gap: clamp(2rem, 5vw, 3.4rem); }
+.final-brand { text-align: center; }
 
 .brand {
   font-family: var(--serif);
@@ -369,20 +271,13 @@ html, body {
   filter: drop-shadow(0 14px 18px rgba(46, 43, 39, 0.16));
 }
 
-.sputnik-speech {
-  text-align: left;
-  max-width: 22rem;
-}
+.sputnik-speech { text-align: left; max-width: 22rem; }
 
 @media (max-width: 560px) {
   .final-scene { gap: 1.7rem; }
   .sputnik-scene { gap: 1.25rem; }
   .sputnik-speech { text-align: center; }
 }
-
-/* --------------------------------------------------------------------------
-   Controls
-   -------------------------------------------------------------------------- */
 
 .exhibit-controls {
   position: fixed;
@@ -396,9 +291,7 @@ html, body {
   background: linear-gradient(to top, var(--paper) 65%, transparent);
 }
 
-.panel-counter {
-  letter-spacing: 0.06em;
-}
+.panel-counter { letter-spacing: 0.06em; }
 
 .continue-button {
   font-family: var(--sans);
@@ -440,42 +333,21 @@ html, body {
   outline-offset: 3px;
 }
 
-/* --------------------------------------------------------------------------
-   Reduced motion: everything appears at once, nothing pulses
-   -------------------------------------------------------------------------- */
-
 @media (prefers-reduced-motion: reduce) {
   .exhibit-panel.is-active { animation: none; }
   [data-reveal] { transition: none; transform: none; }
   .beat.is-pulsing { animation: none; }
   .stress { transition: none; }
   .audio-button, .continue-button, .transport-button { transition: none; }
-  /* The three beat-pattern steps flow down the page in order, all
-     present at once — nothing moves, nothing vanishes. (The script
-     also skips scheduling any clears under reduced motion.) */
   .rhythm-steps { display: block; }
   .rhythm-step { transition: none; }
   .rhythm-step.is-cleared { opacity: 1; visibility: visible; }
 }
 
-/* --------------------------------------------------------------------------
-   Completion safety rules — once the exhibit is complete, no stray
-   attribute or script hiccup can leave it on screen; and the homepage
-   can never leak through while it is still marked hidden.
-   -------------------------------------------------------------------------- */
-
 body.exhibit-complete #opening-exhibit,
-body.exhibit-complete .exhibit-controls {
-  display: none;
-}
+body.exhibit-complete .exhibit-controls { display: none; }
 
-#site-content[hidden] {
-  display: none;
-}
-
-/* --------------------------------------------------------------------------
-   Transport — the exhibit plays itself; these keep the visitor in charge
-   -------------------------------------------------------------------------- */
+#site-content[hidden] { display: none; }
 
 .transport {
   display: flex;
@@ -515,4 +387,3 @@ body.exhibit-complete .exhibit-controls {
 }
 
 .transport-button[hidden] { display: none; }
-
