@@ -1,32 +1,26 @@
-RHYTHM READER PRO — FOUR-FOOT CORRECTION
+RHYTHM READER PRO — INTERFACE REFINEMENT
 
 Files
 -----
-index.html            Corrected self-contained Rhythm Reader Pro interface
-engine.js             Corrected standalone linguistic engine
+index.html            Refined self-contained Rhythm Reader Pro interface
+engine.js             Four-foot linguistic engine (unchanged)
 test_rhythm_feet.js   Node regression checks
 
-What changed
-------------
-1. Phrase-level rhythmic stress is fitted across the continuous syllable stream,
-   rather than treating every word as a self-contained foot.
-2. The rhythmic inventory is limited to four patterns:
-      SW   trochee (strong–weak)
-      WS   iamb (weak–strong)
-      WWS  anapest (weak–weak–strong)
-      SWW  dactyl (strong–weak–weak)
-3. WSW is no longer labeled or used as an amphibrachic fifth foot.
-4. A phrase may contain a one-syllable pickup or final residue when its edge does
-   not form a complete foot.
-5. Dictionary stress, manual edits, research logging, exports, confidence views,
-   phrase editing, and other Pro functions are preserved.
-6. The older profile field proportion_amphibrachic is retained at 0 only so
-   existing data-processing scripts do not break.
+Interface changes
+-----------------
+1. The title now clearly identifies Rhythm Reader Pro.
+2. The opening description is more direct and research-oriented.
+3. Dictionary coverage is moved into Research settings and uses reader-facing wording.
+4. Example buttons show both the metrical name and strong/weak pattern.
+5. Ambiguous output is described in plain language, while the technical label remains available in the analysis tools.
+6. The ambiguity panel is shorter and makes “Keep both” the primary option.
+7. Phrase-boundary insertion marks and heteronym flags no longer clutter the default reading surface; they appear only in the appropriate analysis views.
+8. “Open analysis tools” replaces the less direct disclosure label.
+9. The explanatory caveat is shorter.
 
 Installation
 ------------
-Replace the current Pro index.html and engine.js with these two corrected files.
-The index.html already embeds the corrected engine and can also run by itself.
+Replace the current Pro index.html and engine.js with these files. The index.html is self-contained and can also run by itself.
 
 Testing
 -------

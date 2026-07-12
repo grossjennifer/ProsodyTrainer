@@ -3,151 +3,483 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rhythm Reader — hear the beat of what you read</title>
-<link rel="manifest" href="manifest.webmanifest">
-<meta name="theme-color" content="#A03052">
+<title>Rhythm Reader Pro — a scansion lens for English text</title>
 <style>
+/* ============================================================
+   Design tokens — the layer legend IS the design system:
+   beats = raspberry, phrases = teal, meter/feet = gold,
+   ink on cool paper. System stacks only (runs under file://).
+   ============================================================ */
 :root {
-  --paper: #EFF2F1; --card: #FFFFFF; --ink: #242936; --muted: #5C6472;
-  --line: #D8DEDC; --beat: #A03052; --beat-soft: #F6E7EC;
-  --phrase: #2E6E6A;
+  --paper:   #EFF2F1;
+  --card:    #FFFFFF;
+  --ink:     #242936;
+  --muted:   #5C6472;
+  --line:    #D8DEDC;
+  --beat:    #A03052;   /* rhythmic stress */
+  --beat-soft:#F6E7EC;
+  --phrase:  #2E6E6A;   /* prosodic grouping */
+  --phrase-soft:#E4EFEE;
+  --meter:   #B98A2F;   /* feet / scansion */
+  --meter-soft:#F7EED9;
+  --edit:    #7A4FA0;   /* user-edited marker */
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --sans:  system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --mono:  ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 * { box-sizing: border-box; }
-html { font-size: 18px; }
-body { margin: 0; background: var(--paper); color: var(--ink);
-  font-family: var(--sans); line-height: 1.6; }
-main { max-width: 780px; margin: 0 auto; padding: 1rem 1rem 4rem; }
-header { padding: 1.6rem 0 .6rem; }
-h1 { font-family: var(--serif); font-size: 2rem; margin: 0; }
-h1 .dot { color: var(--beat); font-size: .55em; vertical-align: .5em;
+html { font-size: 17px; }
+body {
+  margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--sans); line-height: 1.55;
+}
+main { max-width: 900px; margin: 0 auto; padding: 1.2rem 1.2rem 4rem; }
+
+/* Header */
+header.site { padding: 2rem 0 1rem; }
+header.site h1 {
+  font-family: var(--serif); font-weight: 600; font-size: 2.1rem;
+  margin: 0 0 .2rem; letter-spacing: .01em;
+}
+header.site h1 .dot { color: var(--beat); font-size: .55em; vertical-align: .5em;
   margin-left: .06em; }
-p.lede { color: var(--muted); margin: .3rem 0 0; max-width: 46ch; }
+.subtitle { font-variant: small-caps; letter-spacing: .08em;
+  color: var(--muted); font-size: .82rem; margin: .1rem 0 0; }
+header.site p.thesis { margin: 0; color: var(--muted); max-width: 60ch; }
+/* Progressive disclosure: Level 1 (simple) -> Level 2 (analysis tools)
+   -> Level 3 (research settings). All machinery stays in the DOM. */
+body.simple .legend, body.simple .toolbar, body.simple .tabs,
+body.simple .panel, body.simple #meterLine .conf,
+body.simple #meterLine .runs, body.simple #meterLine .meter-technical,
+body.simple .row .opt { display: none; }
+body.research-hidden .research { display: none !important; }
+#discloseRow { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .8rem; }
+#discloseRow button { font-size: .85rem; }
+body:not(.simple) #toolsBtn { display: none; }
+#meterLine .gloss { font-size: .95rem; }
+body:not(.simple) #meterLine .gloss { color: var(--muted); font-size: .84rem; }
+
+.legend { display: flex; flex-wrap: wrap; gap: .6rem 1.2rem; margin-top: .9rem;
+  font-size: .85rem; color: var(--muted); }
+.legend .key { display: inline-flex; align-items: center; gap: .35rem; }
+.k-beat::before   { content: "●"; color: var(--beat); }
+.k-phrase::before { content: "❘"; color: var(--phrase); font-weight: 700; }
+.k-meter::before  { content: "‿"; color: var(--meter); font-weight: 700; }
+.k-edit::before   { content: "✎"; color: var(--edit); }
+#dictChip { display: inline-block; margin-top: .8rem; padding: .25rem .7rem;
+  border-radius: 999px; font-size: .8rem; background: var(--card);
+  border: 1px solid var(--line); color: var(--muted); }
+#dictChip.warn { color: var(--muted); }
+
+/* Cards */
 .card { background: var(--card); border: 1px solid var(--line);
-  border-radius: 12px; padding: 1rem 1.1rem; margin-top: 1rem; }
-textarea { width: 100%; min-height: 6.5rem; padding: .8rem .9rem;
-  font: 1.05rem/1.6 var(--serif); color: var(--ink);
-  border: 1px solid var(--line); border-radius: 10px; background: #FDFDFC;
+  border-radius: 10px; padding: 1.1rem 1.2rem; margin-top: 1.2rem; }
+.card h2 { font-family: var(--serif); font-size: 1.15rem; font-weight: 600;
+  margin: 0 0 .7rem; }
+
+/* Input */
+textarea { width: 100%; min-height: 7.5rem; padding: .8rem .9rem;
+  font: 1.02rem/1.6 var(--serif); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 8px; background: #FDFDFC;
   resize: vertical; }
-textarea:focus { outline: 3px solid var(--phrase); outline-offset: 1px; }
-.row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
-  margin-top: .7rem; }
+textarea:focus { outline: 2px solid var(--phrase); outline-offset: 1px; }
+.row { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center;
+  margin-top: .8rem; }
 .row .spacer { flex: 1; }
-button { font: 600 .95rem var(--sans); color: var(--ink);
-  background: var(--card); border: 1.5px solid var(--line);
-  border-radius: 10px; padding: .6rem 1rem; cursor: pointer;
-  min-height: 44px; }
+button {
+  font: 600 .88rem var(--sans); color: var(--ink);
+  background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  padding: .48rem .85rem; cursor: pointer;
+}
 button:hover { border-color: var(--phrase); }
-button:focus-visible { outline: 3px solid var(--phrase); outline-offset: 2px; }
-button.primary { background: var(--beat); color: #fff; border-color: var(--beat);
-  font-size: 1.05rem; }
-button.primary:hover { background: #86243F; }
-button.chip { border-radius: 999px; font-weight: 500; font-size: .85rem;
-  color: var(--muted); min-height: 38px; padding: .35rem .8rem; }
-.seg { display: inline-flex; border: 1.5px solid var(--line);
-  border-radius: 10px; overflow: hidden; }
-.seg button { border: 0; border-radius: 0; min-height: 44px;
-  border-right: 1px solid var(--line); font-weight: 500; }
+button:focus-visible { outline: 2px solid var(--phrase); outline-offset: 2px; }
+button.primary { background: var(--ink); color: #fff; border-color: var(--ink); }
+button.primary:hover { background: #10131C; }
+button.chip { border-radius: 999px; font-weight: 500; font-size: .82rem;
+  padding: .32rem .75rem; color: var(--muted); }
+label.opt { font-size: .85rem; color: var(--muted); display: inline-flex;
+  gap: .4rem; align-items: center; }
+
+/* Toolbar */
+.toolbar { display: flex; flex-wrap: wrap; gap: .8rem 1rem; align-items: center; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px;
+  overflow: hidden; }
+.seg button { border: 0; border-radius: 0; border-right: 1px solid var(--line);
+  background: var(--card); font-weight: 500; }
 .seg button:last-child { border-right: 0; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
-#out { font-family: var(--serif); font-size: 1.5rem; line-height: 2.2;
-  padding: .8rem .2rem .3rem; word-spacing: .1em; overflow-wrap: anywhere; }
-#out.mode-beats { line-height: 3; }
+.seg.tier button[aria-pressed="true"] { background: var(--beat); }
+
+/* Meter summary */
+#meterLine { display: flex; flex-wrap: wrap; gap: .5rem .8rem; align-items: center;
+  margin: .9rem 0 .2rem; font-size: .9rem; }
+.badge { padding: .22rem .65rem; border-radius: 6px; font-weight: 600;
+  font-size: .82rem; background: var(--meter-soft); color: #6E5314;
+  border: 1px solid #E3CE9C; }
+.badge.mixed { background: #EDEFF0; color: var(--muted); border-color: var(--line); }
+.badge.ambig { background: var(--beat-soft); color: var(--beat);
+  border-color: #E4BFCC; }
+#meterLine .conf { color: var(--muted); }
+#meterLine .runs { color: var(--muted); font-size: .84rem; }
+
+/* Reading surface */
+#surface {
+  font-family: var(--serif); font-size: 1.32rem; line-height: 2.15;
+  padding: 1.1rem .4rem .6rem; word-spacing: .08em; overflow-wrap: anywhere;
+}
+#surface.mode-beats { line-height: 2.9; }
+#surface.mode-notation { line-height: 1.4; }
 .word { white-space: nowrap; }
-.syl { all: unset; cursor: pointer; position: relative; border-radius: 5px;
+.syl { all: unset; cursor: pointer; position: relative; border-radius: 4px;
   padding: 0 .02em; }
 .syl:hover { background: var(--beat-soft); }
-.syl:focus-visible { outline: 3px solid var(--phrase); outline-offset: 1px; }
-.joint { color: #ADB6B2; font-size: .78em; padding: 0 .05em; user-select: none; }
-.mode-caps .syl.S { text-transform: uppercase; }
-.mode-bold .syl.S { font-weight: 700; }
-.mode-big  .syl.S { font-weight: 700; font-size: 1.3em; }
-.mode-beats .syl.S::before { content: "●"; position: absolute; left: 50%;
-  transform: translateX(-50%); top: -1.15em; font-size: .48em;
-  color: var(--beat); }
-.mode-beats .syl.S.nodot::before { content: none; }
-.hint { font-size: .85rem; color: var(--muted); margin-top: .6rem; }
-#dictNote { font-size: .8rem; color: var(--muted); margin-top: .5rem; }
-#dictNote.warn { color: #8A5A17; }
-.caveat { margin-top: 1.4rem; border-left: 4px solid var(--phrase);
-  background: #E4EFEE; border-radius: 0 10px 10px 0; padding: .8rem .95rem;
-  font-size: .84rem; color: #23504D; }
-footer { margin-top: 1.4rem; font-size: .82rem; color: var(--muted); }
-footer a { color: var(--phrase); }
-@media print {
-  header .row, .card.input, .row, .hint, #dictNote, .caveat, footer
-    { display: none !important; }
-  body { background: #fff; }
-  .card { border: 0; padding: 0; }
-  #out { font-size: 1.4rem; }
+.syl:focus-visible { outline: 2px solid var(--phrase); outline-offset: 1px; }
+.joint { color: #A9B2AE; font-size: .8em; padding: 0 .04em; user-select: none; }
+.syl.edited { text-decoration: underline dotted var(--edit) 2px;
+  text-underline-offset: .3em; }
+/* confidence view: uncertainty made visible (design carry-forward) */
+.conf-view .syl.c-mid { text-decoration: underline solid #C99A2E 2px;
+  text-underline-offset: .32em; }
+.conf-view .syl.c-lo { text-decoration: underline dotted var(--beat) 2px;
+  text-underline-offset: .32em; }
+.conf-view .syl.edited { text-decoration: underline double var(--edit) 2px; }
+/* disagreements-only filter */
+.edits-only .word:not(.edited-word) { opacity: .28; }
+/* heteronym flag: two dictionary pronunciations exist */
+.conf-view .word.hetero > span > .syl:first-child::before { content: "⇄";
+  font-size: .5em; color: #C99A2E; vertical-align: super; margin-right: .08em; }
+
+/* stress styling per mode + tier */
+.mode-caps .syl.S     { text-transform: uppercase; letter-spacing: .01em; }
+.mode-bold .syl.S     { font-weight: 700; }
+.mode-big  .syl.S     { font-weight: 700; font-size: 1.28em; }
+.syl.S2 { font-weight: 600; font-style: italic; } /* lexical secondary */
+.mode-caps .syl.S2 { text-transform: uppercase; font-weight: 400; }
+.mode-beats .syl.S::before {
+  content: "●"; position: absolute; left: 50%; transform: translateX(-50%);
+  top: -1.15em; font-size: .5em; color: var(--beat);
 }
-@media (max-width: 560px) {
-  html { font-size: 16px; }
-  #out { font-size: 1.35rem; }
+.mode-beats .syl.S2::before {
+  content: "○"; position: absolute; left: 50%; transform: translateX(-50%);
+  top: -1.15em; font-size: .5em; color: var(--beat);
+}
+/* notation mode: word stacked over its pattern */
+.mode-notation .word { display: inline-flex; flex-direction: column;
+  align-items: center; vertical-align: top; margin: .35rem .15rem; }
+.mode-notation .pat { font: .62rem var(--mono); color: var(--beat);
+  letter-spacing: .18em; margin-top: .1rem; }
+.pat { display: none; }
+.mode-notation .pat { display: block; }
+
+/* phrase mode */
+.pbar { display: none; color: var(--phrase); font-weight: 700; padding: 0 .3em;
+  user-select: none; }
+button.pjoint { all: unset; display: none; cursor: pointer; padding: 0 .28em;
+  border-radius: 4px; font-weight: 700; }
+button.pjoint:not(.on) { color: #C4CDC9; font-size: .7em; vertical-align: .18em; }
+button.pjoint:not(.on):hover { color: var(--phrase); background: var(--phrase-soft); }
+button.pjoint.on { color: var(--phrase); }
+button.pjoint.on:hover { background: var(--beat-soft); color: var(--beat); }
+button.pjoint:focus-visible { outline: 2px solid var(--phrase); }
+.mode-phrase button.pjoint { display: inline; }
+.pbar.ip { padding: 0 .4em; }
+.mode-phrase .pbar { display: inline; }
+.mode-phrase .word { background: transparent; }
+
+/* feet layer: alternating gold underlines */
+.show-feet .syl.f0 { box-shadow: inset 0 -4px 0 var(--meter-soft); }
+.show-feet .syl.f1 { box-shadow: inset 0 -4px 0 #EBD9AE; }
+.show-feet .joint.f0 { box-shadow: inset 0 -4px 0 var(--meter-soft); }
+.show-feet .joint.f1 { box-shadow: inset 0 -4px 0 #EBD9AE; }
+
+.hint { font-size: .82rem; color: var(--muted); margin-top: .7rem; }
+.notice { margin-top: .8rem; padding: .8rem .9rem; border-radius: 8px;
+  font-size: .86rem; background: var(--beat-soft); color: #6E2138;
+  border: 1px solid #E4BFCC; }
+.notice .notice-title { display: block; font-weight: 700; margin-bottom: .15rem; }
+.notice .notice-actions { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: .55rem; }
+
+/* Tabs */
+.tabs { display: flex; gap: .4rem; margin-top: 1.6rem; border-bottom: 2px solid var(--line); }
+.tabs button { border: 0; background: none; border-radius: 8px 8px 0 0;
+  padding: .55rem 1rem; color: var(--muted); }
+.tabs button[aria-selected="true"] { color: var(--ink); font-weight: 700;
+  box-shadow: inset 0 -3px 0 var(--beat); }
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Tables */
+table { border-collapse: collapse; width: 100%; font-size: .85rem; margin-top: .8rem; }
+th, td { text-align: left; padding: .45rem .6rem; border-bottom: 1px solid var(--line); }
+th { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
+  color: var(--muted); }
+td.mono, .mono { font-family: var(--mono); font-size: .82rem; }
+.src-CMU { color: var(--phrase); } .src-heuristic { color: #8A6D1F; }
+.src-user { color: var(--edit); }
+.conf-hi { color: var(--phrase); } .conf-mid { color: #8A6D1F; } .conf-lo { color: var(--beat); }
+.statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
+  gap: .8rem; margin-top: .8rem; }
+.stat { background: var(--paper); border-radius: 8px; padding: .7rem .8rem; }
+.stat .n { font-family: var(--serif); font-size: 1.3rem; font-weight: 600; }
+.stat .l { font-size: .76rem; color: var(--muted); }
+
+/* Lexicon */
+.lexctl { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-top: .6rem; }
+select { font: .86rem var(--sans); padding: .4rem .5rem; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+.lexgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr));
+  gap: .8rem; margin-top: .9rem; }
+.lexcard { border: 1px solid var(--line); border-radius: 8px; padding: .7rem .8rem;
+  background: #FDFDFC; }
+.lexcard h3 { margin: 0 0 .3rem; font-family: var(--serif); font-size: 1.05rem; }
+.lexcard .trow { display: flex; justify-content: space-between; gap: .5rem;
+  font-size: .8rem; padding: .12rem 0; }
+.lexcard .trow .k { color: var(--muted); }
+.lexcard .tname { color: var(--meter); font-weight: 600; }
+
+/* Inspector dialog */
+dialog { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem;
+  max-width: 560px; width: calc(100% - 2rem); color: var(--ink); }
+dialog::backdrop { background: rgba(30,34,45,.35); }
+dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
+.tierrow { margin: .7rem 0; }
+.tierrow .tl { font-size: .72rem; text-transform: uppercase; letter-spacing: .07em;
+  color: var(--muted); margin-bottom: .25rem; }
+.insp-syls { display: flex; gap: .3rem; flex-wrap: wrap; align-items: center; }
+.insp-syl { display: flex; flex-direction: column; align-items: center; gap: .15rem; }
+.insp-syl .t { font-family: var(--serif); font-size: 1.15rem; }
+.insp-syl button.digit { min-width: 2.1rem; font-family: var(--mono); }
+.insp-syl button.digit.d1 { background: var(--beat); color: #fff; border-color: var(--beat); }
+.insp-syl button.digit.d2 { background: var(--beat-soft); color: var(--beat); }
+.mergebtn { align-self: center; font-size: .72rem; padding: .2rem .4rem; }
+.splitchars { display: flex; }
+.splitchars .gap { width: 4px; cursor: pointer; border-radius: 2px; }
+.splitchars .gap:hover { background: var(--phrase); }
+.varbtn[aria-pressed="true"] { background: var(--meter-soft); border-color: var(--meter); }
+.meta { font-size: .8rem; color: var(--muted); margin-top: .5rem; }
+
+/* Caveat + about */
+.caveat { margin-top: 1.6rem; border-left: 4px solid var(--phrase);
+  background: var(--phrase-soft); border-radius: 0 8px 8px 0;
+  padding: .9rem 1rem; font-size: .88rem; color: #23504D; }
+.about p { max-width: 70ch; }
+.about code { font-family: var(--mono); background: var(--paper);
+  padding: .05rem .3rem; border-radius: 4px; font-size: .85em; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .syl { transition: background .12s ease; }
+}
+@media (max-width: 640px) {
+  html { font-size: 15.5px; }
+  #surface { font-size: 1.2rem; }
 }
 </style>
 </head>
-<body>
+<body class="simple research-hidden">
 <main>
-<header>
-  <h1>Rhythm Reader<span class="dot">●</span></h1>
-  <p class="lede">Paste any English text and explore one possible rhythm
-  your mind constructs when you read.</p>
+
+<header class="site">
+  <h1>Rhythm Reader Pro<span class="dot">●</span></h1>
+  <p class="subtitle">Research-grade stress, rhythm, phrasing, and meter analysis</p>
+  <p class="thesis">Examine one possible prosodic reading of English text,
+  then adjust the beats, phrase boundaries, word stress, and metrical analysis.</p>
+  <div class="legend" aria-hidden="true">
+    <span class="key k-beat">beats (rhythmic stress)</span>
+    <span class="key k-phrase">phrase boundaries</span>
+    <span class="key k-meter">metrical feet</span>
+    <span class="key k-edit">your edits</span>
+  </div>
+  <span id="dictChip" class="research">Dictionary coverage: loading…</span>
 </header>
 
-<section class="card input">
-  <label for="input" style="font-weight:600">Your text</label>
-  <textarea id="input">Happy children running quickly. The sun arose above the quiet hill.</textarea>
+<section class="card" aria-labelledby="inH">
+  <h2 id="inH">Text to analyze</h2>
+  <textarea id="input" aria-label="Text to analyze"
+    placeholder="Type or paste English text…">The little puppy ran away before the children noticed.</textarea>
   <div class="row">
-    <button class="chip" data-ex="0">Nursery rhyme</button>
-    <button class="chip" data-ex="1">Story sentence</button>
-    <button class="chip" data-ex="2">Poem line</button>
+    <button class="chip" data-ex="trochaic">Trochaic — STRONG-weak</button>
+    <button class="chip" data-ex="iambic">Iambic — weak-STRONG</button>
+    <button class="chip" data-ex="anapestic">Anapestic — weak-weak-STRONG</button>
+    <button class="chip" data-ex="dactylic">Dactylic — STRONG-weak-weak</button>
+    <button class="chip" data-ex="mixed">Mixed prose</button>
     <span class="spacer"></span>
-    <button class="primary" id="go">Show the beat</button>
+    <label class="opt research"><input type="checkbox" id="strictAlt">
+      strict alternation (demote clashing secondaries)</label>
+    <label class="opt research"><input type="checkbox" id="clashSub">
+      subordinate stress clashes (sat DOWN, thread JAMMED)</label>
+    <label class="opt research"><input type="checkbox" id="researchMode">
+      research mode</label>
+    <input id="participantId" type="text" placeholder="participant ID"
+      style="display:none; font:.86rem var(--sans); padding:.4rem .5rem;
+      border:1px solid var(--line); border-radius:8px; width:9rem"
+      aria-label="Participant ID">
+    <input id="studyId" type="text" placeholder="study / condition"
+      style="display:none; font:.86rem var(--sans); padding:.4rem .5rem;
+      border:1px solid var(--line); border-radius:8px; width:11rem"
+      aria-label="Study and condition label">
+    <button class="primary" id="analyzeBtn">Analyze rhythm</button>
   </div>
 </section>
 
-<section class="card">
-  <div class="row" style="margin-top:0">
-    <div class="seg" role="group" aria-label="How to show the beat" id="modes">
+<section class="card" aria-labelledby="outH">
+  <h2 id="outH">Rhythm-enhanced text</h2>
+  <div class="toolbar">
+    <div class="seg" role="group" aria-label="Display mode" id="modeSeg">
       <button data-mode="caps" aria-pressed="true">CAPS</button>
       <button data-mode="bold" aria-pressed="false"><b>Bold</b></button>
-      <button data-mode="big" aria-pressed="false">Big</button>
-      <button data-mode="beats" aria-pressed="false">● Dots</button>
+      <button data-mode="big" aria-pressed="false">Large</button>
+      <button data-mode="beats" aria-pressed="false">● Beats</button>
+      <button data-mode="notation" aria-pressed="false">Notation</button>
+      <button data-mode="phrase" aria-pressed="false">❘ Phrases</button>
     </div>
-    <div class="seg" role="group" aria-label="Show word parts" id="partsSeg"
-      style="margin-left:.2rem">
-      <button data-parts="none" aria-pressed="true">Whole words</button>
-      <button data-parts="syll" aria-pressed="false">Syl·la·bles</button>
-      <button data-parts="morph" aria-pressed="false">Mean·ing parts</button>
+    <div class="seg tier" role="group" aria-label="Stress tier" id="tierSeg">
+      <button data-tier="rhythmic" aria-pressed="true">Beats</button>
+      <button data-tier="lexical" aria-pressed="false">Word stress</button>
     </div>
+    <label class="opt"><input type="checkbox" id="feetToggle"> show feet</label>
+    <label class="opt research"><input type="checkbox" id="sylBreaks"> syllable breaks</label>
+    <label class="opt research" style="gap:.3rem">cues:
+      <select id="density" style="font:.82rem var(--sans); padding:.15rem .3rem;
+        border:1px solid var(--line); border-radius:6px">
+        <option value="all">all beats</option>
+        <option value="phrase">one per phrase</option>
+        <option value="sentence">one per sentence</option>
+        <option value="none">none</option>
+      </select></label>
+    <label class="opt research"><input type="checkbox" id="confView"> confidence</label>
+    <label class="opt research"><input type="checkbox" id="editsOnly"> edits only</label>
     <span class="spacer"></span>
-    <button id="copy">Copy</button>
-    <button id="print">Print</button>
+    <span id="recChip" hidden style="font-size:.78rem; color:var(--beat);
+      border:1px solid #E4BFCC; background:var(--beat-soft);
+      border-radius:999px; padding:.2rem .6rem">● recording</span>
+    <button id="copyBtn">Copy text</button>
+    <select id="exportSel" class="research" aria-label="Export">
+      <option value="">Export…</option>
+      <option value="txt">Annotated text (.txt)</option>
+      <option value="csv">Syllable table (.csv)</option>
+      <option value="profile">Prosody profile (.csv)</option>
+      <option value="lexicon">Metrical lexicon (.csv)</option>
+      <option value="json">Full document (.json)</option>
+      <option value="research">Research session log (.csv)</option>
+      <option value="stimuli">Stimulus pair: congruent + incongruent (.txt)</option>
+      <option value="training">Training set: cue fading, 4 levels (.txt)</option>
+    </select>
   </div>
-  <div id="out" class="mode-caps" aria-live="polite"></div>
-  <p class="hint">Tap any syllable to move a beat — you know how you read
-  better than any computer does.</p>
-  <p id="rhythmNote" class="hint">Rhythm is fitted across each phrase using
-  strong–weak, weak–strong, weak–weak–strong, and strong–weak–weak feet.</p>
-  <p id="dictNote"></p>
+
+  <div id="meterLine"></div>
+  <div id="ambigNotice" class="notice" hidden></div>
+  <div id="surface" class="mode-caps" aria-live="polite"></div>
+  <p class="hint" id="hintLine"></p>
+  <div id="discloseRow">
+    <button id="toolsBtn">Open analysis tools</button>
+    <button id="researchBtn">⚙ Research settings</button>
+  </div>
+</section>
+
+<div class="tabs" role="tablist">
+  <button role="tab" aria-selected="true" data-tab="debug">Analysis table</button>
+  <button role="tab" aria-selected="false" data-tab="lexicon">Metrical lexicon</button>
+  <button role="tab" aria-selected="false" data-tab="about">Notation &amp; about</button>
+</div>
+
+<section class="card panel active" id="panel-debug" role="tabpanel">
+  <h2>Word-by-word analysis</h2>
+  <div class="statgrid" id="statGrid"></div>
+  <div id="debugTableWrap"></div>
+  <h2 style="margin-top:1.2rem">Meter detail</h2>
+  <div id="meterDetail" class="mono" style="font-size:.82rem"></div>
+</section>
+
+<section class="card panel" id="panel-lexicon" role="tabpanel">
+  <h2>Metrical lexicon</h2>
+  <div class="lexctl">
+    <label class="opt">template
+      <select id="lexFilter"><option value="">all</option></select></label>
+    <label class="opt">sort by
+      <select id="lexSort">
+        <option value="word">word</option>
+        <option value="template">template</option>
+        <option value="confidence">confidence</option>
+      </select></label>
+  </div>
+  <div class="lexgrid" id="lexGrid"></div>
+</section>
+
+<section class="card panel about" id="panel-about" role="tabpanel">
+  <h2>About Rhythm Reader Pro</h2>
+  <p>Rhythm Reader Pro is an interactive model of implicit prosody in silent
+  reading. It is designed for close analysis, teaching, and research rather
+  than as a rule for how a passage must be spoken.</p>
+  <h2>Reading the notation</h2>
+  <p>Every syllable carries values on three tiers.
+  <strong>Word stress</strong> (lexical) is the fixed pattern a word has in the
+  dictionary, written with digits: <code>1</code> primary stress,
+  <code>2</code> secondary stress, <code>0</code> unstressed —
+  so <em>banana</em> is <code>010</code>.
+  <strong>Template</strong> records the word's preliminary strong–weak
+  preference from lexical stress: <em>happy</em> is <code>SW</code>,
+  <em>above</em> <code>WS</code>, <em>understand</em> <code>WWS</code>, and
+  <em>wonderful</em> <code>SWW</code>. A sequence such as <em>banana</em>
+  (<code>WSW</code>) is not treated as a fifth foot. At phrase level, its
+  syllables are grouped across a boundary—for example, a weak pickup followed
+  by <code>SW</code>—or combined with neighboring words.
+  <strong>Beats</strong> (rhythmic) show how each syllable is realized in this
+  sentence: <code>S</code> strong, <code>W</code> weak. A word such as
+  <em>of</em> has citation stress in the dictionary but usually receives no
+  rhythmic beat in context.</p>
+  <p>Feet group syllables across words using only four English patterns:
+  trochee <code>SW</code>, iamb <code>WS</code>, anapest <code>WWS</code>,
+  and dactyl <code>SWW</code>. A phrase may begin with a one-syllable pickup
+  or end with one unmatched syllable when the available text does not form a
+  complete foot. Feet are never drawn across a phrase boundary. Some regular
+  text supports more than one plausible scansion; the app reports that
+  ambiguity rather than concealing it.</p>
+  <h2>Editing</h2>
+  <p>Click any syllable to toggle the selected tier (a beat on the Beats tier;
+  cycle <code>0 → 1 → 2</code> on the Word-stress tier). Double-click a word —
+  or use <em>Inspect</em> in the analysis table — to open the word inspector,
+  where you can choose template variants, split or merge syllables, and reset
+  the word to its dictionary analysis. Edited syllables are marked with a
+  dotted underline; every edit is recorded and exported.</p>
+  <h2>The divergence measure</h2>
+  <p>The analysis table reports a <strong>Prosodic Divergence Index</strong>
+  (PDI): how far the current annotation, after your edits, sits from the fully
+  automatic default, averaged over four components — word stress, template,
+  beats, and phrasing (each 0–1). The component breakdown matters more than
+  the composite: it says <em>which</em> representation you disagreed with.
+  In the Phrases display mode, boundaries themselves are editable: click
+  <code>❘</code> to remove one, <code>+</code> to insert one.</p>
+  <h2>Research mode</h2>
+  <p>With <em>research mode</em> on (and an optional participant ID), the app
+  records every edit as a process measure: what changed, on which tier,
+  latency since the previous action, the confidence of the value being
+  overridden, and whether the edit reverses an earlier one. A recording
+  indicator is always shown while logging — the instrument never records
+  covertly. Export the log via <em>Research session log</em>; it also rides
+  along inside the JSON export. Note the resolution caveat: these are
+  click-level latencies in a browser, informative about deliberation and
+  ordering, not a substitute for eye-tracking-grade timing.</p>
+  <h2>Sources and confidence</h2>
+  <p>Each analysis is tagged with its source: the CMU Pronouncing Dictionary,
+  a named fallback rule (for words not in the dictionary), or your own edit.
+  Confidence scores are heuristic indications, not calibrated probabilities.</p>
+  <h2>Running locally</h2>
+  <p>This file is self-contained and runs offline. For full dictionary
+  coverage (126,052 words), place <code>cmudict.js</code> in the same folder;
+  without it, an embedded subset of common words is used and other words fall
+  back to transparent rules.</p>
 </section>
 
 <div class="caveat">
-  This tool provides a computational approximation of English syllable stress
-  and rhythm. English prosody depends on lexical stress, sentence-level
-  emphasis, phrase structure, discourse context, speaker intention, and
-  individual reading style. It is a reading scaffold, not a rule for how a
-  sentence must be spoken — that's why every syllable is tappable.
+  <strong>About the analysis.</strong> Rhythm Reader Pro offers one
+  computational interpretation of English stress and rhythm. Because phrasing,
+  context, emphasis, and reading style can change prosody, every result can be
+  adjusted by hand.
 </div>
 
-<footer>
-  For teachers and researchers: the full analysis instrument (three-tier
-  editing, phrase structure, meter detection, research logging, and data
-  export) is in <a href="index.html">Rhythm Reader Pro</a>.
-</footer>
 </main>
+
+<dialog id="inspector" aria-labelledby="inspTitle"></dialog>
 
 <script>// Embedded subset of the CMU Pronouncing Dictionary (fallback when
 // cmudict.js is not present). 448 words: test suite + high-frequency vocabulary.
@@ -2161,26 +2493,19 @@ window.CMUDICT_SUBSET = {"HAPPY":"HH AE1 P IY0","PUPPY":"P AH1 P IY0","TABLE":"T
 (function () {
 'use strict';
 const E = window.RhythmEngine;
-let doc = null;
-let mode = 'caps';
 
-const EXAMPLES = [
-  'Twinkle, twinkle, little star, how I wonder what you are.',
-  'The little puppy ran away before the children noticed.',
-  'The sun arose above the quiet hill.'
-];
-
-const note = document.getElementById('dictNote');
+/* ---------- dictionary: try full asset, fall back to embedded subset ----- */
+const chip = document.getElementById('dictChip');
 function boot(full) {
   if (full) {
     E.loadDictionary(window.CMUDICT_FULL, 'full');
-    note.textContent = '';
+    chip.textContent = 'Dictionary coverage: full CMU (126,052 words)';
   } else {
     E.loadDictionary(window.CMUDICT_SUBSET, 'subset');
-    note.textContent = 'Running with a small built-in word list; uncommon ' +
-      'words are estimated by rule. For best results keep cmudict.js next ' +
-      'to this file.';
-    note.classList.add('warn');
+    chip.textContent = 'Dictionary coverage: embedded subset (' +
+      Object.keys(window.CMUDICT_SUBSET).length +
+      ' words); uncommon words are estimated automatically';
+    chip.classList.add('warn');
   }
   analyze();
 }
@@ -2190,165 +2515,892 @@ s.onload = () => boot(!!window.CMUDICT_FULL);
 s.onerror = () => boot(false);
 document.head.appendChild(s);
 
-function analyze() {
-  doc = E.analyze(document.getElementById('input').value);
-  render();
-}
-
-let parts = 'none'; // 'none' | 'syll' | 'morph'
-
-function wordCuts(tok, wd) {
-  // syllable cut offsets
-  const syl = [];
-  let acc = 0;
-  wd.syllables.forEach((sy, i) => {
-    if (i > 0) syl.push(acc);
-    acc += sy.text.length;
+/* ---------- state ---------- */
+let doc = null;
+/* Research-mode session logger. Process measures: timestamp, latency since
+   the previous event, edit tier, before/after values, confidence before the
+   edit, and reversal (the after-value re-instates a value this locus held
+   earlier in the session). The recording indicator is always visible while
+   logging: the instrument never records participants covertly — informed
+   consent is the researcher's job, but displaying recording state is the
+   instrument's. */
+const session = {
+  active: false, participant: '', study: '', passageIndex: 0,
+  log: [], lastT: null, t0: null,
+  history: new Map() // locusKey -> [values seen]
+};
+function logEvent(e) {
+  if (!session.active) return;
+  const now = Date.now();
+  const locus = e.locus || (e.action + ':' + e.wordIdx + ':' +
+    (e.sylIdx === undefined ? '-' : e.sylIdx) + ':' + (e.tier || '-'));
+  const hist = session.history.get(locus) || [];
+  const reversal = e.after !== undefined && hist.includes(String(e.after));
+  if (e.before !== undefined) {
+    if (!hist.length) hist.push(String(e.before));
+  }
+  if (e.after !== undefined) hist.push(String(e.after));
+  session.history.set(locus, hist);
+  session.log.push({
+    participant: session.participant || 'anonymous',
+    study: session.study || '',
+    passage_index: session.passageIndex,
+    timestamp: new Date(now).toISOString(),
+    ms_since_analyze: session.t0 === null ? 0 : now - session.t0,
+    latency_ms: session.lastT === null ? 0 : now - session.lastT,
+    action: e.action, tier: e.tier || '',
+    word: e.word || '', word_index: e.wordIdx !== undefined ? e.wordIdx : '',
+    syllable_index: e.sylIdx !== undefined ? e.sylIdx : '',
+    before: e.before !== undefined ? e.before : '',
+    after: e.after !== undefined ? e.after : '',
+    confidence_before: e.confidenceBefore !== undefined ? e.confidenceBefore : '',
+    confidence_after: e.confidenceAfter !== undefined ? e.confidenceAfter
+      : (e.action.startsWith('reset') ? 'auto' :
+         (e.before !== undefined && e.after !== undefined ? 1 : '')),
+    reversal
   });
-  let joints = [];
-  if (parts === 'syll') joints = syl.slice();
-  if (parts === 'morph') {
-    let m = 0;
-    const segs = E.morphSegment(tok.text);
-    segs.forEach((p, i) => { if (i > 0) joints.push(m); m += p.length; });
-    // hyphen/apostrophe already visible in the text: no dot after them
-    joints = joints.filter(o => tok.text[o - 1] !== '-' &&
-                                tok.text[o - 1] !== "'" &&
-                                tok.text[o - 1] !== '\u2019');
-  }
-  // Meaning-parts view: EVERY visible boundary must be morphological, so
-  // segments (and therefore stress-marking spans) are the meaning parts
-  // themselves — the beat is shown on the whole part that carries it
-  // (HAPPY, RUNN·ing, CHILD·ren), never splitting a part at a syllable.
-  const cuts = parts === 'morph'
-    ? joints.slice().sort((a, b) => a - b)
-    : Array.from(new Set([...syl, ...joints])).sort((a, b) => a - b);
-  return { cuts, joints: new Set(joints), syl };
+  session.lastT = now;
+}
+function researchCSV() {
+  const cols = ['participant','study','passage_index',
+    'timestamp','ms_since_analyze','latency_ms',
+    'action','tier','word','word_index','syllable_index','before','after',
+    'confidence_before','confidence_after','reversal'];
+  const esc = v => /[",\n]/.test(String(v))
+    ? '"' + String(v).replace(/"/g,'""') + '"' : String(v);
+  return [cols.join(',')]
+    .concat(session.log.map(r => cols.map(c => esc(r[c])).join(',')))
+    .join('\n');
+}
+let mode = 'caps';
+let tier = 'rhythmic';
+let showFeet = false;
+let feetForced = false;
+let ambigAccepted = false;
+let ambigLogged = false;
+
+const EXAMPLES = {
+  trochaic:  'Happy children running quickly.',
+  iambic:    'The sun arose above the quiet hill.',
+  anapestic: 'In the dark of the night we could hear the wind rise.',
+  dactylic:  'Wonderful, beautiful, carefully moving.',
+  mixed:     'The little puppy ran away before the children noticed.'
+};
+
+/* ---------- analysis ---------- */
+function analyze() {
+  const text = document.getElementById('input').value;
+  doc = E.analyze(text, {
+    strictAlternation: document.getElementById('strictAlt').checked,
+    clashSubordination: document.getElementById('clashSub').checked });
+  feetForced = false;
+  ambigAccepted = false;
+  ambigLogged = false;
+  session.t0 = Date.now(); session.lastT = null; session.history.clear();
+  session.passageIndex += 1;
+  logEvent({ action: 'analyze', before: '', after: '',
+             word: text.slice(0, 40) });
+  renderAll();
 }
 
-// syllables overlapping a character span [s, e)
-function sylsInSpan(wd, syl, s, e) {
-  const starts = [0, ...syl];
-  const out = [];
-  for (let i = 0; i < wd.syllables.length; i++) {
-    const a = starts[i];
-    const b = a + wd.syllables[i].text.length;
-    if (a < e && b > s) out.push(i);
+/* ---------- rendering ---------- */
+function footIndexMap() {
+  // syllable "w:i" -> foot ordinal (classical feet only)
+  const map = {};
+  let ord = 0;
+  for (const f of doc.feet) {
+    const classical = ['iamb','trochee','anapest','dactyl'].includes(f.type);
+    if (classical) {
+      for (const [w, i] of f.span) map[w + ':' + i] = ord;
+      ord++;
+    } else ord++; // strays advance the alternation too
   }
-  return out;
+  return map;
 }
 
-function render() {
-  const out = document.getElementById('out');
-  out.className = 'mode-' + mode;
-  out.textContent = '';
+function phraseMarks() {
+  // word index -> mark BEFORE that word: 'IP' (non-editable, from
+  // punctuation) or 'PHI' (present boundary) or 'GAP' (toggleable joint)
+  const before = {};
+  doc.phrases.forEach((ip, ii) => {
+    if (ii > 0) before[ip.span[0]] = 'IP';
+    for (let w = ip.span[0] + 1; w <= ip.span[1]; w++) before[w] = 'GAP';
+    ip.children.forEach((phi, pi) => {
+      if (pi > 0) before[phi.span[0]] = 'PHI';
+    });
+  });
+  return before;
+}
+
+function makePhraseJoint(kind, wordIdx) {
+  if (kind === 'IP') {
+    const pb = document.createElement('span');
+    pb.className = 'pbar ip';
+    pb.textContent = '‖';
+    pb.title = 'Sentence-level boundary (from punctuation)';
+    return pb;
+  }
+  const b = document.createElement('button');
+  b.className = 'pbar pjoint' + (kind === 'PHI' ? ' on' : '');
+  b.textContent = kind === 'PHI' ? '❘' : '+';
+  b.title = kind === 'PHI'
+    ? 'Phrase boundary — click to remove'
+    : 'Click to insert a phrase boundary here';
+  b.setAttribute('aria-label', b.title);
+  b.addEventListener('click', () => {
+    logEvent({ action: kind === 'PHI' ? 'phrase-remove' : 'phrase-insert',
+      tier: 'phrase', wordIdx, word: doc.words[wordIdx].word,
+      before: kind === 'PHI' ? 'boundary' : 'none',
+      after: kind === 'PHI' ? 'none' : 'boundary' });
+    E.togglePhiBoundary(doc, wordIdx);
+    renderAll();
+  });
+  return b;
+}
+
+function sylClass(wd, sy) {
+  if (tier === 'rhythmic') return sy.rhythmicStress === 'S' ? 'S' : 'W';
+  return sy.lexicalStress === '1' ? 'S' : sy.lexicalStress === '2' ? 'S2' : 'W';
+}
+
+function densityKeep() {
+  const level = document.getElementById('density').value;
+  return level === 'all' ? null : E.beatSubset(doc, level);
+}
+
+function renderSurface() {
+  const surface = document.getElementById('surface');
+  surface.className = 'mode-' + mode + (showFeet ? ' show-feet' : '') +
+    (document.getElementById('confView').checked ? ' conf-view' : '') +
+    (document.getElementById('editsOnly').checked ? ' edits-only' : '');
+  surface.textContent = '';
+  const fmap = footIndexMap();
+  const marks = phraseMarks();
+  const dk = densityKeep();
+
   for (const tok of doc.tokens) {
-    if (tok.type !== 'word') {
-      out.appendChild(document.createTextNode(tok.text));
-      continue;
-    }
-    const wd = doc.words[tok.wordIndex];
-    const w = document.createElement('span');
-    w.className = 'word';
-    const { cuts, joints, syl } = wordCuts(tok, wd);
-    const bounds = [0, ...cuts, tok.text.length];
-    const sylOfOffset = (o) => {
-      let i = 0;
-      while (i < syl.length && o >= syl[i]) i++;
-      return i;
-    };
-    const dotted = new Set(); // one beat dot per stressed syllable
-    for (let k = 0; k < bounds.length - 1; k++) {
-      const s = bounds[k], e = bounds[k + 1];
-      if (s === e) continue;
-      if (joints.has(s)) {
-        const j = document.createElement('span');
-        j.className = 'joint'; j.textContent = '·';
-        w.appendChild(j);
+    if (tok.type === 'word') {
+      const wd = doc.words[tok.wordIndex];
+      if (marks[tok.wordIndex] !== undefined) {
+        surface.appendChild(
+          makePhraseJoint(marks[tok.wordIndex], tok.wordIndex));
       }
-      const inSpan = sylsInSpan(wd, syl, s, e);
-      const strong = inSpan.some(i => wd.syllables[i].rhythmicStress === 'S');
-      // the syllable a tap edits: the beat-carrying one in this span,
-      // else the first
-      const si = inSpan.find(i => wd.syllables[i].rhythmicStress === 'S')
-                 ?? inSpan[0] ?? sylOfOffset(s);
-      const b = document.createElement('button');
-      b.className = 'syl' + (strong ? ' S' : '');
-      if (strong) {
-        if (inSpan.some(i => dotted.has(i))) b.classList.add('nodot');
-        inSpan.forEach(i => {
-          if (wd.syllables[i].rhythmicStress === 'S') dotted.add(i); });
-      }
-      b.textContent = tok.text.slice(s, e);
-      b.setAttribute('aria-label', wd.word + ' part, ' +
-        (strong ? 'has a beat' : 'no beat') + '. Tap to change.');
-      b.addEventListener('click', () => {
-        E.editRhythmicStress(doc, tok.wordIndex, si,
-          wd.syllables[si].rhythmicStress === 'S' ? 'W' : 'S');
-        render();
+      const wspan = document.createElement('span');
+      wspan.className = 'word' +
+        ((wd.userEdited.lexical || wd.userEdited.rhythmic ||
+          wd.userEdited.template) ? ' edited-word' : '') +
+        ((wd.hasStressVariants && !wd.isFunctionWord && !wd.userEdited.lexical)
+          ? ' hetero' : '');
+      if (wd.hasStressVariants && !wd.isFunctionWord) wspan.title =
+        'Two dictionary pronunciations — double-click to choose';
+      wspan.addEventListener('dblclick', () => openInspector(tok.wordIndex));
+      const inner = document.createElement('span');
+      const breaks = document.getElementById('sylBreaks').checked;
+      wd.syllables.forEach((sy, i) => {
+        if (i > 0 && breaks) {
+          const j = document.createElement('span');
+          j.className = 'joint';
+          const f = fmap[tok.wordIndex + ':' + i];
+          const fPrev = fmap[tok.wordIndex + ':' + (i - 1)];
+          if (showFeet && f !== undefined && f === fPrev)
+            j.classList.add('f' + (f % 2));
+          j.textContent = '·';
+          inner.appendChild(j);
+        }
+        const b = document.createElement('button');
+        let cls = sylClass(wd, sy);
+        if (cls === 'S' && tier === 'rhythmic' && dk &&
+            !dk.has(tok.wordIndex + ':' + i)) cls = 'W';
+        b.className = 'syl ' + cls;
+        const f = fmap[tok.wordIndex + ':' + i];
+        if (showFeet && f !== undefined) b.classList.add('f' + (f % 2));
+        if (wd.userEdited.rhythmic || wd.userEdited.lexical)
+          b.classList.add('edited');
+        const rc = sy.rhythmicConfidence;
+        if (rc !== null) b.classList.add(rc >= 0.9 ? 'c-hi'
+          : rc >= 0.6 ? 'c-mid' : 'c-lo');
+        // preserve original casing from the token where possible
+        b.textContent = restoreCase(tok.text, wd, i);
+        b.setAttribute('aria-label', wd.word + ' syllable ' + (i + 1) + ', ' +
+          (tier === 'rhythmic'
+            ? (sy.rhythmicStress === 'S' ? 'beat' : 'no beat')
+            : 'stress ' + sy.lexicalStress) + '. Activate to change.');
+        b.addEventListener('click', () => onSylClick(tok.wordIndex, i));
+        inner.appendChild(b);
       });
-      w.appendChild(b);
+      wspan.appendChild(inner);
+      const pat = document.createElement('span');
+      pat.className = 'pat';
+      pat.textContent = tier === 'rhythmic'
+        ? wd.rhythmicPattern.split('').join('-')
+        : wd.lexicalPattern.split('').join('-');
+      wspan.appendChild(pat);
+      surface.appendChild(wspan);
+    } else {
+      surface.appendChild(document.createTextNode(tok.text));
     }
-    out.appendChild(w);
   }
-  document.querySelector('.hint').textContent = parts === 'morph'
-    ? 'Meaning parts (child·ren, runn·ing, filth·y) are approximate — built ' +
-      'from word structure, not sound. The beat is shown on the whole part ' +
-      'that carries it; for precise beat placement, use the other views.'
-    : 'Tap any syllable to move a beat — you know how you read better than ' +
-      'any computer does.';
+  document.getElementById('hintLine').textContent =
+    mode === 'phrase'
+      ? 'Click ❘ to remove a phrase boundary, + to insert one. ‖ marks come from punctuation. Click a syllable to toggle its beat.'
+      : tier === 'rhythmic'
+      ? 'Click a syllable to toggle its beat. Double-click a word to inspect and edit it.'
+      : 'Click a syllable to cycle its word stress (0 → 1 → 2). Double-click a word to inspect it.';
 }
 
-function rendition() {
+function restoreCase(orig, wd, sylIdx) {
+  // map syllable slice back onto the original token's casing
+  let start = 0;
+  for (let k = 0; k < sylIdx; k++) start += wd.syllables[k].text.length;
+  const len = wd.syllables[sylIdx].text.length;
+  const slice = orig.slice(start, start + len);
+  return slice.length === len ? slice : wd.syllables[sylIdx].text;
+}
+
+function renderMeterLine() {
+  const ml = document.getElementById('meterLine');
+  ml.textContent = '';
+  const ms = doc.meterSummary;
+  const badge = document.createElement('span');
+  const isAmbig = ms.label.startsWith('alternating');
+  const isMixed = ms.label.startsWith('mixed');
+  badge.className = 'badge' + (isAmbig ? ' ambig' : isMixed ? ' mixed' : '');
+  badge.textContent = isAmbig ? 'Two rhythms fit nearly equally well' : ms.label;
+  ml.appendChild(badge);
+  // A plain-language finding appears first. The exact computational label is
+  // retained for users who open the analysis tools.
+  const GLOSS = [
+    ['trochaic',   'a STRONG-weak, song-like beat'],
+    ['iambic',     'a weak-STRONG, da-DUM beat'],
+    ['anapestic',  'a galloping, weak-weak-STRONG beat'],
+    ['dactylic',   'a falling, STRONG-weak-weak beat'],
+    ['alternating','trochaic and iambic interpretations are both plausible'],
+    ['mixed',      'a mixed, everyday-prose rhythm']
+  ];
+  const g = GLOSS.find(([k]) => ms.label.includes(k));
+  if (g) {
+    const gs = document.createElement('span');
+    gs.className = 'gloss';
+    gs.textContent = '— ' + g[1];
+    ml.appendChild(gs);
+  }
+  if (isAmbig) {
+    const tech = document.createElement('span');
+    tech.className = 'meter-technical';
+    tech.textContent = 'technical label: ' + ms.label;
+    ml.appendChild(tech);
+  }
+  const conf = document.createElement('span');
+  conf.className = 'conf';
+  conf.textContent = 'parse confidence ' + ms.parseConfidence;
+  ml.appendChild(conf);
+  if (ms.localRuns.length) {
+    const r = document.createElement('span');
+    r.className = 'runs';
+    r.textContent = 'local runs: ' + ms.localRuns.map(x =>
+      x.type + ' (' + x.confidence + ')').join(', ');
+    ml.appendChild(r);
+  }
+  // feet gating [design §9]: drawn only above threshold, but inspectable.
+  // Ambiguity is a first-class state AND a probe: the reader's response
+  // (resolve to one reading, or keep both) is itself data (→ ASI).
+  const ft = document.getElementById('feetToggle');
+  const notice = document.getElementById('ambigNotice');
+  if (ms.forcedScansion) {
+    notice.hidden = true; notice.textContent = '';
+    showFeet = true; ft.checked = true;
+    const undo = document.createElement('button');
+    undo.textContent = 'revert to ambiguous';
+    undo.style.marginLeft = '.4rem';
+    undo.addEventListener('click', () => {
+      logEvent({ action: 'scansion-revert', tier: 'meter',
+        before: ms.forcedScansion, after: 'ambiguous' });
+      E.clearForcedScansion(doc); ambigAccepted = false; renderAll(); });
+    ml.appendChild(undo);
+  } else if (isAmbig && !feetForced && !ambigAccepted) {
+    showFeet = false; ft.checked = false;
+    notice.hidden = false;
+    notice.innerHTML = '';
+    if (!ambigLogged) {
+      logEvent({ action: 'ambiguity-shown', tier: 'meter',
+        before: '', after: ms.ambiguousTypes.join('/') });
+      ambigLogged = true;
+    }
+    const title = document.createElement('span');
+    title.className = 'notice-title';
+    title.textContent = 'This passage supports more than one rhythm.';
+    notice.appendChild(title);
+    notice.append('Choose the reading that sounds most natural, or preserve ' +
+      'both interpretations.');
+    const actions = document.createElement('div');
+    actions.className = 'notice-actions';
+    const keep = document.createElement('button');
+    keep.className = 'primary';
+    keep.textContent = 'Keep both';
+    keep.addEventListener('click', () => {
+      logEvent({ action: 'ambiguity-accept', tier: 'meter',
+        before: 'ambiguous', after: 'ambiguous' });
+      ambigAccepted = true; notice.hidden = true; });
+    actions.appendChild(keep);
+    for (const t of ms.ambiguousTypes) {
+      const b = document.createElement('button');
+      b.textContent = 'Choose ' + (t === 'iamb' ? 'iambic'
+        : t === 'trochee' ? 'trochaic'
+        : t === 'anapest' ? 'anapestic' : 'dactylic');
+      b.addEventListener('click', () => {
+        logEvent({ action: 'scansion-resolve', tier: 'meter',
+          before: 'ambiguous', after: t });
+        E.forceScansion(doc, t); renderAll(); });
+      actions.appendChild(b);
+    }
+    notice.appendChild(actions);
+  } else if (!ms.showFeet && !feetForced) {
+    notice.hidden = false;
+    notice.textContent = 'Meter confidence is below the display threshold (' +
+      ms.displayThreshold + '), so feet are not drawn automatically. ' +
+      'You can still turn on “show feet” to inspect the parse.';
+  } else {
+    notice.hidden = true; notice.textContent = '';
+  }
+}
+
+/* ---------- debug panel ---------- */
+function renderDebug() {
+  const st = doc.stats;
+  const grid = document.getElementById('statGrid');
+  grid.innerHTML = '';
+  const pdi = E.computePDI(doc);
+  const stats = [
+    [pdi.pdi, 'prosodic divergence (PDI)'],
+    [Math.round(st.cmuRate * 100) + '%', 'words found in CMU'],
+    [Math.round(st.heuristicRate * 100) + '%', 'estimated by rule'],
+    [Math.round(st.userEditRate * 100) + '%', 'edited by you'],
+    [st.tierMismatchCount, 'stress ≠ beat syllables'],
+    [st.implicitProsodyProfile.rhythmicRegularityIndex, 'rhythmic regularity'],
+    [st.implicitProsodyProfile.meanPhraseLength, 'mean phrase length (words)']
+  ];
+  for (const [n, l] of stats) {
+    const d = document.createElement('div');
+    d.className = 'stat';
+    d.innerHTML = '<div class="n"></div><div class="l"></div>';
+    d.querySelector('.n').textContent = n;
+    d.querySelector('.l').textContent = l;
+    grid.appendChild(d);
+  }
+  const wrap = document.getElementById('debugTableWrap');
+  wrap.innerHTML = '';
+  const tbl = document.createElement('table');
+  tbl.innerHTML = '<thead><tr><th>word</th><th>syllables</th>' +
+    '<th>lexical</th><th>template</th><th>beats</th><th>source</th>' +
+    '<th>conf.</th><th>in CMU</th><th>edited</th><th></th></tr></thead>';
+  const tb = document.createElement('tbody');
+  doc.words.forEach((wd, wi) => {
+    const tr = document.createElement('tr');
+    const cells = [
+      wd.word,
+      wd.syllables.map(x => x.text).join('·'),
+      wd.lexicalPattern,
+      wd.template.pattern + ' ' + wd.template.traditionalName,
+      wd.rhythmicPattern,
+      wd.lexicalSource + (wd.lexicalRule ? ' (' + wd.lexicalRule + ')' : ''),
+      wd.lexicalConfidence,
+      wd.lexicalSource === 'CMU' ? 'yes' : 'no',
+      (wd.userEdited.lexical || wd.userEdited.rhythmic ||
+       wd.userEdited.template) ? '✎ yes' : '—'
+    ];
+    cells.forEach((c, ci) => {
+      const td = document.createElement('td');
+      if (ci >= 2 && ci <= 4) td.className = 'mono';
+      if (ci === 5) td.className = 'src-' +
+        (wd.lexicalSource === 'CMU' ? 'CMU'
+         : wd.lexicalSource === 'user' ? 'user' : 'heuristic');
+      if (ci === 6) td.className = 'mono ' +
+        (c >= 0.9 ? 'conf-hi' : c >= 0.6 ? 'conf-mid' : 'conf-lo');
+      td.textContent = c;
+      tr.appendChild(td);
+    });
+    const td = document.createElement('td');
+    const b = document.createElement('button');
+    b.textContent = 'Inspect';
+    b.addEventListener('click', () => openInspector(wi));
+    td.appendChild(b);
+    tr.appendChild(td);
+    tb.appendChild(tr);
+  });
+  tbl.appendChild(tb);
+  wrap.appendChild(tbl);
+
+  // meter detail: DP parse per IP + grid-probe costs (design carry-forward)
+  const md = document.getElementById('meterDetail');
+  md.innerHTML = '';
+  doc.ipReports.forEach((r, i) => {
+    const line = document.createElement('div');
+    const feet = r.feet.map(f => '[' + f.pattern + ' ' + f.type + ']').join(' ');
+    line.textContent = 'IP ' + (i + 1) + '  cost ' + r.cost + '  ' + feet +
+      (r.alternates.length
+        ? '   near-equivalent scansions: ' +
+          r.alternates.map(a => a.type + '@' + a.cost).join(', ')
+        : '');
+    md.appendChild(line);
+  });
+  // distributions
+  const dist = document.createElement('div');
+  dist.style.marginTop = '.6rem';
+  dist.textContent = 'templates: ' + JSON.stringify(st.templateDistribution) +
+    '   patterns: ' + JSON.stringify(st.patternDistribution) +
+    '   PDI components: ' + JSON.stringify(pdiForDetail());
+  md.appendChild(dist);
+}
+
+function pdiForDetail() { return E.computePDI(doc).components; }
+
+/* ---------- lexicon panel ---------- */
+function lexEntries() {
+  const map = new Map();
+  doc.words.forEach((wd, wi) => {
+    const k = wd.normalized;
+    if (!map.has(k)) map.set(k, { wd, instances: [] });
+    map.get(k).instances.push({ wi, rhythmic: wd.rhythmicPattern });
+  });
+  return Array.from(map.values());
+}
+
+function renderLexicon() {
+  const entries = lexEntries();
+  const filter = document.getElementById('lexFilter');
+  const chosen = filter.value;
+  const names = Array.from(new Set(entries.map(e =>
+    e.wd.template.traditionalName))).sort();
+  filter.innerHTML = '<option value="">all</option>' +
+    names.map(n => '<option' + (n === chosen ? ' selected' : '') + '>' +
+      n + '</option>').join('');
+  let list = entries.filter(e =>
+    !filter.value || e.wd.template.traditionalName === filter.value);
+  const sort = document.getElementById('lexSort').value;
+  list.sort((a, b) =>
+    sort === 'template'
+      ? a.wd.template.traditionalName.localeCompare(b.wd.template.traditionalName)
+      : sort === 'confidence'
+        ? a.wd.lexicalConfidence - b.wd.lexicalConfidence
+        : a.wd.normalized.localeCompare(b.wd.normalized));
+  const grid = document.getElementById('lexGrid');
+  grid.innerHTML = '';
+  for (const e of list) {
+    const wd = e.wd;
+    const realizations = {};
+    e.instances.forEach(x => {
+      const p = doc.words[x.wi].rhythmicPattern;
+      realizations[p] = (realizations[p] || 0) + 1;
+    });
+    const card = document.createElement('div');
+    card.className = 'lexcard';
+    card.innerHTML = '<h3></h3>' +
+      row('syllables', wd.syllables.map(x => x.text).join('·')) +
+      row('word stress', wd.lexicalPattern) +
+      '<div class="trow"><span class="k">template</span>' +
+      '<span class="tname"></span></div>' +
+      row('realized here', Object.entries(realizations)
+        .map(([p, n]) => p + ' ×' + n).join(', ')) +
+      row('meaning parts', E.morphSegment(wd.normalized).join('·')) +
+      row('confidence', wd.lexicalConfidence) +
+      row('source', wd.lexicalSource);
+    card.querySelector('h3').textContent = wd.normalized;
+    card.querySelector('.tname').textContent =
+      wd.template.pattern + ' · ' + wd.template.traditionalName;
+    const b = document.createElement('button');
+    b.textContent = 'Inspect';
+    b.style.marginTop = '.4rem';
+    b.addEventListener('click', () => openInspector(e.instances[0].wi));
+    card.appendChild(b);
+    grid.appendChild(card);
+  }
+  function row(k, v) {
+    const d = document.createElement('div');
+    d.className = 'trow';
+    const ks = document.createElement('span'); ks.className = 'k'; ks.textContent = k;
+    const vs = document.createElement('span'); vs.textContent = v;
+    d.append(ks, vs);
+    return d.outerHTML;
+  }
+}
+
+/* ---------- editing ---------- */
+function onSylClick(wi, si) {
+  const wd = doc.words[wi];
+  if (tier === 'rhythmic') {
+    const cur = wd.syllables[si].rhythmicStress;
+    const next = cur === 'S' ? 'W' : 'S';
+    logEvent({ action: 'beat-toggle', tier: 'rhythmic', wordIdx: wi,
+      sylIdx: si, word: wd.word, before: cur, after: next,
+      confidenceBefore: wd.syllables[si].rhythmicConfidence });
+    E.editRhythmicStress(doc, wi, si, next);
+  } else {
+    const cyc = { '0': '1', '1': '2', '2': '0' };
+    const cur = wd.syllables[si].lexicalStress;
+    const pat = wd.syllables.map((sy, k) =>
+      k === si ? cyc[sy.lexicalStress] : sy.lexicalStress).join('');
+    logEvent({ action: 'stress-cycle', tier: 'lexical', wordIdx: wi,
+      sylIdx: si, word: wd.word, before: cur, after: cyc[cur],
+      confidenceBefore: wd.lexicalConfidence });
+    E.editLexicalStress(doc, wi, pat);
+  }
+  renderAll();
+}
+
+function openInspector(wi) {
+  const wd = doc.words[wi];
+  const dlg = document.getElementById('inspector');
+  dlg.innerHTML = '';
+  const h = document.createElement('h3');
+  h.id = 'inspTitle'; h.textContent = wd.word;
+  dlg.appendChild(h);
+  const meta = document.createElement('div');
+  meta.className = 'meta';
+  meta.textContent = 'source: ' + wd.lexicalSource +
+    (wd.lexicalRule ? ' (' + wd.lexicalRule + ')' : '') +
+    ' · confidence ' + wd.lexicalConfidence +
+    ' · meaning parts: ' + E.morphSegment(wd.word).join('·') + ' [heuristic]' +
+    (wd.editHistory.length ? ' · ' + wd.editHistory.length + ' edit(s)' : '');
+  dlg.appendChild(meta);
+
+  // Tier 1: lexical digits + split gaps + merge buttons
+  const t1 = document.createElement('div');
+  t1.className = 'tierrow';
+  t1.innerHTML = '<div class="tl">Tier 1 · word stress (click a digit to cycle; click between letters to split; ⇤⇥ merges)</div>';
+  const syls = document.createElement('div');
+  syls.className = 'insp-syls';
+  wd.syllables.forEach((sy, si) => {
+    if (si > 0) {
+      const m = document.createElement('button');
+      m.className = 'mergebtn';
+      m.textContent = '⇤⇥';
+      m.title = 'Merge with previous syllable';
+      m.addEventListener('click', () => {
+        logEvent({ action: 'merge', tier: 'lexical', wordIdx: wi,
+          sylIdx: si - 1, word: wd.word,
+          before: wd.syllables[si-1].text + '.' + wd.syllables[si].text,
+          after: wd.syllables[si-1].text + wd.syllables[si].text,
+          confidenceBefore: wd.lexicalConfidence });
+        E.mergeSyllables(doc, wi, si - 1); renderAll(); openInspector(wi); });
+      syls.appendChild(m);
+    }
+    const cell = document.createElement('div');
+    cell.className = 'insp-syl';
+    const t = document.createElement('div');
+    t.className = 't splitchars';
+    sy.text.split('').forEach((ch, ci) => {
+      const c = document.createElement('span'); c.textContent = ch;
+      t.appendChild(c);
+      if (ci < sy.text.length - 1) {
+        const g = document.createElement('span');
+        g.className = 'gap';
+        g.title = 'Split syllable here';
+        g.setAttribute('role', 'button');
+        g.addEventListener('click', () => {
+          logEvent({ action: 'split', tier: 'lexical', wordIdx: wi,
+            sylIdx: si, word: wd.word, before: sy.text,
+            after: sy.text.slice(0, ci + 1) + '.' + sy.text.slice(ci + 1),
+            confidenceBefore: wd.lexicalConfidence });
+          E.splitSyllable(doc, wi, si, ci + 1); renderAll(); openInspector(wi); });
+        t.appendChild(g);
+      }
+    });
+    const d = document.createElement('button');
+    d.className = 'digit d' + sy.lexicalStress;
+    d.textContent = sy.lexicalStress;
+    d.title = 'Cycle word stress 0 → 1 → 2';
+    d.addEventListener('click', () => {
+      const cyc = { '0': '1', '1': '2', '2': '0' };
+      logEvent({ action: 'stress-cycle', tier: 'lexical', wordIdx: wi,
+        sylIdx: si, word: wd.word, before: sy.lexicalStress,
+        after: cyc[sy.lexicalStress], confidenceBefore: wd.lexicalConfidence });
+      const pat = wd.syllables.map((x, k) =>
+        k === si ? cyc[x.lexicalStress] : x.lexicalStress).join('');
+      E.editLexicalStress(doc, wi, pat); renderAll(); openInspector(wi); });
+    cell.append(t, d);
+    syls.appendChild(cell);
+  });
+  t1.appendChild(syls);
+  dlg.appendChild(t1);
+
+  // Pronunciations (heteronym workflow): CMU alternates with different
+  // stress patterns, one click to select
+  if (wd.alternates && wd.alternates.length) {
+    const tp = document.createElement('div');
+    tp.className = 'tierrow';
+    tp.innerHTML = '<div class="tl">Dictionary pronunciations</div>';
+    const cur = document.createElement('button');
+    cur.className = 'varbtn'; cur.setAttribute('aria-pressed', 'true');
+    cur.textContent = wd.lexicalPattern + ' (current)';
+    tp.appendChild(cur);
+    wd.alternates.forEach((alt, ai) => {
+      const b = document.createElement('button');
+      b.className = 'varbtn'; b.style.marginLeft = '.4rem';
+      b.textContent = alt.pattern +
+        (alt.pattern !== wd.lexicalPattern ? ' — different stress' : '');
+      b.addEventListener('click', () => {
+        logEvent({ action: 'pronunciation-select', tier: 'lexical',
+          wordIdx: wi, word: wd.word, before: wd.lexicalPattern,
+          after: alt.pattern, confidenceBefore: wd.lexicalConfidence });
+        E.selectPronunciation(doc, wi, ai); renderAll(); openInspector(wi);
+      });
+      tp.appendChild(b);
+    });
+    dlg.appendChild(tp);
+  }
+
+  // Tier 2: template + variants
+  const t2 = document.createElement('div');
+  t2.className = 'tierrow';
+  t2.innerHTML = '<div class="tl">Tier 2 · metrical template</div>';
+  const cur = document.createElement('button');
+  cur.className = 'varbtn';
+  cur.setAttribute('aria-pressed', 'true');
+  cur.textContent = wd.template.pattern + ' — ' + wd.template.traditionalName;
+  t2.appendChild(cur);
+  wd.template.variants.forEach(v => {
+    const b = document.createElement('button');
+    b.className = 'varbtn';
+    b.setAttribute('aria-pressed', 'false');
+    b.style.marginLeft = '.4rem';
+    b.textContent = v.pattern + ' — ' +
+      (typeof v.footing === 'string' ? v.footing : v.label);
+    b.addEventListener('click', () => {
+      logEvent({ action: 'template-variant', tier: 'template', wordIdx: wi,
+        word: wd.word, before: wd.template.pattern, after: v.pattern,
+        confidenceBefore: wd.template.confidence });
+      E.selectTemplateVariant(doc, wi, v.pattern); renderAll(); openInspector(wi); });
+    t2.appendChild(b);
+  });
+  dlg.appendChild(t2);
+
+  // Tier 3: rhythmic realization
+  const t3 = document.createElement('div');
+  t3.className = 'tierrow';
+  t3.innerHTML = '<div class="tl">Tier 3 · beats in this sentence (click to toggle)</div>';
+  wd.syllables.forEach((sy, si) => {
+    const b = document.createElement('button');
+    b.textContent = sy.text + ' ' + sy.rhythmicStress;
+    b.style.marginRight = '.3rem';
+    if (sy.rhythmicStress === 'S') { b.style.background = 'var(--beat)';
+      b.style.color = '#fff'; b.style.borderColor = 'var(--beat)'; }
+    b.addEventListener('click', () => {
+      const next = sy.rhythmicStress === 'S' ? 'W' : 'S';
+      logEvent({ action: 'beat-toggle', tier: 'rhythmic', wordIdx: wi,
+        sylIdx: si, word: wd.word, before: sy.rhythmicStress, after: next,
+        confidenceBefore: sy.rhythmicConfidence });
+      E.editRhythmicStress(doc, wi, si, next);
+      renderAll(); openInspector(wi); });
+    t3.appendChild(b);
+  });
+  dlg.appendChild(t3);
+
+  const foot = document.createElement('div');
+  foot.className = 'row';
+  const reset = document.createElement('button');
+  reset.textContent = 'Reset to dictionary analysis';
+  reset.addEventListener('click', () => {
+    logEvent({ action: 'reset-word', tier: 'all', wordIdx: wi,
+      word: wd.word, before: wd.rhythmicPattern, after: 'auto',
+      confidenceBefore: wd.lexicalConfidence });
+    E.resetWord(doc, wi); renderAll(); openInspector(wi); });
+  const close = document.createElement('button');
+  close.className = 'primary';
+  close.textContent = 'Done';
+  close.addEventListener('click', () => dlg.close());
+  foot.append(reset, document.createElement('span'), close);
+  foot.children[1].className = 'spacer';
+  dlg.appendChild(foot);
+  if (!dlg.open) dlg.showModal();
+}
+
+/* ---------- copy & export ---------- */
+function currentRendition() {
   let out = '';
+  const dk = densityKeep();
   for (const tok of doc.tokens) {
     if (tok.type !== 'word') { out += tok.text; continue; }
     const wd = doc.words[tok.wordIndex];
-    const { cuts, joints, syl } = wordCuts(tok, wd);
-    const bounds = [0, ...cuts, tok.text.length];
-    for (let k = 0; k < bounds.length - 1; k++) {
-      const s = bounds[k], e = bounds[k + 1];
-      if (s === e) continue;
-      if (joints.has(s)) out += '·';
-      let t = tok.text.slice(s, e);
-      const strong = sylsInSpan(wd, syl, s, e)
-        .some(i => wd.syllables[i].rhythmicStress === 'S');
-      if (strong) t = mode === 'caps' ? t.toUpperCase() : '*' + t + '*';
-      out += t;
-    }
+    out += wd.syllables.map((sy, i) => {
+      const strong = (tier === 'rhythmic'
+        ? sy.rhythmicStress === 'S' : sy.lexicalStress === '1') &&
+        !(tier === 'rhythmic' && dk && !dk.has(tok.wordIndex + ':' + i));
+      let t = restoreCase(tok.text, wd, i);
+      if (mode === 'caps' && strong) t = t.toUpperCase();
+      if ((mode === 'bold' || mode === 'big') && strong) t = '*' + t + '*';
+      return t;
+    }).join(document.getElementById('sylBreaks').checked ? '·' : '');
+    if (mode === 'notation')
+      out += ' [' + (tier === 'rhythmic'
+        ? wd.rhythmicPattern : wd.lexicalPattern) + ']';
   }
   return out;
 }
 
-document.getElementById('go').addEventListener('click', analyze);
-document.querySelectorAll('[data-ex]').forEach(b =>
-  b.addEventListener('click', () => {
-    document.getElementById('input').value = EXAMPLES[+b.dataset.ex];
-    analyze();
-  }));
-document.getElementById('modes').addEventListener('click', (ev) => {
-  const b = ev.target.closest('button'); if (!b) return;
-  mode = b.dataset.mode;
-  document.querySelectorAll('#modes button').forEach(x =>
-    x.setAttribute('aria-pressed', String(x === b)));
-  render();
-});
-document.getElementById('copy').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(rendition()); }
-  catch (e) { window.prompt('Copy the text below:', rendition()); }
-});
-document.getElementById('print').addEventListener('click', () => window.print());
-document.getElementById('partsSeg').addEventListener('click', (ev) => {
-  const b = ev.target.closest('button'); if (!b) return;
-  parts = b.dataset.parts;
-  document.querySelectorAll('#partsSeg button').forEach(x =>
-    x.setAttribute('aria-pressed', String(x === b)));
-  render();
+document.getElementById('copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(currentRendition()); }
+  catch (e) { window.prompt('Copy the text below:', currentRendition()); }
 });
 
-// Installable app when hosted over HTTPS (no effect from a local file)
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
+function download(name, content, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function lexiconCSV() {
+  const rows = [['word', 'syllables', 'lexical_stress', 'template_pattern',
+                 'template_name', 'realizations', 'confidence', 'source',
+                 'instances']];
+  for (const e of lexEntries()) {
+    const wd = e.wd;
+    const realizations = {};
+    e.instances.forEach(x => {
+      const p = doc.words[x.wi].rhythmicPattern;
+      realizations[p] = (realizations[p] || 0) + 1; });
+    rows.push([wd.normalized, wd.syllables.map(x => x.text).join('·'),
+      wd.lexicalPattern, wd.template.pattern, wd.template.traditionalName,
+      Object.entries(realizations).map(([p, n]) => p + 'x' + n).join(' '),
+      wd.lexicalConfidence, wd.lexicalSource, e.instances.length]);
+  }
+  return rows.map(r => r.map(v => /[",\n]/.test(String(v))
+    ? '"' + String(v).replace(/"/g, '""') + '"' : String(v)).join(',')).join('\n');
+}
+document.getElementById('exportSel').addEventListener('change', (ev) => {
+  const v = ev.target.value;
+  ev.target.value = '';
+  if (!v || !doc) return;
+  if (v === 'txt') download('rhythm_annotated.txt', E.annotatedText(doc), 'text/plain');
+  if (v === 'csv') download('rhythm_analysis.csv', E.toCSV(doc), 'text/csv');
+  if (v === 'profile') download('implicit_prosody_profile.csv', E.profileCSV(doc), 'text/csv');
+  if (v === 'lexicon') download('metrical_lexicon.csv', lexiconCSV(), 'text/csv');
+  if (v === 'stimuli') {
+    const p = E.stimulusPair(doc);
+    download('stimulus_pair.txt',
+      'CONGRUENT (' + p.congruentCount + ' marks):\n' + p.congruent +
+      '\n\nINCONGRUENT (' + p.incongruentCount + ' marks):\n' + p.incongruent +
+      '\n\nGenerated by Rhythm Reader (deterministic; Gross et al., 2017 paradigm).\n',
+      'text/plain');
+  }
+  if (v === 'training') {
+    const ts = E.trainingSet(doc);
+    download('training_set.txt',
+      'FULL MARKING (all beats):\n' + ts.full +
+      '\n\nONE MARK PER PHRASE:\n' + ts.phrase +
+      '\n\nONE MARK PER SENTENCE (transfer level):\n' + ts.sentence +
+      '\n\nPLAIN (no cues):\n' + ts.plain +
+      '\n\nCue-fading sequence per the training-to-transfer design of ' +
+      'Gross, Roldan, Kiessel, Esselink, & Dunlap (2026, Reading and ' +
+      'Writing). Selection rule: first beat per unit survives; relocate ' +
+      'any mark by tap-editing before export.\n', 'text/plain');
+  }
+  if (v === 'research') download('research_session' +
+    (session.participant ? '_' + session.participant : '') + '.csv',
+    researchCSV(), 'text/csv');
+  if (v === 'json') {
+    const payload = Object.assign({}, doc,
+      session.log.length ? { researchSession: {
+        participant: session.participant || 'anonymous',
+        events: session.log } } : {});
+    download('rhythm_document' +
+      (session.log.length && session.participant ? '_' + session.participant : '') +
+      '.json',
+      JSON.stringify(payload, (k, val) => k === 'phonemes' && val === null ? undefined : val, 1),
+      'application/json');
+  }
+});
+
+/* ---------- controls wiring ---------- */
+document.getElementById('analyzeBtn').addEventListener('click', analyze);
+document.getElementById('researchMode').addEventListener('change', (ev) => {
+  session.active = ev.target.checked;
+  document.getElementById('participantId').style.display =
+    session.active ? '' : 'none';
+  document.getElementById('studyId').style.display =
+    session.active ? '' : 'none';
+  if (session.active) session.passageIndex = 0;
+  document.getElementById('recChip').hidden = !session.active;
+  if (session.active && session.t0 === null) session.t0 = Date.now();
+});
+document.getElementById('studyId').addEventListener('input', (ev) => {
+  session.study = ev.target.value.trim();
+});
+document.getElementById('participantId').addEventListener('input', (ev) => {
+  session.participant = ev.target.value.trim();
+  document.getElementById('recChip').textContent =
+    '● recording' + (session.participant ? ' · ' + session.participant : '');
+});
+document.getElementById('toolsBtn').addEventListener('click', () => {
+  document.body.classList.remove('simple');
+});
+document.getElementById('researchBtn').addEventListener('click', () => {
+  document.body.classList.remove('simple');
+  const hidden = document.body.classList.toggle('research-hidden');
+  document.getElementById('researchBtn').textContent =
+    hidden ? '⚙ Research settings' : '⚙ Hide research settings';
+});
+// pro.html#research opens everything (bookmarkable for lab use)
+if (/research|full/.test(window.location.hash)) {
+  document.body.classList.remove('simple', 'research-hidden');
+  document.getElementById('researchBtn').textContent = '⚙ Hide research settings';
+}
+document.querySelectorAll('[data-ex]').forEach(b =>
+  b.addEventListener('click', () => {
+    document.getElementById('input').value = EXAMPLES[b.dataset.ex];
+    analyze();
+  }));
+document.getElementById('strictAlt').addEventListener('change', () => {
+  if (!doc) return;
+  E.reanalyze(doc, { strictAlternation:
+    document.getElementById('strictAlt').checked });
+  renderAll();
+});
+document.getElementById('clashSub').addEventListener('change', () => {
+  if (!doc) return;
+  E.reanalyze(doc, { clashSubordination:
+    document.getElementById('clashSub').checked });
+  renderAll();
+});
+document.getElementById('sylBreaks').addEventListener('change', renderSurface);
+document.getElementById('confView').addEventListener('change', renderSurface);
+document.getElementById('density').addEventListener('change', renderSurface);
+document.getElementById('editsOnly').addEventListener('change', renderSurface);
+document.getElementById('modeSeg').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button'); if (!b) return;
+  mode = b.dataset.mode;
+  document.querySelectorAll('#modeSeg button').forEach(x =>
+    x.setAttribute('aria-pressed', String(x === b)));
+  renderSurface();
+});
+document.getElementById('tierSeg').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button'); if (!b) return;
+  tier = b.dataset.tier;
+  document.querySelectorAll('#tierSeg button').forEach(x =>
+    x.setAttribute('aria-pressed', String(x === b)));
+  renderSurface();
+});
+document.getElementById('feetToggle').addEventListener('change', (ev) => {
+  showFeet = ev.target.checked;
+  feetForced = showFeet;
+  renderSurface();
+});
+document.querySelectorAll('.tabs [role="tab"]').forEach(t =>
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tabs [role="tab"]').forEach(x =>
+      x.setAttribute('aria-selected', String(x === t)));
+    document.querySelectorAll('.panel').forEach(p =>
+      p.classList.toggle('active', p.id === 'panel-' + t.dataset.tab));
+  }));
+document.getElementById('lexFilter').addEventListener('change', renderLexicon);
+document.getElementById('lexSort').addEventListener('change', renderLexicon);
+
+function renderAll() {
+  renderMeterLine();
+  renderSurface();
+  renderDebug();
+  renderLexicon();
 }
 })();
 </script>
