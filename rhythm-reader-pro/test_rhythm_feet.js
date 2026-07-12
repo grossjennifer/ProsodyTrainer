@@ -5,7 +5,7 @@
 
 const assert = require('assert');
 const path = require('path');
-const E = require(path.join(__dirname, 'engine.js'));
+const E = require(path.join(__dirname, 'engine_rhythm_fixed.js'));
 
 E.loadDictionary({
   A: 'AH0',
