@@ -14,7 +14,7 @@
    - Under prefers-reduced-motion, nothing moves and nothing self-advances:
      each panel appears complete, clips play only when pressed, and
      Back / Continue step through at the reader's pace.
-   - The final panel (Sputnik) never auto-advances; the tour rests there
+   - The final Prosody Trainer + Sputnik panel never auto-advances; the tour rests there
      until the visitor presses Begin Exploring.
    ========================================================================== */
 
@@ -139,6 +139,7 @@
     // buttons alone.
     playPauseButton.textContent = paused ? RESUME_LABEL : PAUSE_LABEL;
     playPauseButton.setAttribute("aria-pressed", paused ? "true" : "false");
+    playPauseButton.setAttribute("aria-label", paused ? "Resume animation" : "Pause animation");
   }
 
   /* ------------------------------------------------------------------ */
@@ -192,7 +193,7 @@
 
     // Panel-specific choreography.
     const n = panel.getAttribute("data-panel");
-    if (n === "4") pulseBeats(panel, 3600, 900);            // POT → SNORT → LOUD → WA → EDGE
+    if (n === "4") pulseBeats(panel, 3200, 850);            // LIT → PUP → RAN → WAY
     if (n === "5") {                                        // beat patterns: step one, then step two
       pulseBeats(panel.querySelector(".pattern-a"), 800, 700);
       pulseBeats(panel.querySelector(".pattern-b"), 9000, 700);

@@ -38,7 +38,7 @@ console.log("Opening exhibit \u2014 structural checks");
 {
   const { document } = loadDom();
   const panels = document.querySelectorAll(".exhibit-panel");
-  check("10 panels present", panels.length === 10);
+  check("9 panels present", panels.length === 9);
   check("panel 1 active on load", panels[0].classList.contains("is-active"));
   check("transport back/forward/pause present",
         !!document.getElementById("back-button") &&
@@ -47,12 +47,19 @@ console.log("Opening exhibit \u2014 structural checks");
   check("Begin Exploring button exists and starts hidden",
         !!document.getElementById("begin-button") && document.getElementById("begin-button").hidden === true);
   check("Skip intro exists", !!document.getElementById("skip-intro"));
-  check("counter reads 1 of 10", document.getElementById("panel-counter").textContent === "1 of 10");
+  check("counter reads 1 of 9", document.getElementById("panel-counter").textContent === "1 of 9");
   check("architecture has six levels", document.querySelectorAll(".arch-level").length === 6);
-  check("Sputnik photo only in panel 10",
+  check("Sputnik cutout appears only in the merged final panel",
         document.querySelectorAll(".sputnik").length === 1 &&
         document.querySelector("img.sputnik").getAttribute("src") === "sputnik.png" &&
-        document.querySelector(".sputnik").closest("[data-panel]").getAttribute("data-panel") === "10");
+        document.querySelector(".sputnik").closest("[data-panel]").getAttribute("data-panel") === "9");
+  check("brand and Sputnik share the final panel",
+        document.querySelector('[data-panel="9"] .brand') &&
+        document.querySelector('[data-panel="9"] .sputnik-scene'));
+  check("intonation buttons have descriptive accessible names",
+        Array.from(document.querySelectorAll(".audio-button")).every(b => b.getAttribute("aria-label")));
+  check("pause control has a full accessible name",
+        document.getElementById("play-pause-button").getAttribute("aria-label") === "Pause animation");
   check("navigation is plain text \u2014 Back / Pause / Continue",
         document.getElementById("back-button").textContent.trim() === "Back" &&
         document.getElementById("play-pause-button").textContent.trim() === "Pause" &&
@@ -68,18 +75,14 @@ console.log("Brief \u2014 wording checks");
 {
   const { document } = loadDom();
   const text = document.getElementById("opening-exhibit").textContent;
-  check("stress takeaway: Some syllables stand out.", text.includes("Some syllables stand out."));
-  check("rhythm takeaway uses connected words",
-        text.includes("Stress creates a beat across connected words.") &&
-        !text.includes("connected language"));
-  check("hippo rhythm reveal present",
-        text.includes("POT") && text.includes("SNORT") && text.includes("LOUD") &&
-        text.includes("WA") && text.includes("EDGE"));
-  check("hippo phrasing panel removed \u2014 hippo appears only in the rhythm panel",
-        !text.replace(/\s+/g, " ").includes("The hippopotamus \u2502") &&
-        document.querySelector('[data-panel="4"]').textContent.includes("The hippopotamus snorted") &&
-        Array.from(document.querySelectorAll(".exhibit-panel"))
-          .filter(p => p.textContent.includes("hippopotamus")).length === 1);
+  check("stress takeaway identifies the strongest syllable", text.includes("In many words, one syllable carries the strongest beat."));
+  check("sentence-rhythm bridge is concise",
+        text.includes("Across a sentence, the beats form a pattern."));
+  check("short puppy rhythm reveal present",
+        text.includes("LIT") && text.includes("PUP") && text.includes("RAN") && text.includes("WAY"));
+  check("hippopotamus example removed from the welcome",
+        !text.toLowerCase().includes("hippopotamus") &&
+        document.querySelector('[data-panel="4"]').textContent.includes("The little puppy ran away."));
   check("no leaning-forward / stepping-down phrasing",
         !text.includes("lean forward") && !text.includes("step down"));
   check("beat-pattern panel has no large title",
@@ -93,18 +96,18 @@ console.log("Brief \u2014 wording checks");
   check("Step 1 marked line present",
         text.includes("BAND") && text.includes("PLAY") && text.includes("NIGHT") && text.includes("SCHOOL"));
   check("ta-DUM cue uses quiet interpuncts", text.includes("ta-DUM \u00B7 ta-DUM \u00B7 ta-DUM \u00B7 ta-DUM"));
-  check("Step 1 caption present", text.includes("A lighter syllable can lead into the beat."));
+  check("Step 1 caption names the strong beat", text.includes("A lighter syllable can lead into a strong beat."));
   check("Step 2 marked line present",
         text.includes("DRA") && text.includes("STU") && text.includes("PRAC"));
   check("DUM-ta cue uses quiet interpuncts", text.includes("DUM-ta \u00B7 DUM-ta \u00B7 DUM-ta \u00B7 DUM-ta"));
-  check("Step 2 caption present", text.includes("The beat can also come first."));
+  check("Step 2 caption names the strong beat", text.includes("A strong beat can also come first."));
   check("no tall bars inside the beat-pattern panel",
         !document.querySelector('[data-panel="5"]').textContent.includes("\u2502") &&
         !document.querySelector('[data-panel="5"] .foot-divider'));
   const flat = text.replace(/\s+/g, " ");
   check("Grandma: unbroken line present", flat.includes("Let\u2019s eat Grandma."));
   check("Grandma: boundary line present", flat.includes("Let\u2019s eat \u2502 Grandma."));
-  check("Grandma: phrasing lesson line present", text.includes("Readers group words into meaningful phrases."));
+  check("Grandma: phrasing lesson connects to silent reading", text.includes("Readers group words into meaningful phrases—even when reading silently."));
   check("Grandma: comma line present", flat.includes("Let\u2019s eat, Grandma."));
   check("Grandma: takeaway updated", text.includes("Grouping can change meaning.") &&
         !text.includes("Grouping changes meaning."));
@@ -118,9 +121,12 @@ console.log("Brief \u2014 wording checks");
         Array.from(document.querySelectorAll(".arch-level")).some(l => l.textContent === "Stress") &&
         !text.includes("Lexical Stress"));
   check("hierarchy closing line updated",
-        text.includes("With stress, rhythm, phrasing, and intonation, readers turn print back into a voice."));
+        text.includes("Together, stress, rhythm, phrasing, and intonation help readers turn print into a voice—and a voice into meaning."));
   check("Sputnik lines present",
         text.includes("I\u2019ve been listening all along.") && text.includes("Now you can hear it too."));
+  check("brand page merged with Sputnik rather than standing alone",
+        document.querySelectorAll('[data-panel="9"] .brand').length === 1 &&
+        document.querySelectorAll('.exhibit-panel').length === 9);
 }
 
 console.log("Beat patterns \u2014 one at a time");
@@ -184,7 +190,7 @@ console.log("Grandma \u2014 one sentence carries the phrasing lesson");
   check("sequence: plain \u2192 boundary \u2192 lesson \u2192 comma \u2192 takeaway",
         order[0] === "Let\u2019s eat Grandma." &&
         order[1] === "Let\u2019s eat \u2502 Grandma." &&
-        order[2] === "Readers group words into meaningful phrases." &&
+        order[2] === "Readers group words into meaningful phrases—even when reading silently." &&
         order[3] === "Let\u2019s eat, Grandma." &&
         order[4] === "Grouping can change meaning.");
 }
@@ -196,8 +202,8 @@ console.log("Transition \u2014 Begin Exploring reveals the homepage at the top")
   const begin = document.getElementById("begin-button");
   const panels = document.querySelectorAll(".exhibit-panel");
 
-  for (let i = 0; i < 9; i++) forward.click();            // 1 -> 10
-  check("panel 10 (Sputnik) active after 9 steps", panels[9].classList.contains("is-active"));
+  for (let i = 0; i < 8; i++) forward.click();            // 1 -> 9
+  check("merged final panel active after 8 steps", panels[8].classList.contains("is-active"));
   check("Begin Exploring shown on final panel", begin.hidden === false);
   check("skip hidden on final panel", document.getElementById("skip-intro").hidden === true);
   check("forward disabled on final panel", forward.disabled === true);
@@ -270,7 +276,7 @@ console.log("Intonation \u2014 the three voices play themselves");
         takeaway.hasAttribute("data-reveal") && !takeaway.hidden);
   check("takeaway has both lines",
         takeaway.textContent.includes("Same word. Different voice.") &&
-        takeaway.textContent.includes("Punctuation helps shape the voice."));
+        takeaway.textContent.includes("Punctuation gives readers clues about how it might sound."));
   check("transcript available in a disclosure",
         !!document.querySelector(".audio-transcript-details summary") &&
         document.querySelector(".audio-transcript-details").textContent.includes("really"));
@@ -304,6 +310,8 @@ console.log("Intonation \u2014 the three voices play themselves");
   check("pressing a clip pauses the tour", playPause.getAttribute("aria-pressed") === "true");
   check("paused button reads Resume \u2014 text, not a play triangle",
         playPause.textContent.trim() === "Resume");
+  check("paused button exposes Resume animation to assistive technology",
+        playPause.getAttribute("aria-label") === "Resume animation");
 }
 
 console.log("Homepage \u2014 harmonization hooks");

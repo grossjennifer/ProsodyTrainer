@@ -321,50 +321,62 @@ html, body {
 }
 
 /* --------------------------------------------------------------------------
-   Panel 9 — brand
+   Final panel — Prosody Trainer + Sputnik
    -------------------------------------------------------------------------- */
+
+.final-panel {
+  max-width: 48rem;
+}
+
+.final-scene {
+  display: grid;
+  gap: clamp(2rem, 5vw, 3.4rem);
+}
+
+.final-brand {
+  text-align: center;
+}
 
 .brand {
   font-family: var(--serif);
   font-size: clamp(2.4rem, 7vw, 4rem);
   font-weight: 400;
   letter-spacing: 0.01em;
-  margin: 0 0 1rem;
+  margin: 0 0 0.7rem;
 }
 
 .brand-subtitle {
   font-family: var(--sans);
   font-size: clamp(1rem, 2.6vw, 1.2rem);
   color: var(--ink-soft);
-  max-width: 30rem;
+  max-width: 31rem;
   margin: 0 auto;
   line-height: 1.6;
 }
-
-/* --------------------------------------------------------------------------
-   Panel 10 — Sputnik
-   -------------------------------------------------------------------------- */
 
 .sputnik-scene {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 2.4rem;
+  gap: clamp(1.5rem, 5vw, 3rem);
   flex-wrap: wrap;
 }
 
 .sputnik {
-  width: min(170px, 40vw);
+  width: min(190px, 42vw);
   height: auto;
-  color: var(--ink);
   flex-shrink: 0;
+  filter: drop-shadow(0 14px 18px rgba(46, 43, 39, 0.16));
 }
 
-.sputnik-collar { stroke: var(--glow); }
-
-.sputnik-speech { text-align: left; max-width: 22rem; }
+.sputnik-speech {
+  text-align: left;
+  max-width: 22rem;
+}
 
 @media (max-width: 560px) {
+  .final-scene { gap: 1.7rem; }
+  .sputnik-scene { gap: 1.25rem; }
   .sputnik-speech { text-align: center; }
 }
 
@@ -504,11 +516,3 @@ body.exhibit-complete .exhibit-controls {
 
 .transport-button[hidden] { display: none; }
 
-/* --------------------------------------------------------------------------
-   Panel 10 — Sputnik's portrait (a photograph now, not a line drawing)
-   -------------------------------------------------------------------------- */
-
-img.sputnik {
-  border-radius: 14px;
-  box-shadow: 0 12px 32px rgba(46, 43, 39, 0.18);
-}
