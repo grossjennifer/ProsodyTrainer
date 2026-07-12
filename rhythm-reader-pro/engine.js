@@ -482,12 +482,15 @@
    * the traditional foot name is an educational label (design final rev).
    * ======================================================================== */
 
+  // The rhythmic inventory is deliberately limited to the four recurring
+  // English feet used by this application. A surface string such as WSW is
+  // parsed across a foot boundary (for example, W + SW or WS + W); it is not
+  // assigned a fifth, word-sized "amphibrach" template.
   const FOOT_NAMES = {
-    'SW': 'trochee', 'WS': 'iamb', 'WWS': 'anapest', 'SWW': 'dactyl',
-    'WSW': 'amphibrach'
+    'SW': 'trochee', 'WS': 'iamb', 'WWS': 'anapest', 'SWW': 'dactyl'
   };
   const CLASSICAL = new Set(['SW', 'WS', 'WWS', 'SWW']);
-  const FOOT_INVENTORY = ['SW', 'WS', 'WWS', 'SWW', 'WSW'];
+  const FOOT_INVENTORY = ['SW', 'WS', 'WWS', 'SWW'];
 
   // All resolutions of secondary stress: each '2' → 'S' or 'W'.
   function resolutions(lexPattern) {
@@ -501,8 +504,8 @@
     return Array.from(new Set(outs));
   }
 
-  // DP parse of an S/W string into inventory feet + singletons.
-  // Costs: classical foot 1.0, amphibrach 1.15, singleton 1.6.
+  // DP parse of an S/W string into the four-foot inventory + singletons.
+  // Costs: an English foot 1.0, singleton 1.6.
   // Returns { units: [{pattern, name}], cost } minimizing cost;
   // tie-breaks: (a) primary-stress syllable inside a classical foot,
   // (b) fewer singletons, (c) leftmost-longest.
@@ -516,7 +519,7 @@
       for (const f of FOOT_INVENTORY) {
         if (sw.startsWith(f, i)) {
           candidates.push({ pattern: f, len: f.length,
-                            cost: CLASSICAL.has(f) ? 1.0 : 1.15 });
+                            cost: 1.0 });
         }
       }
       candidates.push({ pattern: sw[i], len: 1, cost: 1.6 }); // singleton
@@ -604,22 +607,9 @@
         source: 'template-assigner'
       });
     }
-    // Rule 2: single foot from extended inventory (amphibrach).
-    const singleAny = res.filter(r => FOOT_NAMES[r]);
-    if (singleAny.length >= 1) {
-      const canonical = singleAny[0];
-      return stamp({
-        pattern: canonical, traditionalName: FOOT_NAMES[canonical],
-        variants: res.filter(r => r !== canonical).map(r => ({
-          pattern: r, label: 'alternative',
-          footing: describeParse(parseFeet(r, primaryIdx))
-        })),
-        assignmentRule: 'single-foot-extended',
-        confidence: lexPattern.includes('2') ? CONF.SECONDARY_RESOLUTION : 1.0,
-        source: 'template-assigner'
-      });
-    }
-    // Rule 3: composite — pick resolution with the cheapest foot parse.
+    // Rule 2: composite — pick the resolution with the cheapest parse over
+    // the four English feet. Edge syllables may remain unfooted here; the
+    // phrase-level projector below decides how neighboring words combine.
     let best = null;
     for (const r of res) {
       const parse = parseFeet(r, primaryIdx);
@@ -815,52 +805,194 @@
   }
 
   /* ==========================================================================
-   * SECTION 9 — Rhythmic Projector (Tier 3)  [design §6]
-   * Runs per φ; never consults material across a φ boundary.
+   * SECTION 9 — Phrase-level Rhythmic Projector (Tier 3)  [design §6]
+   * Fits the continuous syllable stream inside each φ to the four English
+   * rhythmic feet: SW, WS, WWS, and SWW. Lexical stress supplies weighted
+   * preferences; it does not force every word to behave like a complete foot.
+   * A single weak/strong syllable may remain at a phrase edge (pickup or tail),
+   * because ordinary prose and short fragments do not always begin and end on
+   * complete feet. Feet never cross a φ boundary.
    * ======================================================================== */
+
+  const RHYTHM_FEET = [
+    { pattern: 'SW', name: 'trochee' },
+    { pattern: 'WS', name: 'iamb' },
+    { pattern: 'WWS', name: 'anapest' },
+    { pattern: 'SWW', name: 'dactyl' }
+  ];
+  const LEADING_RESIDUE_COST = 0.55;
+  const TRAILING_RESIDUE_COST = 0.65;
+  const FOOT_SWITCH_COST = 0.08;
+  const SAME_BOUNDARY_COST = 0.12;
+
+  // Build the preferred realization for one syllable before phrase footing.
+  // Primary lexical stress is the strongest anchor. Unstressed syllables in
+  // polysyllabic words resist promotion more than free-standing function or
+  // content monosyllables resist contextual adjustment.
+  function rhythmPreference(wd, i) {
+    const sy = wd.syllables[i];
+    if (wd.userEdited.rhythmic && sy.rhythmicStress) {
+      return { value: sy.rhythmicStress, weight: 1000,
+               confidence: CONF.USER, source: 'user' };
+    }
+    if (wd.syllables.length === 1) {
+      return wd.isFunctionWord
+        ? { value: 'W', weight: 1.2, confidence: CONF.FUNCTION_WORD,
+            source: 'rule:function-word-demotion' }
+        : { value: 'S', weight: 1.6, confidence: CONF.CONTENT_MONO,
+            source: 'rule:content-monosyllable' };
+    }
+    const templ = wd.template.pattern[i] ||
+      (sy.lexicalStress === '0' ? 'W' : 'S');
+    const weight = sy.lexicalStress === '1' ? 6.0
+      : sy.lexicalStress === '2' ? 2.5 : 3.5;
+    return { value: templ, weight,
+             confidence: Math.min(wd.lexicalConfidence, wd.template.confidence),
+             source: 'rule:lexical-template-preference' };
+  }
+
+  function unitMismatch(stream, pos, pattern) {
+    let cost = 0, primaryMismatches = 0;
+    for (let k = 0; k < pattern.length; k++) {
+      const item = stream[pos + k];
+      if (item.pref.value !== pattern[k]) {
+        cost += item.pref.weight;
+        if (item.sy.lexicalStress === '1') primaryMismatches++;
+      }
+    }
+    return { cost, primaryMismatches };
+  }
+
+  function betterRhythmFit(a, b) {
+    if (!b) return true;
+    if (Math.abs(a.cost - b.cost) > 1e-9) return a.cost < b.cost;
+    if (a.primaryMismatches !== b.primaryMismatches)
+      return a.primaryMismatches < b.primaryMismatches;
+    if (a.residues !== b.residues) return a.residues < b.residues;
+    if (a.switches !== b.switches) return a.switches < b.switches;
+    // Prefer analyses with a leading pickup over a dangling final syllable.
+    if (a.trailingResidues !== b.trailingResidues)
+      return a.trailingResidues < b.trailingResidues;
+    return a.units.length < b.units.length;
+  }
+
+  // Fit complete feet from `start`; only one trailing edge syllable may remain.
+  function fitFrom(stream, start, previousLast, previousFoot) {
+    const n = stream.length;
+    const memo = new Map();
+    const solve = (i, prevLast, prevFoot) => {
+      const key = i + '|' + (prevLast || '-') + '|' + (prevFoot || '-');
+      if (memo.has(key)) return memo.get(key);
+      if (i === n) {
+        const done = { units: [], cost: 0, primaryMismatches: 0,
+                       residues: 0, trailingResidues: 0, switches: 0 };
+        memo.set(key, done); return done;
+      }
+      let best = null;
+      if (i === n - 1) {
+        const item = stream[i];
+        best = {
+          units: [{ type: 'trailing', pattern: item.pref.value,
+                    span: [item.ref], cost: TRAILING_RESIDUE_COST }],
+          cost: TRAILING_RESIDUE_COST,
+          primaryMismatches: 0, residues: 1, trailingResidues: 1, switches: 0
+        };
+      }
+      for (const foot of RHYTHM_FEET) {
+        if (i + foot.pattern.length > n) continue;
+        const local = unitMismatch(stream, i, foot.pattern);
+        const boundary = prevLast && prevLast === foot.pattern[0]
+          ? SAME_BOUNDARY_COST : 0;
+        const switched = prevFoot && prevFoot !== foot.name ? 1 : 0;
+        const switchCost = switched ? FOOT_SWITCH_COST : 0;
+        const rest = solve(i + foot.pattern.length,
+                           foot.pattern[foot.pattern.length - 1], foot.name);
+        const cand = {
+          units: [{ type: foot.name, pattern: foot.pattern,
+                    span: stream.slice(i, i + foot.pattern.length).map(x => x.ref),
+                    cost: round2(local.cost + boundary + switchCost) },
+                  ...rest.units],
+          cost: local.cost + boundary + switchCost + rest.cost,
+          primaryMismatches: local.primaryMismatches + rest.primaryMismatches,
+          residues: rest.residues,
+          trailingResidues: rest.trailingResidues,
+          switches: switched + rest.switches
+        };
+        if (betterRhythmFit(cand, best)) best = cand;
+      }
+      memo.set(key, best); return best;
+    };
+    return solve(start, previousLast, previousFoot);
+  }
+
+  function fitPhraseRhythm(stream) {
+    if (!stream.length) return { units: [], cost: 0 };
+    if (stream.length === 1) {
+      const item = stream[0];
+      return { units: [{ type: 'isolated', pattern: item.pref.value,
+                         span: [item.ref], cost: 0 }], cost: 0,
+               primaryMismatches: 0, residues: 1,
+               trailingResidues: 0, switches: 0 };
+    }
+    let best = fitFrom(stream, 0, null, null);
+    // Also test an initial pickup. This is especially important for lexical
+    // WSW sequences: the first W can be a pickup and the remaining SW a
+    // trochee, rather than inventing a fifth three-syllable foot.
+    if (stream.length >= 3) {
+      const first = stream[0];
+      const rest = fitFrom(stream, 1, first.pref.value, null);
+      const withPickup = {
+        units: [{ type: 'pickup', pattern: first.pref.value,
+                  span: [first.ref], cost: LEADING_RESIDUE_COST }, ...rest.units],
+        cost: LEADING_RESIDUE_COST + rest.cost,
+        primaryMismatches: rest.primaryMismatches,
+        residues: 1 + rest.residues,
+        trailingResidues: rest.trailingResidues,
+        switches: rest.switches
+      };
+      if (betterRhythmFit(withPickup, best)) best = withPickup;
+    }
+    return best;
+  }
 
   function project(words, ips, config) {
     for (const ip of ips) {
       for (const phi of ip.children) {
         const [s, e] = phi.span;
+        const stream = [];
         for (let w = s; w <= e; w++) {
           const wd = words[w];
-          if (wd.userEdited.rhythmic) continue; // user authority preserved
-          if (wd.syllables.length === 1) {
-            const isFn = wd.isFunctionWord;
-            const val = isFn ? 'W' : 'S';
-            setRhythm(wd, 0, val,
-              isFn ? 'rule:function-word-demotion' : 'rule:content-monosyllable',
-              isFn ? CONF.FUNCTION_WORD : CONF.CONTENT_MONO);
-          } else {
-            // Template realization: canonical pattern, syllable by syllable.
-            const pat = wd.template.pattern;
-            for (let i = 0; i < wd.syllables.length; i++) {
-              setRhythm(wd, i, pat[i] || 'W', 'rule:template-realization',
-                        Math.min(wd.lexicalConfidence, wd.template.confidence));
-            }
-          }
+          wd.syllables.forEach((sy, i) => stream.push({
+            wd, sy, i, ref: [w, i], pref: rhythmPreference(wd, i)
+          }));
         }
-        // Title demotion [HEUR "title-demotion"]: monosyllabic titles
-        // before a capitalized name subordinate like function words
-        // (Miss MUFfet, not MISS MUFfet).
-        for (let w = s; w < e; w++) {
-          const wd = words[w];
-          if (!wd.userEdited.rhythmic && wd.syllables.length === 1 &&
-              (wd.normalized === 'miss' || wd.normalized === 'ms') &&
-              /^[A-Z]/.test(words[w + 1].word)) {
-            setRhythm(wd, 0, 'W', 'rule:title-demotion', 0.70);
-          }
+        const fit = fitPhraseRhythm(stream);
+        phi.rhythmicFeet = fit.units;
+        phi.rhythmicCost = round2(fit.cost || 0);
+
+        for (const unit of fit.units) {
+          unit.span.forEach((ref, k) => {
+            const [w, i] = ref;
+            const wd = words[w];
+            // Preserve the user's word-level rhythmic edit exactly as the
+            // previous engine did; the fitted unit remains diagnostic only.
+            if (wd.userEdited.rhythmic) return;
+            const item = stream.find(x => x.ref[0] === w && x.ref[1] === i);
+            const val = unit.pattern[k] || item.pref.value;
+            const matched = val === item.pref.value;
+            const source = ['pickup', 'trailing', 'isolated'].includes(unit.type)
+              ? 'rule:phrase-edge-residue'
+              : 'rule:phrase-foot-' + unit.type;
+            const confidence = matched
+              ? item.pref.confidence
+              : Math.min(0.60, item.pref.confidence);
+            setRhythm(wd, i, val, source, confidence);
+          });
         }
-        // Optional strict alternation [HEUR, OFF by default — design §6]:
-        // demote a secondary-derived S adjacent to another S.
+
+        // Optional post-projection adjustments remain available for research
+        // comparisons, but are OFF by default because they can disrupt a foot.
         if (config.strictAlternation) applyStrictAlternation(words, s, e);
-        // Optional clash subordination [HEUR, OFF by default]: when two
-        // adjacent syllables are both S and the LEFT belongs to a content
-        // monosyllable, demote it (rightmost wins, per the rightward drift
-        // of phrasal prominence: sat DOWN, thread JAMMED). Deliberately not
-        // a default: prose-poetry uses clash as deliberate weight, and
-        // ironing it out silently would falsify such texts.
         if (config.clashSubordination) applyClashSubordination(words, s, e);
       }
     }
@@ -914,10 +1046,7 @@
    * parses retained; alternation ambiguity reported honestly.
    * ======================================================================== */
 
-  const METRICAL_FEET = [
-    { pattern: 'WS', name: 'iamb' }, { pattern: 'SW', name: 'trochee' },
-    { pattern: 'WWS', name: 'anapest' }, { pattern: 'SWW', name: 'dactyl' }
-  ];
+  const METRICAL_FEET = RHYTHM_FEET;
   const SINGLETON_COST = 0.55;
   const AMBIGUITY_MARGIN = 0.6;
 
@@ -1204,7 +1333,9 @@
         proportionIambic: prop('iamb'),
         proportionAnapestic: prop('anapest'),
         proportionDactylic: prop('dactyl'),
-        proportionAmphibrachic: prop('amphibrach'),
+        // Retained as a zero-valued compatibility field for older exports.
+        // WSW is now analyzed across boundaries, never as a fifth foot.
+        proportionAmphibrachic: 0,
         phraseLengthDistribution: phiLengths,
         meanPhraseLength: round2(phiLengths.reduce((a, b) => a + b, 0) /
                                  (phiLengths.length || 1)),
@@ -1864,7 +1995,7 @@
     selectPronunciation, incongruentMap, stimulusPair, beatSubset, trainingSet,
     toCSV, profileCSV, annotatedText, roundTripText,
     constants: { FUNCTION_WORDS, CHUNK_STARTERS, CONF, FOOT_NAMES,
-                 HYPHEN_EXCEPTIONS, PHI_MAX_WORDS }
+                 HYPHEN_EXCEPTIONS, PHI_MAX_WORDS, RHYTHM_FEET }
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = RhythmEngine;

@@ -1,4 +1,158 @@
-/* ============================================================================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rhythm Reader — hear the beat of what you read</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#A03052">
+<style>
+:root {
+  --paper: #EFF2F1; --card: #FFFFFF; --ink: #242936; --muted: #5C6472;
+  --line: #D8DEDC; --beat: #A03052; --beat-soft: #F6E7EC;
+  --phrase: #2E6E6A;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+* { box-sizing: border-box; }
+html { font-size: 18px; }
+body { margin: 0; background: var(--paper); color: var(--ink);
+  font-family: var(--sans); line-height: 1.6; }
+main { max-width: 780px; margin: 0 auto; padding: 1rem 1rem 4rem; }
+header { padding: 1.6rem 0 .6rem; }
+h1 { font-family: var(--serif); font-size: 2rem; margin: 0; }
+h1 .dot { color: var(--beat); font-size: .55em; vertical-align: .5em;
+  margin-left: .06em; }
+p.lede { color: var(--muted); margin: .3rem 0 0; max-width: 46ch; }
+.card { background: var(--card); border: 1px solid var(--line);
+  border-radius: 12px; padding: 1rem 1.1rem; margin-top: 1rem; }
+textarea { width: 100%; min-height: 6.5rem; padding: .8rem .9rem;
+  font: 1.05rem/1.6 var(--serif); color: var(--ink);
+  border: 1px solid var(--line); border-radius: 10px; background: #FDFDFC;
+  resize: vertical; }
+textarea:focus { outline: 3px solid var(--phrase); outline-offset: 1px; }
+.row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+  margin-top: .7rem; }
+.row .spacer { flex: 1; }
+button { font: 600 .95rem var(--sans); color: var(--ink);
+  background: var(--card); border: 1.5px solid var(--line);
+  border-radius: 10px; padding: .6rem 1rem; cursor: pointer;
+  min-height: 44px; }
+button:hover { border-color: var(--phrase); }
+button:focus-visible { outline: 3px solid var(--phrase); outline-offset: 2px; }
+button.primary { background: var(--beat); color: #fff; border-color: var(--beat);
+  font-size: 1.05rem; }
+button.primary:hover { background: #86243F; }
+button.chip { border-radius: 999px; font-weight: 500; font-size: .85rem;
+  color: var(--muted); min-height: 38px; padding: .35rem .8rem; }
+.seg { display: inline-flex; border: 1.5px solid var(--line);
+  border-radius: 10px; overflow: hidden; }
+.seg button { border: 0; border-radius: 0; min-height: 44px;
+  border-right: 1px solid var(--line); font-weight: 500; }
+.seg button:last-child { border-right: 0; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
+#out { font-family: var(--serif); font-size: 1.5rem; line-height: 2.2;
+  padding: .8rem .2rem .3rem; word-spacing: .1em; overflow-wrap: anywhere; }
+#out.mode-beats { line-height: 3; }
+.word { white-space: nowrap; }
+.syl { all: unset; cursor: pointer; position: relative; border-radius: 5px;
+  padding: 0 .02em; }
+.syl:hover { background: var(--beat-soft); }
+.syl:focus-visible { outline: 3px solid var(--phrase); outline-offset: 1px; }
+.joint { color: #ADB6B2; font-size: .78em; padding: 0 .05em; user-select: none; }
+.mode-caps .syl.S { text-transform: uppercase; }
+.mode-bold .syl.S { font-weight: 700; }
+.mode-big  .syl.S { font-weight: 700; font-size: 1.3em; }
+.mode-beats .syl.S::before { content: "●"; position: absolute; left: 50%;
+  transform: translateX(-50%); top: -1.15em; font-size: .48em;
+  color: var(--beat); }
+.mode-beats .syl.S.nodot::before { content: none; }
+.hint { font-size: .85rem; color: var(--muted); margin-top: .6rem; }
+#dictNote { font-size: .8rem; color: var(--muted); margin-top: .5rem; }
+#dictNote.warn { color: #8A5A17; }
+.caveat { margin-top: 1.4rem; border-left: 4px solid var(--phrase);
+  background: #E4EFEE; border-radius: 0 10px 10px 0; padding: .8rem .95rem;
+  font-size: .84rem; color: #23504D; }
+footer { margin-top: 1.4rem; font-size: .82rem; color: var(--muted); }
+footer a { color: var(--phrase); }
+@media print {
+  header .row, .card.input, .row, .hint, #dictNote, .caveat, footer
+    { display: none !important; }
+  body { background: #fff; }
+  .card { border: 0; padding: 0; }
+  #out { font-size: 1.4rem; }
+}
+@media (max-width: 560px) {
+  html { font-size: 16px; }
+  #out { font-size: 1.35rem; }
+}
+</style>
+</head>
+<body>
+<main>
+<header>
+  <h1>Rhythm Reader<span class="dot">●</span></h1>
+  <p class="lede">Paste any English text and explore one possible rhythm
+  your mind constructs when you read.</p>
+</header>
+
+<section class="card input">
+  <label for="input" style="font-weight:600">Your text</label>
+  <textarea id="input">Happy children running quickly. The sun arose above the quiet hill.</textarea>
+  <div class="row">
+    <button class="chip" data-ex="0">Nursery rhyme</button>
+    <button class="chip" data-ex="1">Story sentence</button>
+    <button class="chip" data-ex="2">Poem line</button>
+    <span class="spacer"></span>
+    <button class="primary" id="go">Show the beat</button>
+  </div>
+</section>
+
+<section class="card">
+  <div class="row" style="margin-top:0">
+    <div class="seg" role="group" aria-label="How to show the beat" id="modes">
+      <button data-mode="caps" aria-pressed="true">CAPS</button>
+      <button data-mode="bold" aria-pressed="false"><b>Bold</b></button>
+      <button data-mode="big" aria-pressed="false">Big</button>
+      <button data-mode="beats" aria-pressed="false">● Dots</button>
+    </div>
+    <div class="seg" role="group" aria-label="Show word parts" id="partsSeg"
+      style="margin-left:.2rem">
+      <button data-parts="none" aria-pressed="true">Whole words</button>
+      <button data-parts="syll" aria-pressed="false">Syl·la·bles</button>
+      <button data-parts="morph" aria-pressed="false">Mean·ing parts</button>
+    </div>
+    <span class="spacer"></span>
+    <button id="copy">Copy</button>
+    <button id="print">Print</button>
+  </div>
+  <div id="out" class="mode-caps" aria-live="polite"></div>
+  <p class="hint">Tap any syllable to move a beat — you know how you read
+  better than any computer does.</p>
+  <p id="rhythmNote" class="hint">Rhythm is fitted across each phrase using
+  strong–weak, weak–strong, weak–weak–strong, and strong–weak–weak feet.</p>
+  <p id="dictNote"></p>
+</section>
+
+<div class="caveat">
+  This tool provides a computational approximation of English syllable stress
+  and rhythm. English prosody depends on lexical stress, sentence-level
+  emphasis, phrase structure, discourse context, speaker intention, and
+  individual reading style. It is a reading scaffold, not a rule for how a
+  sentence must be spoken — that's why every syllable is tappable.
+</div>
+
+<footer>
+  For teachers and researchers: the full analysis instrument (three-tier
+  editing, phrase structure, meter detection, research logging, and data
+  export) is in <a href="index.html">Rhythm Reader Pro</a>.
+</footer>
+</main>
+
+<script>// Embedded subset of the CMU Pronouncing Dictionary (fallback when
+// cmudict.js is not present). 448 words: test suite + high-frequency vocabulary.
+window.CMUDICT_SUBSET = {"HAPPY":"HH AE1 P IY0","PUPPY":"P AH1 P IY0","TABLE":"T EY1 B AH0 L","MORNING":"M AO1 R N IH0 NG","RUNNING":"R AH1 N IH0 NG","GARDEN":"G AA1 R D AH0 N","ABOVE":"AH0 B AH1 V","ARISE":"ER0 AY1 Z","BETWEEN":"B IH0 T W IY1 N|B IY0 T W IY1 N","BEFORE":"B IH0 F AO1 R|B IY2 F AO1 R","AWAY":"AH0 W EY1","BELIEVE":"B IH0 L IY1 V","UNDERSTAND":"AH2 N D ER0 S T AE1 N D","INTERVENE":"IH2 N T ER0 V IY1 N","CONTRADICT":"K AA2 N T R AH0 D IH1 K T","COMPREHEND":"K AA2 M P R IY0 HH EH1 N D","WONDERFUL":"W AH1 N D ER0 F AH0 L","CAREFULLY":"K EH1 R F AH0 L IY0","MERRILY":"M EH1 R AH0 L IY0","TENDERLY":"T EH1 N D ER0 L IY0","POSSIBLE":"P AA1 S AH0 B AH0 L","OPPORTUNITY":"AA2 P ER0 T UW1 N AH0 T IY0","INFORMATION":"IH2 N F ER0 M EY1 SH AH0 N|IH0 N F AO1 R M EY1 SH AH0 N","ORGANIZATION":"AO2 R G AH0 N AH0 Z EY1 SH AH0 N","ELECTRICITY":"IH0 L EH2 K T R IH1 S AH0 T IY0","PHOTOGRAPH":"F OW1 T AH0 G R AE2 F","PHOTOGRAPHER":"F AH0 T AA1 G R AH0 F ER0","PHOTOGRAPHIC":"F OW2 T AH0 G R AE1 F IH0 K","THE":"DH AH0|DH AH1|DH IY0","LITTLE":"L IH1 T AH0 L","RAN":"R AE1 N","CHILDREN":"CH IH1 L D R AH0 N","SUN":"S AH1 N","AROSE":"ER0 OW1 Z","QUIET":"K W AY1 AH0 T","HILL":"HH IH1 L","IN":"IH0 N|IH1 N","DARK":"D AA1 R K","OF":"AH1 V","NIGHT":"N AY1 T","WE":"W IY1","COULD":"K UH1 D","HEAR":"HH IY1 R","WIND":"W AY1 N D|W IH1 N D","RISE":"R AY1 Z","BEAUTIFUL":"B Y UW1 T AH0 F AH0 L","MOVING":"M UW1 V IH0 NG","NOTICED":"N OW1 T AH0 S T","QUICKLY":"K W IH1 K L IY0","BANANA":"B AH0 N AE1 N AH0","TOMORROW":"T AH0 M AA1 R OW2|T UW0 M AA1 R OW2","IMPRESSION":"IH2 M P R EH1 SH AH0 N","CATEGORY":"K AE1 T AH0 G AO2 R IY0","MORN":"M AO1 R N","SEW":"S OW1","SING":"S IH1 NG","WONDER":"W AH1 N D ER0","CAREFUL":"K EH1 R F AH0 L","FILTH":"F IH1 L TH","RUST":"R AH1 S T","QUICK":"K W IH1 K","MYRIAD":"M IH1 R IY0 AH0 D","LIFELONG":"L AY1 F L AO1 NG","REAM":"R IY1 M","WEAR":"W EH1 R","TIRED":"T AY1 ER0 D","LOATH":"L OW1 TH","SOME":"S AH1 M","PHOTO":"F OW1 T OW2","GRAPH":"G R AE1 F","RUN":"R AH1 N","HOPE":"HH OW1 P","CARE":"K EH1 R","GRAND":"G R AE1 N D","PRODUCE":"P R AH0 D UW1 S|P R OW1 D UW0 S","RECORD":"R AH0 K AO1 R D|R EH1 K ER0 D|R IH0 K AO1 R D","PRESENT":"P R EH1 Z AH0 N T|P R IY0 Z EH1 N T|P ER0 Z EH1 N T","CONDUCT":"K AA1 N D AH0 K T|K AA0 N D AH1 K T","ABSTRACT":"AE0 B S T R AE1 K T|AE1 B S T R AE2 K T","CONTEST":"K AA1 N T EH0 S T|K AH0 N T EH1 S T","REBEL":"R EH1 B AH0 L|R IH0 B EH1 L","PROJECT":"P R AA1 JH EH0 K T|P R AH0 JH EH1 K T","SUBJECT":"S AH0 B JH EH1 K T|S AH1 B JH IH0 K T","OBJECT":"AA1 B JH EH0 K T|AH0 B JH EH1 K T","FARMERS":"F AA1 R M ER0 Z","THREAD":"TH R EH1 D","JAMMED":"JH AE1 M D","COTTON":"K AA1 T AH0 N|K AO1 T AH0 N","DINGY":"D IH1 N JH IY0","SLIDE":"S L AY1 D","DOOR":"D AO1 R","DECEMBER":"D IH0 S EH1 M B ER0","FABRIC":"F AE1 B R IH0 K","FILTHY":"F IH1 L TH IY0","RUSTY":"R AH1 S T IY0","METHOD":"M EH1 TH AH0 D","GATHER":"G AE1 DH ER0","SINGER":"S IH1 NG ER0","SEWING":"S OW1 IH0 NG","BE":"B IY1|B IY0","TO":"T UW1|T IH0|T AH0","AND":"AH0 N D|AE1 N D","A":"AH0|EY1","THAT":"DH AE1 T|DH AH0 T","HAVE":"HH AE1 V","I":"AY1","IT":"IH1 T|IH0 T","FOR":"F AO1 R|F ER0|F R ER0","NOT":"N AA1 T","ON":"AA1 N|AO1 N","WITH":"W IH1 DH|W IH1 TH|W IH0 TH|W IH0 DH","HE":"HH IY1","AS":"AE1 Z|EH1 Z","YOU":"Y UW1","DO":"D UW1","AT":"AE1 T","THIS":"DH IH1 S|DH IH0 S","BUT":"B AH1 T","HIS":"HH IH1 Z|HH IH0 Z","BY":"B AY1","FROM":"F R AH1 M","THEY":"DH EY1","SAY":"S EY1","HER":"HH ER1|HH ER0","SHE":"SH IY1","OR":"AO1 R|ER0","AN":"AE1 N|AH0 N","WILL":"W IH1 L|W AH0 L","MY":"M AY1","ONE":"W AH1 N","ALL":"AO1 L","WOULD":"W UH1 D","THERE":"DH EH1 R","THEIR":"DH EH1 R","WHAT":"W AH1 T|HH W AH1 T","SO":"S OW1","UP":"AH1 P","OUT":"AW1 T","IF":"IH1 F|IH0 F","ABOUT":"AH0 B AW1 T","WHO":"HH UW1","GET":"G EH1 T|G IH1 T","WHICH":"W IH1 CH|HH W IH1 CH","GO":"G OW1","ME":"M IY1","WHEN":"W EH1 N|HH W EH1 N|W IH1 N|HH W IH1 N","MAKE":"M EY1 K","CAN":"K AE1 N|K AH0 N","LIKE":"L AY1 K","TIME":"T AY1 M","NO":"N OW1","JUST":"JH AH1 S T|JH IH0 S T","HIM":"HH IH1 M|IH0 M","KNOW":"N OW1","TAKE":"T EY1 K","PEOPLE":"P IY1 P AH0 L","INTO":"IH1 N T UW0|IH0 N T UW1|IH0 N T AH0","YEAR":"Y IH1 R","YOUR":"Y AO1 R|Y UH1 R","GOOD":"G UH1 D|G IH0 D","THEM":"DH EH1 M|DH AH0 M","SEE":"S IY1","OTHER":"AH1 DH ER0","THAN":"DH AE1 N|DH AH0 N","THEN":"DH EH1 N","NOW":"N AW1","LOOK":"L UH1 K","ONLY":"OW1 N L IY0","COME":"K AH1 M","ITS":"IH1 T S|IH0 T S","OVER":"OW1 V ER0","THINK":"TH IH1 NG K","ALSO":"AO1 L S OW0","BACK":"B AE1 K","AFTER":"AE1 F T ER0","USE":"Y UW1 S|Y UW1 Z","TWO":"T UW1","HOW":"HH AW1","OUR":"AW1 ER0|AW1 R|AA1 R","WORK":"W ER1 K","FIRST":"F ER1 S T","WELL":"W EH1 L","WAY":"W EY1","EVEN":"IY1 V IH0 N","NEW":"N UW1|N Y UW1","WANT":"W AA1 N T|W AO1 N T","BECAUSE":"B IH0 K AO1 Z|B IH0 K AH1 Z|B IH0 K AA1 Z|B IH0 K AH0 Z","ANY":"EH1 N IY0","THESE":"DH IY1 Z","GIVE":"G IH1 V","DAY":"D EY1","MOST":"M OW1 S T|M OW1 S","US":"AH1 S|Y UW2 EH1 S","IS":"IH1 Z|IH0 Z","WAS":"W AA1 Z|W AH0 Z","ARE":"AA1 R|ER0","BEEN":"B IH1 N|B AH0 N|B IH0 N","HAS":"HH AE1 Z|HH AH0 Z","HAD":"HH AE1 D","WERE":"W ER1","SAID":"S EH1 D","DID":"D IH1 D|D IH0 D","HAVING":"HH AE1 V IH0 NG","MAY":"M EY1","SHOULD":"SH UH1 D","AM":"AE1 M|EY1 EH1 M","SHALL":"SH AE1 L","MIGHT":"M AY1 T","MUST":"M AH1 S T","LET":"L EH1 T","VERY":"V EH1 R IY0","STILL":"S T IH1 L","OWN":"OW1 N","SAME":"S EY1 M","TOO":"T UW1","HERE":"HH IY1 R","WHERE":"W EH1 R|HH W EH1 R","WHY":"W AY1|HH W AY1","WHILE":"W AY1 L|HH W AY1 L","SUCH":"S AH1 CH","BOTH":"B OW1 TH","EACH":"IY1 CH","FEW":"F Y UW1","MORE":"M AO1 R","MUCH":"M AH1 CH","MANY":"M EH1 N IY0","UNDER":"AH1 N D ER0","AGAIN":"AH0 G EH1 N|AH0 G EY1 N","FURTHER":"F ER1 DH ER0","ONCE":"W AH1 N S","DURING":"D UH1 R IH0 NG|D Y UH1 R IH0 NG|D ER1 IH0 NG","BELOW":"B IH0 L OW1|B IY0 L OW1","OFF":"AO1 F","DOWN":"D AW1 N","AGAINST":"AH0 G EH1 N S T|AH0 G EY1 N S T","THROUGH":"TH R UW1","ONTO":"AA1 N T UW0|AO1 N T UW0","UPON":"AH0 P AA1 N","WITHIN":"W IH0 DH IH1 N|W IH0 TH IH1 N","WITHOUT":"W IH0 TH AW1 T|W IH0 DH AW1 T","ACROSS":"AH0 K R AO1 S","BEHIND":"B IH0 HH AY1 N D","BEYOND":"B IH0 AA1 N D|B IY2 AO1 N D|B IH0 AO1 N D","NEAR":"N IH1 R","FAR":"F AA1 R","ALWAYS":"AO1 L W EY2 Z|AO1 L W IY0 Z","NEVER":"N EH1 V ER0","OFTEN":"AO1 F AH0 N|AO1 F T AH0 N","SOMETIMES":"S AH0 M T AY1 M Z|S AH1 M T AY2 M Z","USUALLY":"Y UW1 ZH AH0 W AH0 L IY0|Y UW1 ZH AH0 L IY0","REALLY":"R IH1 L IY0|R IY1 L IY0","QUITE":"K W AY1 T","RATHER":"R AE1 DH ER0|R AH1 DH ER0","ALMOST":"AO1 L M OW2 S T","ENOUGH":"IH0 N AH1 F|IY0 N AH1 F","THUS":"DH AH1 S","HENCE":"HH EH1 N S","YET":"Y EH1 T","ALREADY":"AO0 L R EH1 D IY0|AO0 R EH1 D IY0","SOON":"S UW1 N","LATER":"L EY1 T ER0","EARLY":"ER1 L IY0","LATE":"L EY1 T","TODAY":"T AH0 D EY1|T UW0 D EY1","YESTERDAY":"Y EH1 S T ER0 D EY2|Y EH1 S T ER0 D IY0","CHILD":"CH AY1 L D","MAN":"M AE1 N","WOMAN":"W UH1 M AH0 N","MEN":"M EH1 N","WOMEN":"W IH1 M AH0 N","BOY":"B OY1","GIRL":"G ER1 L","HOUSE":"HH AW1 S","HOME":"HH OW1 M","SCHOOL":"S K UW1 L","WATER":"W AO1 T ER0","FOOD":"F UW1 D","HAND":"HH AE1 N D","HEAD":"HH EH1 D","EYE":"AY1","FACE":"F EY1 S","PLACE":"P L EY1 S","THING":"TH IH1 NG","WORLD":"W ER1 L D","LIFE":"L AY1 F","PART":"P AA1 R T","SIDE":"S AY1 D","WEEK":"W IY1 K","MONTH":"M AH1 N TH","EVENING":"IY1 V N IH0 NG","STORY":"S T AO1 R IY0","FACT":"F AE1 K T","GROUP":"G R UW1 P","PROBLEM":"P R AA1 B L AH0 M","RIGHT":"R AY1 T","LEFT":"L EH1 F T","NUMBER":"N AH1 M B ER0","WORD":"W ER1 D","SMALL":"S M AO1 L","LARGE":"L AA1 R JH","GREAT":"G R EY1 T","BIG":"B IH1 G","HIGH":"HH AY1","LOW":"L OW1","LONG":"L AO1 NG","SHORT":"SH AO1 R T","OLD":"OW1 L D","YOUNG":"Y AH1 NG","BAD":"B AE1 D","ANOTHER":"AH0 N AH1 DH ER0","NEXT":"N EH1 K S T|N EH1 K S","LAST":"L AE1 S T|L AE1 S","SECOND":"S EH1 K AH0 N D","THIRD":"TH ER1 D","HARD":"HH AA1 R D","EASY":"IY1 Z IY0","FAST":"F AE1 S T","SLOW":"S L OW1","SAD":"S AE1 D","HOT":"HH AA1 T","COLD":"K OW1 L D","WARM":"W AO1 R M","COOL":"K UW1 L","LIGHT":"L AY1 T","HEAVY":"HH EH1 V IY0","SOFT":"S AA1 F T|S AO1 F T","LOUD":"L AW1 D","WALK":"W AO1 K|W AA1 K","JUMP":"JH AH1 M P","PLAY":"P L EY1","READ":"R EH1 D|R IY1 D","WRITE":"R AY1 T","SPEAK":"S P IY1 K","TALK":"T AO1 K","LISTEN":"L IH1 S AH0 N","WATCH":"W AA1 CH|W AO1 CH","FIND":"F AY1 N D","LOSE":"L UW1 Z","BRING":"B R IH1 NG","CARRY":"K AE1 R IY0|K EH1 R IY0","HOLD":"HH OW1 L D","KEEP":"K IY1 P","TURN":"T ER1 N","MOVE":"M UW1 V","STOP":"S T AA1 P","START":"S T AA1 R T","BEGIN":"B IH0 G IH1 N","END":"EH1 N D","OPEN":"OW1 P AH0 N","CLOSE":"K L OW1 S|K L OW1 Z","EAT":"IY1 T","DRINK":"D R IH1 NG K","SLEEP":"S L IY1 P","WAKE":"W EY1 K","LOVE":"L AH1 V","HATE":"HH EY1 T","NEED":"N IY1 D","HELP":"HH EH1 L P","ASK":"AE1 S K","ANSWER":"AE1 N S ER0","CALL":"K AO1 L","TELL":"T EH1 L","REMEMBER":"R IH0 M EH1 M B ER0|R IY0 M EH1 M B ER0","FORGET":"F ER0 G EH1 T|F AO0 R G EH1 T","LEARN":"L ER1 N","TEACH":"T IY1 CH","STUDY":"S T AH1 D IY0","REST":"R EH1 S T","SIT":"S IH1 T","STAND":"S T AE1 N D","LIE":"L AY1","FALL":"F AO1 L|F AA1 L","GROW":"G R OW1","LIVE":"L AY1 V|L IH1 V","DIE":"D AY1","FEEL":"F IY1 L","SEEM":"S IY1 M","BECOME":"B IH0 K AH1 M","REMAIN":"R IH0 M EY1 N|R IY0 M EY1 N","APPEAR":"AH0 P IH1 R","HAPPEN":"HH AE1 P AH0 N","CHANGE":"CH EY1 N JH","FOLLOW":"F AA1 L OW0","LEAD":"L EH1 D|L IY1 D","MEET":"M IY1 T","LEAVE":"L IY1 V","ARRIVE":"ER0 AY1 V","RETURN":"R IH0 T ER1 N|R IY0 T ER1 N","SEND":"S EH1 N D","RECEIVE":"R AH0 S IY1 V|R IH0 S IY1 V|R IY0 S IY1 V","BUY":"B AY1","SELL":"S EH1 L","PAY":"P EY1","COST":"K AA1 S T|K AO1 S T","WIN":"W IH1 N","CHOOSE":"CH UW1 Z","DECIDE":"D IH2 S AY1 D","TRY":"T R AY1","BUILD":"B IH1 L D","BREAK":"B R EY1 K","CUT":"K AH1 T","PUT":"P UH1 T","SET":"S EH1 T","DOG":"D AO1 G","CAT":"K AE1 T","BIRD":"B ER1 D","FISH":"F IH1 SH","TREE":"T R IY1","FLOWER":"F L AW1 ER0","GRASS":"G R AE1 S","SKY":"S K AY1","CLOUD":"K L AW1 D","RAIN":"R EY1 N","SNOW":"S N OW1","STORM":"S T AO1 R M","RIVER":"R IH1 V ER0","LAKE":"L EY1 K","SEA":"S IY1","OCEAN":"OW1 SH AH0 N","MOUNTAIN":"M AW1 N T AH0 N","FIELD":"F IY1 L D","ROAD":"R OW1 D","STREET":"S T R IY1 T","CITY":"S IH1 T IY0","TOWN":"T AW1 N","COUNTRY":"K AH1 N T R IY0","FAMILY":"F AE1 M AH0 L IY0|F AE1 M L IY0","FRIEND":"F R EH1 N D","MOTHER":"M AH1 DH ER0","FATHER":"F AA1 DH ER0","SISTER":"S IH1 S T ER0","BROTHER":"B R AH1 DH ER0","BABY":"B EY1 B IY0","BOOK":"B UH1 K","PAPER":"P EY1 P ER0","PEN":"P EH1 N","LETTER":"L EH1 T ER0","WINDOW":"W IH1 N D OW0","WALL":"W AO1 L","FLOOR":"F L AO1 R","ROOM":"R UW1 M","CHAIR":"CH EH1 R","BED":"B EH1 D","CAR":"K AA1 R","TRAIN":"T R EY1 N","PLANE":"P L EY1 N","SHIP":"SH IH1 P","BOAT":"B OW1 T"};</script>
+<script>/* ============================================================================
  * engine.js — Rhythm-Enhanced Text: Stage 1 Linguistic Engine
  * ----------------------------------------------------------------------------
  * Implements the frozen Revision 3 design:
@@ -482,12 +636,15 @@
    * the traditional foot name is an educational label (design final rev).
    * ======================================================================== */
 
+  // The rhythmic inventory is deliberately limited to the four recurring
+  // English feet used by this application. A surface string such as WSW is
+  // parsed across a foot boundary (for example, W + SW or WS + W); it is not
+  // assigned a fifth, word-sized "amphibrach" template.
   const FOOT_NAMES = {
-    'SW': 'trochee', 'WS': 'iamb', 'WWS': 'anapest', 'SWW': 'dactyl',
-    'WSW': 'amphibrach'
+    'SW': 'trochee', 'WS': 'iamb', 'WWS': 'anapest', 'SWW': 'dactyl'
   };
   const CLASSICAL = new Set(['SW', 'WS', 'WWS', 'SWW']);
-  const FOOT_INVENTORY = ['SW', 'WS', 'WWS', 'SWW', 'WSW'];
+  const FOOT_INVENTORY = ['SW', 'WS', 'WWS', 'SWW'];
 
   // All resolutions of secondary stress: each '2' → 'S' or 'W'.
   function resolutions(lexPattern) {
@@ -501,8 +658,8 @@
     return Array.from(new Set(outs));
   }
 
-  // DP parse of an S/W string into inventory feet + singletons.
-  // Costs: classical foot 1.0, amphibrach 1.15, singleton 1.6.
+  // DP parse of an S/W string into the four-foot inventory + singletons.
+  // Costs: an English foot 1.0, singleton 1.6.
   // Returns { units: [{pattern, name}], cost } minimizing cost;
   // tie-breaks: (a) primary-stress syllable inside a classical foot,
   // (b) fewer singletons, (c) leftmost-longest.
@@ -516,7 +673,7 @@
       for (const f of FOOT_INVENTORY) {
         if (sw.startsWith(f, i)) {
           candidates.push({ pattern: f, len: f.length,
-                            cost: CLASSICAL.has(f) ? 1.0 : 1.15 });
+                            cost: 1.0 });
         }
       }
       candidates.push({ pattern: sw[i], len: 1, cost: 1.6 }); // singleton
@@ -604,22 +761,9 @@
         source: 'template-assigner'
       });
     }
-    // Rule 2: single foot from extended inventory (amphibrach).
-    const singleAny = res.filter(r => FOOT_NAMES[r]);
-    if (singleAny.length >= 1) {
-      const canonical = singleAny[0];
-      return stamp({
-        pattern: canonical, traditionalName: FOOT_NAMES[canonical],
-        variants: res.filter(r => r !== canonical).map(r => ({
-          pattern: r, label: 'alternative',
-          footing: describeParse(parseFeet(r, primaryIdx))
-        })),
-        assignmentRule: 'single-foot-extended',
-        confidence: lexPattern.includes('2') ? CONF.SECONDARY_RESOLUTION : 1.0,
-        source: 'template-assigner'
-      });
-    }
-    // Rule 3: composite — pick resolution with the cheapest foot parse.
+    // Rule 2: composite — pick the resolution with the cheapest parse over
+    // the four English feet. Edge syllables may remain unfooted here; the
+    // phrase-level projector below decides how neighboring words combine.
     let best = null;
     for (const r of res) {
       const parse = parseFeet(r, primaryIdx);
@@ -815,52 +959,194 @@
   }
 
   /* ==========================================================================
-   * SECTION 9 — Rhythmic Projector (Tier 3)  [design §6]
-   * Runs per φ; never consults material across a φ boundary.
+   * SECTION 9 — Phrase-level Rhythmic Projector (Tier 3)  [design §6]
+   * Fits the continuous syllable stream inside each φ to the four English
+   * rhythmic feet: SW, WS, WWS, and SWW. Lexical stress supplies weighted
+   * preferences; it does not force every word to behave like a complete foot.
+   * A single weak/strong syllable may remain at a phrase edge (pickup or tail),
+   * because ordinary prose and short fragments do not always begin and end on
+   * complete feet. Feet never cross a φ boundary.
    * ======================================================================== */
+
+  const RHYTHM_FEET = [
+    { pattern: 'SW', name: 'trochee' },
+    { pattern: 'WS', name: 'iamb' },
+    { pattern: 'WWS', name: 'anapest' },
+    { pattern: 'SWW', name: 'dactyl' }
+  ];
+  const LEADING_RESIDUE_COST = 0.55;
+  const TRAILING_RESIDUE_COST = 0.65;
+  const FOOT_SWITCH_COST = 0.08;
+  const SAME_BOUNDARY_COST = 0.12;
+
+  // Build the preferred realization for one syllable before phrase footing.
+  // Primary lexical stress is the strongest anchor. Unstressed syllables in
+  // polysyllabic words resist promotion more than free-standing function or
+  // content monosyllables resist contextual adjustment.
+  function rhythmPreference(wd, i) {
+    const sy = wd.syllables[i];
+    if (wd.userEdited.rhythmic && sy.rhythmicStress) {
+      return { value: sy.rhythmicStress, weight: 1000,
+               confidence: CONF.USER, source: 'user' };
+    }
+    if (wd.syllables.length === 1) {
+      return wd.isFunctionWord
+        ? { value: 'W', weight: 1.2, confidence: CONF.FUNCTION_WORD,
+            source: 'rule:function-word-demotion' }
+        : { value: 'S', weight: 1.6, confidence: CONF.CONTENT_MONO,
+            source: 'rule:content-monosyllable' };
+    }
+    const templ = wd.template.pattern[i] ||
+      (sy.lexicalStress === '0' ? 'W' : 'S');
+    const weight = sy.lexicalStress === '1' ? 6.0
+      : sy.lexicalStress === '2' ? 2.5 : 3.5;
+    return { value: templ, weight,
+             confidence: Math.min(wd.lexicalConfidence, wd.template.confidence),
+             source: 'rule:lexical-template-preference' };
+  }
+
+  function unitMismatch(stream, pos, pattern) {
+    let cost = 0, primaryMismatches = 0;
+    for (let k = 0; k < pattern.length; k++) {
+      const item = stream[pos + k];
+      if (item.pref.value !== pattern[k]) {
+        cost += item.pref.weight;
+        if (item.sy.lexicalStress === '1') primaryMismatches++;
+      }
+    }
+    return { cost, primaryMismatches };
+  }
+
+  function betterRhythmFit(a, b) {
+    if (!b) return true;
+    if (Math.abs(a.cost - b.cost) > 1e-9) return a.cost < b.cost;
+    if (a.primaryMismatches !== b.primaryMismatches)
+      return a.primaryMismatches < b.primaryMismatches;
+    if (a.residues !== b.residues) return a.residues < b.residues;
+    if (a.switches !== b.switches) return a.switches < b.switches;
+    // Prefer analyses with a leading pickup over a dangling final syllable.
+    if (a.trailingResidues !== b.trailingResidues)
+      return a.trailingResidues < b.trailingResidues;
+    return a.units.length < b.units.length;
+  }
+
+  // Fit complete feet from `start`; only one trailing edge syllable may remain.
+  function fitFrom(stream, start, previousLast, previousFoot) {
+    const n = stream.length;
+    const memo = new Map();
+    const solve = (i, prevLast, prevFoot) => {
+      const key = i + '|' + (prevLast || '-') + '|' + (prevFoot || '-');
+      if (memo.has(key)) return memo.get(key);
+      if (i === n) {
+        const done = { units: [], cost: 0, primaryMismatches: 0,
+                       residues: 0, trailingResidues: 0, switches: 0 };
+        memo.set(key, done); return done;
+      }
+      let best = null;
+      if (i === n - 1) {
+        const item = stream[i];
+        best = {
+          units: [{ type: 'trailing', pattern: item.pref.value,
+                    span: [item.ref], cost: TRAILING_RESIDUE_COST }],
+          cost: TRAILING_RESIDUE_COST,
+          primaryMismatches: 0, residues: 1, trailingResidues: 1, switches: 0
+        };
+      }
+      for (const foot of RHYTHM_FEET) {
+        if (i + foot.pattern.length > n) continue;
+        const local = unitMismatch(stream, i, foot.pattern);
+        const boundary = prevLast && prevLast === foot.pattern[0]
+          ? SAME_BOUNDARY_COST : 0;
+        const switched = prevFoot && prevFoot !== foot.name ? 1 : 0;
+        const switchCost = switched ? FOOT_SWITCH_COST : 0;
+        const rest = solve(i + foot.pattern.length,
+                           foot.pattern[foot.pattern.length - 1], foot.name);
+        const cand = {
+          units: [{ type: foot.name, pattern: foot.pattern,
+                    span: stream.slice(i, i + foot.pattern.length).map(x => x.ref),
+                    cost: round2(local.cost + boundary + switchCost) },
+                  ...rest.units],
+          cost: local.cost + boundary + switchCost + rest.cost,
+          primaryMismatches: local.primaryMismatches + rest.primaryMismatches,
+          residues: rest.residues,
+          trailingResidues: rest.trailingResidues,
+          switches: switched + rest.switches
+        };
+        if (betterRhythmFit(cand, best)) best = cand;
+      }
+      memo.set(key, best); return best;
+    };
+    return solve(start, previousLast, previousFoot);
+  }
+
+  function fitPhraseRhythm(stream) {
+    if (!stream.length) return { units: [], cost: 0 };
+    if (stream.length === 1) {
+      const item = stream[0];
+      return { units: [{ type: 'isolated', pattern: item.pref.value,
+                         span: [item.ref], cost: 0 }], cost: 0,
+               primaryMismatches: 0, residues: 1,
+               trailingResidues: 0, switches: 0 };
+    }
+    let best = fitFrom(stream, 0, null, null);
+    // Also test an initial pickup. This is especially important for lexical
+    // WSW sequences: the first W can be a pickup and the remaining SW a
+    // trochee, rather than inventing a fifth three-syllable foot.
+    if (stream.length >= 3) {
+      const first = stream[0];
+      const rest = fitFrom(stream, 1, first.pref.value, null);
+      const withPickup = {
+        units: [{ type: 'pickup', pattern: first.pref.value,
+                  span: [first.ref], cost: LEADING_RESIDUE_COST }, ...rest.units],
+        cost: LEADING_RESIDUE_COST + rest.cost,
+        primaryMismatches: rest.primaryMismatches,
+        residues: 1 + rest.residues,
+        trailingResidues: rest.trailingResidues,
+        switches: rest.switches
+      };
+      if (betterRhythmFit(withPickup, best)) best = withPickup;
+    }
+    return best;
+  }
 
   function project(words, ips, config) {
     for (const ip of ips) {
       for (const phi of ip.children) {
         const [s, e] = phi.span;
+        const stream = [];
         for (let w = s; w <= e; w++) {
           const wd = words[w];
-          if (wd.userEdited.rhythmic) continue; // user authority preserved
-          if (wd.syllables.length === 1) {
-            const isFn = wd.isFunctionWord;
-            const val = isFn ? 'W' : 'S';
-            setRhythm(wd, 0, val,
-              isFn ? 'rule:function-word-demotion' : 'rule:content-monosyllable',
-              isFn ? CONF.FUNCTION_WORD : CONF.CONTENT_MONO);
-          } else {
-            // Template realization: canonical pattern, syllable by syllable.
-            const pat = wd.template.pattern;
-            for (let i = 0; i < wd.syllables.length; i++) {
-              setRhythm(wd, i, pat[i] || 'W', 'rule:template-realization',
-                        Math.min(wd.lexicalConfidence, wd.template.confidence));
-            }
-          }
+          wd.syllables.forEach((sy, i) => stream.push({
+            wd, sy, i, ref: [w, i], pref: rhythmPreference(wd, i)
+          }));
         }
-        // Title demotion [HEUR "title-demotion"]: monosyllabic titles
-        // before a capitalized name subordinate like function words
-        // (Miss MUFfet, not MISS MUFfet).
-        for (let w = s; w < e; w++) {
-          const wd = words[w];
-          if (!wd.userEdited.rhythmic && wd.syllables.length === 1 &&
-              (wd.normalized === 'miss' || wd.normalized === 'ms') &&
-              /^[A-Z]/.test(words[w + 1].word)) {
-            setRhythm(wd, 0, 'W', 'rule:title-demotion', 0.70);
-          }
+        const fit = fitPhraseRhythm(stream);
+        phi.rhythmicFeet = fit.units;
+        phi.rhythmicCost = round2(fit.cost || 0);
+
+        for (const unit of fit.units) {
+          unit.span.forEach((ref, k) => {
+            const [w, i] = ref;
+            const wd = words[w];
+            // Preserve the user's word-level rhythmic edit exactly as the
+            // previous engine did; the fitted unit remains diagnostic only.
+            if (wd.userEdited.rhythmic) return;
+            const item = stream.find(x => x.ref[0] === w && x.ref[1] === i);
+            const val = unit.pattern[k] || item.pref.value;
+            const matched = val === item.pref.value;
+            const source = ['pickup', 'trailing', 'isolated'].includes(unit.type)
+              ? 'rule:phrase-edge-residue'
+              : 'rule:phrase-foot-' + unit.type;
+            const confidence = matched
+              ? item.pref.confidence
+              : Math.min(0.60, item.pref.confidence);
+            setRhythm(wd, i, val, source, confidence);
+          });
         }
-        // Optional strict alternation [HEUR, OFF by default — design §6]:
-        // demote a secondary-derived S adjacent to another S.
+
+        // Optional post-projection adjustments remain available for research
+        // comparisons, but are OFF by default because they can disrupt a foot.
         if (config.strictAlternation) applyStrictAlternation(words, s, e);
-        // Optional clash subordination [HEUR, OFF by default]: when two
-        // adjacent syllables are both S and the LEFT belongs to a content
-        // monosyllable, demote it (rightmost wins, per the rightward drift
-        // of phrasal prominence: sat DOWN, thread JAMMED). Deliberately not
-        // a default: prose-poetry uses clash as deliberate weight, and
-        // ironing it out silently would falsify such texts.
         if (config.clashSubordination) applyClashSubordination(words, s, e);
       }
     }
@@ -914,10 +1200,7 @@
    * parses retained; alternation ambiguity reported honestly.
    * ======================================================================== */
 
-  const METRICAL_FEET = [
-    { pattern: 'WS', name: 'iamb' }, { pattern: 'SW', name: 'trochee' },
-    { pattern: 'WWS', name: 'anapest' }, { pattern: 'SWW', name: 'dactyl' }
-  ];
+  const METRICAL_FEET = RHYTHM_FEET;
   const SINGLETON_COST = 0.55;
   const AMBIGUITY_MARGIN = 0.6;
 
@@ -1204,7 +1487,9 @@
         proportionIambic: prop('iamb'),
         proportionAnapestic: prop('anapest'),
         proportionDactylic: prop('dactyl'),
-        proportionAmphibrachic: prop('amphibrach'),
+        // Retained as a zero-valued compatibility field for older exports.
+        // WSW is now analyzed across boundaries, never as a fifth foot.
+        proportionAmphibrachic: 0,
         phraseLengthDistribution: phiLengths,
         meanPhraseLength: round2(phiLengths.reduce((a, b) => a + b, 0) /
                                  (phiLengths.length || 1)),
@@ -1864,10 +2149,208 @@
     selectPronunciation, incongruentMap, stimulusPair, beatSubset, trainingSet,
     toCSV, profileCSV, annotatedText, roundTripText,
     constants: { FUNCTION_WORDS, CHUNK_STARTERS, CONF, FOOT_NAMES,
-                 HYPHEN_EXCEPTIONS, PHI_MAX_WORDS }
+                 HYPHEN_EXCEPTIONS, PHI_MAX_WORDS, RHYTHM_FEET }
   };
 
   if (typeof module !== 'undefined' && module.exports) module.exports = RhythmEngine;
   global.RhythmEngine = RhythmEngine;
 
 })(typeof window !== 'undefined' ? window : globalThis);
+</script>
+<script>
+(function () {
+'use strict';
+const E = window.RhythmEngine;
+let doc = null;
+let mode = 'caps';
+
+const EXAMPLES = [
+  'Twinkle, twinkle, little star, how I wonder what you are.',
+  'The little puppy ran away before the children noticed.',
+  'The sun arose above the quiet hill.'
+];
+
+const note = document.getElementById('dictNote');
+function boot(full) {
+  if (full) {
+    E.loadDictionary(window.CMUDICT_FULL, 'full');
+    note.textContent = '';
+  } else {
+    E.loadDictionary(window.CMUDICT_SUBSET, 'subset');
+    note.textContent = 'Running with a small built-in word list; uncommon ' +
+      'words are estimated by rule. For best results keep cmudict.js next ' +
+      'to this file.';
+    note.classList.add('warn');
+  }
+  analyze();
+}
+const s = document.createElement('script');
+s.src = 'cmudict.js';
+s.onload = () => boot(!!window.CMUDICT_FULL);
+s.onerror = () => boot(false);
+document.head.appendChild(s);
+
+function analyze() {
+  doc = E.analyze(document.getElementById('input').value);
+  render();
+}
+
+let parts = 'none'; // 'none' | 'syll' | 'morph'
+
+function wordCuts(tok, wd) {
+  // syllable cut offsets
+  const syl = [];
+  let acc = 0;
+  wd.syllables.forEach((sy, i) => {
+    if (i > 0) syl.push(acc);
+    acc += sy.text.length;
+  });
+  let joints = [];
+  if (parts === 'syll') joints = syl.slice();
+  if (parts === 'morph') {
+    let m = 0;
+    const segs = E.morphSegment(tok.text);
+    segs.forEach((p, i) => { if (i > 0) joints.push(m); m += p.length; });
+    // hyphen/apostrophe already visible in the text: no dot after them
+    joints = joints.filter(o => tok.text[o - 1] !== '-' &&
+                                tok.text[o - 1] !== "'" &&
+                                tok.text[o - 1] !== '\u2019');
+  }
+  // Meaning-parts view: EVERY visible boundary must be morphological, so
+  // segments (and therefore stress-marking spans) are the meaning parts
+  // themselves — the beat is shown on the whole part that carries it
+  // (HAPPY, RUNN·ing, CHILD·ren), never splitting a part at a syllable.
+  const cuts = parts === 'morph'
+    ? joints.slice().sort((a, b) => a - b)
+    : Array.from(new Set([...syl, ...joints])).sort((a, b) => a - b);
+  return { cuts, joints: new Set(joints), syl };
+}
+
+// syllables overlapping a character span [s, e)
+function sylsInSpan(wd, syl, s, e) {
+  const starts = [0, ...syl];
+  const out = [];
+  for (let i = 0; i < wd.syllables.length; i++) {
+    const a = starts[i];
+    const b = a + wd.syllables[i].text.length;
+    if (a < e && b > s) out.push(i);
+  }
+  return out;
+}
+
+function render() {
+  const out = document.getElementById('out');
+  out.className = 'mode-' + mode;
+  out.textContent = '';
+  for (const tok of doc.tokens) {
+    if (tok.type !== 'word') {
+      out.appendChild(document.createTextNode(tok.text));
+      continue;
+    }
+    const wd = doc.words[tok.wordIndex];
+    const w = document.createElement('span');
+    w.className = 'word';
+    const { cuts, joints, syl } = wordCuts(tok, wd);
+    const bounds = [0, ...cuts, tok.text.length];
+    const sylOfOffset = (o) => {
+      let i = 0;
+      while (i < syl.length && o >= syl[i]) i++;
+      return i;
+    };
+    const dotted = new Set(); // one beat dot per stressed syllable
+    for (let k = 0; k < bounds.length - 1; k++) {
+      const s = bounds[k], e = bounds[k + 1];
+      if (s === e) continue;
+      if (joints.has(s)) {
+        const j = document.createElement('span');
+        j.className = 'joint'; j.textContent = '·';
+        w.appendChild(j);
+      }
+      const inSpan = sylsInSpan(wd, syl, s, e);
+      const strong = inSpan.some(i => wd.syllables[i].rhythmicStress === 'S');
+      // the syllable a tap edits: the beat-carrying one in this span,
+      // else the first
+      const si = inSpan.find(i => wd.syllables[i].rhythmicStress === 'S')
+                 ?? inSpan[0] ?? sylOfOffset(s);
+      const b = document.createElement('button');
+      b.className = 'syl' + (strong ? ' S' : '');
+      if (strong) {
+        if (inSpan.some(i => dotted.has(i))) b.classList.add('nodot');
+        inSpan.forEach(i => {
+          if (wd.syllables[i].rhythmicStress === 'S') dotted.add(i); });
+      }
+      b.textContent = tok.text.slice(s, e);
+      b.setAttribute('aria-label', wd.word + ' part, ' +
+        (strong ? 'has a beat' : 'no beat') + '. Tap to change.');
+      b.addEventListener('click', () => {
+        E.editRhythmicStress(doc, tok.wordIndex, si,
+          wd.syllables[si].rhythmicStress === 'S' ? 'W' : 'S');
+        render();
+      });
+      w.appendChild(b);
+    }
+    out.appendChild(w);
+  }
+  document.querySelector('.hint').textContent = parts === 'morph'
+    ? 'Meaning parts (child·ren, runn·ing, filth·y) are approximate — built ' +
+      'from word structure, not sound. The beat is shown on the whole part ' +
+      'that carries it; for precise beat placement, use the other views.'
+    : 'Tap any syllable to move a beat — you know how you read better than ' +
+      'any computer does.';
+}
+
+function rendition() {
+  let out = '';
+  for (const tok of doc.tokens) {
+    if (tok.type !== 'word') { out += tok.text; continue; }
+    const wd = doc.words[tok.wordIndex];
+    const { cuts, joints, syl } = wordCuts(tok, wd);
+    const bounds = [0, ...cuts, tok.text.length];
+    for (let k = 0; k < bounds.length - 1; k++) {
+      const s = bounds[k], e = bounds[k + 1];
+      if (s === e) continue;
+      if (joints.has(s)) out += '·';
+      let t = tok.text.slice(s, e);
+      const strong = sylsInSpan(wd, syl, s, e)
+        .some(i => wd.syllables[i].rhythmicStress === 'S');
+      if (strong) t = mode === 'caps' ? t.toUpperCase() : '*' + t + '*';
+      out += t;
+    }
+  }
+  return out;
+}
+
+document.getElementById('go').addEventListener('click', analyze);
+document.querySelectorAll('[data-ex]').forEach(b =>
+  b.addEventListener('click', () => {
+    document.getElementById('input').value = EXAMPLES[+b.dataset.ex];
+    analyze();
+  }));
+document.getElementById('modes').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button'); if (!b) return;
+  mode = b.dataset.mode;
+  document.querySelectorAll('#modes button').forEach(x =>
+    x.setAttribute('aria-pressed', String(x === b)));
+  render();
+});
+document.getElementById('copy').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText(rendition()); }
+  catch (e) { window.prompt('Copy the text below:', rendition()); }
+});
+document.getElementById('print').addEventListener('click', () => window.print());
+document.getElementById('partsSeg').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button'); if (!b) return;
+  parts = b.dataset.parts;
+  document.querySelectorAll('#partsSeg button').forEach(x =>
+    x.setAttribute('aria-pressed', String(x === b)));
+  render();
+});
+
+// Installable app when hosted over HTTPS (no effect from a local file)
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
+})();
+</script>
+</body>
+</html>
