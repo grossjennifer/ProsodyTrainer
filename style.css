@@ -137,8 +137,8 @@ html, body {
 }
 
 .phrase-boundary {
-  color: var(--boundary);
-  font-weight: 300;
+  color: var(--ink-soft);
+  font-weight: 400;
   padding: 0 0.18em;
 }
 
@@ -168,6 +168,14 @@ html, body {
 
 .beat-caption { margin: 0.6rem 0 0; }
 
+/* Captions that carry teaching content, not chrome, read at body scale. */
+.exhibit-note,
+.beat-caption {
+  font-size: clamp(1rem, 2.6vw, 1.12rem);
+  line-height: 1.55;
+  color: var(--ink-soft);
+}
+
 .audio-row {
   display: flex;
   gap: 1rem;
@@ -182,14 +190,43 @@ html, body {
   color: var(--ink);
   background: transparent;
   border: 1px solid var(--boundary);
-  border-radius: 999px;
-  padding: 0.55em 1.1em;
+  border-radius: 20px;
+  padding: 0.7em 1.1em 0.75em;
   cursor: pointer;
   display: inline-flex;
+  flex-direction: column;
   align-items: center;
-  gap: 0.55em;
+  gap: 0.4em;
   transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
 }
+
+.contour {
+  width: 84px;
+  height: 34px;
+  overflow: visible;
+}
+
+.contour-line {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: stroke 300ms var(--ease);
+}
+
+.contour-dot {
+  fill: var(--ink);
+  transition: fill 300ms var(--ease);
+}
+
+.audio-label { display: inline-flex; align-items: center; gap: 0.5em; }
+
+.audio-button.was-played .contour-line,
+.audio-button.is-sounding .contour-line { stroke: var(--glow-deep); }
+
+.audio-button.was-played .contour-dot,
+.audio-button.is-sounding .contour-dot { fill: var(--glow-deep); }
 
 .audio-button:hover,
 .audio-button:focus-visible {
@@ -238,6 +275,8 @@ html, body {
 .final-panel { max-width: 48rem; }
 .final-scene { display: grid; gap: clamp(2rem, 5vw, 3.4rem); }
 .final-brand { text-align: center; }
+.final-cta { text-align: center; }
+.final-cta-button { font-size: 1.05rem; }
 
 .brand {
   font-family: var(--serif);
@@ -265,18 +304,69 @@ html, body {
 }
 
 .sputnik {
-  width: min(190px, 42vw);
+  width: min(172px, 40vw);
   height: auto;
   flex-shrink: 0;
-  filter: drop-shadow(0 14px 18px rgba(46, 43, 39, 0.16));
+  filter: drop-shadow(0 12px 16px rgba(46, 43, 39, 0.18));
 }
 
-.sputnik-speech { text-align: left; max-width: 22rem; }
+.sputnik-speech { text-align: left; max-width: 23rem; }
+
+.sputnik-bubble {
+  position: relative;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 1rem 1.25rem;
+  box-shadow: 0 8px 22px rgba(46, 43, 39, 0.08);
+}
+
+.sputnik-bubble p {
+  font-family: var(--serif);
+  font-size: clamp(1.25rem, 3.4vw, 1.6rem);
+  line-height: 1.35;
+  margin: 0.15em 0;
+  color: var(--ink);
+}
+
+/* Tail pointing left toward Sputnik. */
+.sputnik-bubble::before,
+.sputnik-bubble::after {
+  content: "";
+  position: absolute;
+  top: 2.1rem;
+  border-style: solid;
+}
+
+.sputnik-bubble::before {
+  left: -11px;
+  border-width: 9px 11px 9px 0;
+  border-color: transparent var(--line) transparent transparent;
+}
+
+.sputnik-bubble::after {
+  left: -9px;
+  border-width: 8px 10px 8px 0;
+  border-color: transparent #fff transparent transparent;
+}
+
+.sputnik-name {
+  margin: 0.55rem 0 0;
+  font-family: var(--sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--ink-soft);
+  text-align: right;
+}
 
 @media (max-width: 560px) {
   .final-scene { gap: 1.7rem; }
   .sputnik-scene { gap: 1.25rem; }
   .sputnik-speech { text-align: center; }
+  .sputnik-bubble::before,
+  .sputnik-bubble::after { display: none; }
+  .sputnik-name { text-align: center; }
 }
 
 .exhibit-controls {
@@ -329,7 +419,7 @@ html, body {
 .skip-link:focus-visible { color: var(--ink); }
 
 :focus-visible {
-  outline: 2px solid var(--glow);
+  outline: 2px solid var(--glow-deep);
   outline-offset: 3px;
 }
 
@@ -387,3 +477,18 @@ body.exhibit-complete .exhibit-controls { display: none; }
 }
 
 .transport-button[hidden] { display: none; }
+
+.site-replay {
+  font: inherit;
+  color: var(--glow-deep);
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 0.35rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.site-replay:hover,
+.site-replay:focus-visible { color: var(--ink); }

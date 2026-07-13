@@ -23,6 +23,16 @@
   let queue = [];
   const advance = { id: null, remaining: 0, startedAt: 0 };
 
+  const INTRO_KEY = "prosodyTrainerIntroSeen";
+  function introSeen() {
+    try { return window.localStorage.getItem(INTRO_KEY) === "1"; }
+    catch (error) { return false; }
+  }
+  function markIntroSeen() {
+    try { window.localStorage.setItem(INTRO_KEY, "1"); }
+    catch (error) { /* storage unavailable; intro simply replays */ }
+  }
+
   function arm(item) {
     item.startedAt = Date.now();
     item.id = window.setTimeout(function () {
@@ -161,7 +171,7 @@
     if (panelNumber === "4") pulseBeats(panel, 3200, 850);
     if (panelNumber === "5") {
       pulseBeats(panel.querySelector(".pattern-a"), 800, 700);
-      pulseBeats(panel.querySelector(".pattern-b"), 9000, 700);
+      pulseBeats(panel.querySelector(".pattern-b"), 10500, 700);
     }
     if (panelNumber === "7" && !reducedMotion) {
       panel.querySelectorAll(".audio-button").forEach(function (button) {
@@ -206,6 +216,9 @@
     }
 
     document.body.classList.add("exhibit-complete");
+    markIntroSeen();
+    const replay = document.getElementById("replay-intro");
+    if (replay) replay.hidden = false;
     try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }
     catch (error) { try { window.scrollTo(0, 0); } catch (ignored) {} }
 
@@ -243,5 +256,18 @@
     });
   });
 
-  next();
+  const replayButton = document.getElementById("replay-intro");
+  if (replayButton) {
+    replayButton.addEventListener("click", function () {
+      try { window.localStorage.removeItem(INTRO_KEY); } catch (error) {}
+      try { window.location.reload(); }
+      catch (error) { window.location.href = window.location.href; }
+    });
+  }
+
+  if (introSeen()) {
+    completeExhibit();
+  } else {
+    next();
+  }
 })();
