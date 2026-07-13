@@ -114,6 +114,7 @@
     ALIGN_FORCED_PENALTY: 0.10,
     FUNCTION_WORD: 0.75,
     CONTENT_MONO: 0.85,
+    NUCLEAR: 0.80,                // phrase-final nuclear accent (NSR)
     SECONDARY_RESOLUTION: 0.90,   // template-level: secondary resolved by rule
     SUFFIX_RULE: 0.70,
     DISYLLABIC_DEFAULT: 0.55,
@@ -995,6 +996,7 @@
         if (config.strictAlternation) applyStrictAlternation(words, s, e);
         if (config.clashSubordination) applyClashSubordination(words, s, e);
       }
+      if (config.nuclearStress) applyNuclearStress(words, ip);
     }
     for (const wd of words) {
       wd.rhythmicPattern = wd.syllables.map(sy => sy.rhythmicStress).join('');
@@ -1037,6 +1039,44 @@
         }
       }
     }
+  }
+
+  /* Nuclear Stress Rule (NSR).  Per intonational phrase, the main (nuclear)
+   * accent falls on the last content word — hence "the final word tends to be
+   * stressed" [Chomsky & Halle 1968; Liberman 1975; Liberman & Prince 1977].
+   * We mark that word's primary-stress syllable as the IP nucleus and, if
+   * footing left it weak, promote it to strong so the phrase does not end
+   * unaccented. This is a tendency, not a law: narrow focus or given/new
+   * structure can shift the nucleus leftward, so it is a gated pass and never
+   * overrides a user's own rhythmic edit.  A single flat marker (`sy.nuclear`)
+   * plus `ip.nucleus` lets the UI highlight the phrase's strongest beat. */
+  function applyNuclearStress(words, ip) {
+    const [start, end] = ip.span;
+    if (end < start) return;
+    // Rightmost content word (function words reduce and do not take the nucleus
+    // in neutral prosody); fall back to the last word if the IP is all-function.
+    let nw = -1;
+    for (let w = end; w >= start; w--) {
+      if (!words[w].isFunctionWord) { nw = w; break; }
+    }
+    if (nw === -1) nw = end;
+    const wd = words[nw];
+    // Nuclear syllable = primary lexical stress; else the rightmost strong
+    // syllable; else the last syllable.
+    let ns = wd.syllables.findIndex(sy => sy.lexicalStress === '1');
+    if (ns === -1) {
+      for (let i = wd.syllables.length - 1; i >= 0; i--) {
+        if (wd.syllables[i].rhythmicStress === 'S') { ns = i; break; }
+      }
+    }
+    if (ns === -1) ns = wd.syllables.length - 1;
+    if (ns < 0) return;
+    if (!wd.userEdited.rhythmic && wd.syllables[ns].rhythmicStress !== 'S') {
+      setRhythm(wd, ns, 'S', 'rule:nuclear-stress', CONF.NUCLEAR);
+    }
+    wd.syllables[ns].nuclear = true;
+    ip.nucleus = { word: nw, syllable: ns, ref: [nw, ns],
+                   source: 'rule:nuclear-stress' };
   }
 
   /* ==========================================================================
@@ -1353,7 +1393,7 @@
    * ======================================================================== */
 
   function analyze(text, options) {
-    const config = Object.assign({ strictAlternation: false, clashSubordination: false }, options || {});
+    const config = Object.assign({ strictAlternation: false, clashSubordination: false, nuclearStress: true }, options || {});
     const tokens = tokenize(text);
 
     // Build word list + IP break map from punctuation.
