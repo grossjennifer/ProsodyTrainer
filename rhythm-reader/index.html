@@ -9,7 +9,7 @@
 <style>
 :root {
   --paper: #EFF2F1; --card: #FFFFFF; --ink: #242936; --muted: #5C6472;
-  --line: #D8DEDC; --beat: #A03052; --beat-soft: #F6E7EC;
+  --line: #D8DEDC; --ctrl: #7E8783; --beat: #A03052; --beat-soft: #F6E7EC;
   --phrase: #2E6E6A;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --sans: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -28,14 +28,14 @@ p.lede { color: var(--muted); margin: .3rem 0 0; max-width: 46ch; }
   border-radius: 12px; padding: 1rem 1.1rem; margin-top: 1rem; }
 textarea { width: 100%; min-height: 6.5rem; padding: .8rem .9rem;
   font: 1.05rem/1.6 var(--serif); color: var(--ink);
-  border: 1px solid var(--line); border-radius: 10px; background: #FDFDFC;
+  border: 1px solid var(--ctrl); border-radius: 10px; background: #FDFDFC;
   resize: vertical; }
 textarea:focus { outline: 3px solid var(--phrase); outline-offset: 1px; }
 .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
   margin-top: .7rem; }
 .row .spacer { flex: 1; }
 button { font: 600 .95rem var(--sans); color: var(--ink);
-  background: var(--card); border: 1.5px solid var(--line);
+  background: var(--card); border: 1.5px solid var(--ctrl);
   border-radius: 10px; padding: .6rem 1rem; cursor: pointer;
   min-height: 44px; }
 button:hover { border-color: var(--phrase); }
@@ -45,10 +45,10 @@ button.primary { background: var(--beat); color: #fff; border-color: var(--beat)
 button.primary:hover { background: #86243F; }
 button.chip { border-radius: 999px; font-weight: 500; font-size: .85rem;
   color: var(--muted); min-height: 38px; padding: .35rem .8rem; }
-.seg { display: inline-flex; border: 1.5px solid var(--line);
+.seg { display: inline-flex; border: 1.5px solid var(--ctrl);
   border-radius: 10px; overflow: hidden; }
 .seg button { border: 0; border-radius: 0; min-height: 44px;
-  border-right: 1px solid var(--line); font-weight: 500; }
+  border-right: 1px solid var(--ctrl); font-weight: 500; }
 .seg button:last-child { border-right: 0; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
 #out { font-family: var(--serif); font-size: 1.5rem; line-height: 2.2;
@@ -59,7 +59,7 @@ button.chip { border-radius: 999px; font-weight: 500; font-size: .85rem;
   padding: 0 .02em; }
 .syl:hover { background: var(--beat-soft); }
 .syl:focus-visible { outline: 3px solid var(--phrase); outline-offset: 1px; }
-.joint { color: #ADB6B2; font-size: .78em; padding: 0 .05em; user-select: none; }
+.joint { color: #7E8783; font-size: .78em; padding: 0 .05em; user-select: none; }
 .mode-caps .syl.S { text-transform: uppercase; }
 .mode-bold .syl.S { font-weight: 700; }
 .mode-big  .syl.S { font-weight: 700; font-size: 1.3em; }
@@ -85,6 +85,7 @@ footer a { color: var(--phrase); }
 @media (max-width: 560px) {
   html { font-size: 16px; }
   #out { font-size: 1.35rem; }
+  .hint, #dictNote, .caveat, footer, button.chip { font-size: .9rem; }
 }
 </style>
 </head>
@@ -145,7 +146,7 @@ footer a { color: var(--phrase); }
 <footer>
   For teachers and researchers: the full analysis instrument (three-tier
   editing, phrase structure, meter detection, research logging, and data
-  export) is in <a href="index.html">Rhythm Reader Pro</a>.
+  export) is in <a href="../rhythm-reader-pro/">Rhythm Reader Pro</a>.
 </footer>
 </main>
 
