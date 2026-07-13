@@ -305,6 +305,19 @@
       .site-button, a.site-card { transition: none; }
       a.site-card:hover, a.site-card:focus-visible { transform: none; }
     }
+
+    /* Prominent replay control — the welcome tour is a teaching tool. */
+    .site-replay-cta { border-color: var(--glow); color: var(--glow-deep); font-weight: 700; }
+    .site-replay-cta::before { content: "\25B6"; font-size: .72em; margin-right: .55rem; }
+    .site-replay-cta:hover, .site-replay-cta:focus-visible { background: var(--glow-halo); border-color: var(--glow); }
+
+    /* Theoretical foundations reference list (collapsed by default). */
+    .site-theory-details { margin-top: 1.6rem; }
+    .site-theory-details > summary { cursor: pointer; font-weight: 700; color: var(--glow-deep); font-size: 1rem; }
+    .site-theory-details > summary:hover, .site-theory-details > summary:focus-visible { color: var(--ink); }
+    .site-theory-lede { max-width: 800px; margin: .8rem 0 1rem; color: var(--ink-soft); font-size: 1rem; line-height: 1.65; }
+    .site-theory-ref { margin: 0 0 .55rem; padding-left: 1.4rem; text-indent: -1.4rem; color: var(--ink-soft); font-size: .95rem; line-height: 1.55; }
+    .site-theory-ref a { color: var(--glow-deep); }
   </style>
 </head>
 <body>
@@ -355,9 +368,8 @@
   <section class="exhibit-panel" data-panel="6" data-duration="12000">
     <p class="demo-sentence" data-reveal data-delay="0">Let&rsquo;s eat Grandma.</p>
     <p class="demo-sentence" data-reveal data-delay="2000">Let&rsquo;s eat <span class="phrase-boundary">│</span> Grandma.</p>
-    <p class="caption exhibit-note" data-reveal data-delay="4200">Readers group words into meaningful phrases&mdash;even when reading silently.</p>
-    <p class="demo-sentence" data-reveal data-delay="6200">Let&rsquo;s eat, Grandma.</p>
-    <p class="takeaway" data-reveal data-delay="8600">Grouping can change meaning.</p>
+    <p class="demo-sentence" data-reveal data-delay="4000">Let&rsquo;s eat, Grandma.</p>
+    <p class="takeaway" data-reveal data-delay="6400">Grouping can change meaning &mdash; even in silent reading.</p>
   </section>
 
   <section class="exhibit-panel" data-panel="7" data-duration="15500">
@@ -388,6 +400,7 @@
   </section>
 
   <section class="exhibit-panel" data-panel="8" data-duration="15000">
+    <h2 class="panel-title" data-reveal data-delay="0">Layers of the inner voice</h2>
     <div class="architecture">
       <p class="arch-level" data-reveal data-delay="4500">Meaning</p>
       <p class="arch-arrow" data-reveal data-delay="4200" aria-hidden="true">&uarr;</p>
@@ -411,13 +424,13 @@
         <p class="brand-subtitle" data-reveal data-delay="1100">An interactive laboratory where people discover how the mind brings written language to life.</p>
       </div>
       <div class="sputnik-scene">
-        <img class="sputnik" src="sputnik.png" data-reveal data-delay="2100" alt="Sputnik, a Siberian husky with blue eyes, sitting and looking up attentively.">
+        <img class="sputnik" src="sputnik.png" data-reveal data-delay="2100" alt="Sputnik the Prosody Pup, a Siberian husky with blue eyes, sitting and looking up attentively.">
         <div class="sputnik-speech" data-reveal data-delay="3100">
           <div class="sputnik-bubble">
             <p>I&rsquo;ve been listening all along.</p>
             <p>Now you can hear it too.</p>
           </div>
-          <p class="sputnik-name">&mdash; Sputnik</p>
+          <p class="sputnik-name">&mdash; Sputnik, the Prosody Pup</p>
         </div>
       </div>
       <div class="final-cta" data-reveal data-delay="4600">
@@ -464,6 +477,7 @@
         <div class="site-cta-row">
           <a class="site-button primary" href="rhythm-reader/">Try Rhythm Reader</a>
           <a class="site-button" href="rhythm-reader-pro/">Open Rhythm Reader Pro</a>
+          <button type="button" class="site-button site-replay-cta js-replay-intro" id="replay-intro-hero">Replay the welcome tour</button>
         </div>
       </div>
     </header>
@@ -502,6 +516,23 @@
           <div><h3>Why prosody matters</h3><p>Prosody helps readers organize language into meaningful units, distinguish emphasis, and understand how words and phrases fit together.</p></div>
           <div><h3>What the project investigates</h3><p>Our research asks how readers represent prosody, how these processes differ across readers, and whether prosodic sensitivity can be strengthened through instruction.</p></div>
         </div>
+        <details class="site-theory-details">
+          <summary>Theoretical foundations</summary>
+          <p class="site-theory-lede">Prosody Trainer&rsquo;s stress and rhythm models draw on the metrical and prosodic-phonology tradition.</p>
+          <p class="site-theory-ref">Chomsky, N., &amp; Halle, M. (1968). <i>The sound pattern of English.</i> Harper &amp; Row.</p>
+          <p class="site-theory-ref">Martin, J. G. (1972). Rhythmic (hierarchical) versus serial structure in speech and other behavior. <i>Psychological Review, 79</i>(6), 487&ndash;509. <a href="https://doi.org/10.1037/h0033467">https://doi.org/10.1037/h0033467</a></p>
+          <p class="site-theory-ref">Halle, M. (1973). Stress rules in English: A new version. <i>Linguistic Inquiry, 4</i>(4), 451&ndash;464.</p>
+          <p class="site-theory-ref">Liberman, M. (1975). <i>The intonational system of English</i> [Doctoral dissertation, MIT]. (Distributed 1978 by Indiana University Linguistics Club.)</p>
+          <p class="site-theory-ref">Liberman, M., &amp; Prince, A. (1977). On stress and linguistic rhythm. <i>Linguistic Inquiry, 8</i>(2), 249&ndash;336.</p>
+          <p class="site-theory-ref">Ladd, D. R. (1980). <i>The structure of intonational meaning: Evidence from English.</i> Indiana University Press.</p>
+          <p class="site-theory-ref">Hayes, B. (1981). <i>A metrical theory of stress rules</i> [Doctoral dissertation, MIT]. (Distributed by Indiana University Linguistics Club.)</p>
+          <p class="site-theory-ref">Nespor, M., &amp; Vogel, I. (1982). Prosodic domains of external sandhi rules. In H. van der Hulst &amp; N. Smith (Eds.), <i>The structure of phonological representations (Part I)</i> (pp. 225&ndash;255). Foris.</p>
+          <p class="site-theory-ref">Selkirk, E. O. (1984). <i>Phonology and syntax: The relation between sound and structure.</i> MIT Press.</p>
+          <p class="site-theory-ref">Beckman, M. E. (1986). <i>Stress and non-stress accent.</i> Foris.</p>
+          <p class="site-theory-ref">Nespor, M., &amp; Vogel, I. (1986). <i>Prosodic phonology.</i> Foris.</p>
+          <p class="site-theory-ref">Hayes, B. (1995). <i>Metrical stress theory: Principles and case studies.</i> University of Chicago Press.</p>
+          <p class="site-theory-ref">Ladd, D. R. (1996). <i>Intonational phonology.</i> Cambridge University Press.</p>
+        </details>
       </section>
 
       <section id="use">
@@ -563,7 +594,7 @@
           <a href="#about">About and contact</a>
         </div>
       </div>
-      <p class="site-footer-note">© 2026 Jennifer Gross. Accessibility feedback is welcome at <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>. <button type="button" class="site-replay" id="replay-intro" hidden>Replay intro</button></p>
+      <p class="site-footer-note">© 2026 Jennifer Gross. Accessibility feedback is welcome at <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>. <button type="button" class="site-replay js-replay-intro" id="replay-intro" hidden>Replay intro</button></p>
     </footer>
   </div>
 </div>
