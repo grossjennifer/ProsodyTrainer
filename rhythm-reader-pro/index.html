@@ -16,11 +16,13 @@
   --ink:     #242936;
   --muted:   #5C6472;
   --line:    #D8DEDC;
+  --ctrl:    #7E8783;   /* accessible control border (>=3:1) */
   --beat:    #A03052;   /* rhythmic stress */
   --beat-soft:#F6E7EC;
   --phrase:  #2E6E6A;   /* prosodic grouping */
   --phrase-soft:#E4EFEE;
   --meter:   #B98A2F;   /* feet / scansion */
+  --meter-ink:#806316;  /* meter used as text (>=4.5:1) */
   --meter-soft:#F7EED9;
   --edit:    #7A4FA0;   /* user-edited marker */
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
@@ -80,7 +82,7 @@ body:not(.simple) #meterLine .gloss { color: var(--muted); font-size: .84rem; }
 /* Input */
 textarea { width: 100%; min-height: 7.5rem; padding: .8rem .9rem;
   font: 1.02rem/1.6 var(--serif); color: var(--ink);
-  border: 1px solid var(--line); border-radius: 8px; background: #FDFDFC;
+  border: 1px solid var(--ctrl); border-radius: 8px; background: #FDFDFC;
   resize: vertical; }
 textarea:focus { outline: 2px solid var(--phrase); outline-offset: 1px; }
 .row { display: flex; flex-wrap: wrap; gap: .55rem; align-items: center;
@@ -88,7 +90,7 @@ textarea:focus { outline: 2px solid var(--phrase); outline-offset: 1px; }
 .row .spacer { flex: 1; }
 button {
   font: 600 .88rem var(--sans); color: var(--ink);
-  background: var(--card); border: 1px solid var(--line); border-radius: 8px;
+  background: var(--card); border: 1px solid var(--ctrl); border-radius: 8px;
   padding: .48rem .85rem; cursor: pointer;
 }
 button:hover { border-color: var(--phrase); }
@@ -102,9 +104,9 @@ label.opt { font-size: .85rem; color: var(--muted); display: inline-flex;
 
 /* Toolbar */
 .toolbar { display: flex; flex-wrap: wrap; gap: .8rem 1rem; align-items: center; }
-.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px;
+.seg { display: inline-flex; border: 1px solid var(--ctrl); border-radius: 8px;
   overflow: hidden; }
-.seg button { border: 0; border-radius: 0; border-right: 1px solid var(--line);
+.seg button { border: 0; border-radius: 0; border-right: 1px solid var(--ctrl);
   background: var(--card); font-weight: 500; }
 .seg button:last-child { border-right: 0; }
 .seg button[aria-pressed="true"] { background: var(--ink); color: #fff; }
@@ -187,10 +189,10 @@ button.pjoint:focus-visible { outline: 2px solid var(--phrase); }
 .mode-phrase .word { background: transparent; }
 
 /* feet layer: alternating gold underlines */
-.show-feet .syl.f0 { box-shadow: inset 0 -4px 0 var(--meter-soft); }
-.show-feet .syl.f1 { box-shadow: inset 0 -4px 0 #EBD9AE; }
-.show-feet .joint.f0 { box-shadow: inset 0 -4px 0 var(--meter-soft); }
-.show-feet .joint.f1 { box-shadow: inset 0 -4px 0 #EBD9AE; }
+.show-feet .syl.f0,
+.show-feet .joint.f0 { box-shadow: inset 0 -4px 0 var(--meter); }
+.show-feet .syl.f1,
+.show-feet .joint.f1 { box-shadow: none; }
 
 .hint { font-size: .82rem; color: var(--muted); margin-top: .7rem; }
 .notice { margin-top: .8rem; padding: .8rem .9rem; border-radius: 8px;
@@ -226,7 +228,7 @@ td.mono, .mono { font-family: var(--mono); font-size: .82rem; }
 /* Lexicon */
 .lexctl { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center; margin-top: .6rem; }
 select { font: .86rem var(--sans); padding: .4rem .5rem; border-radius: 8px;
-  border: 1px solid var(--line); background: var(--card); color: var(--ink); }
+  border: 1px solid var(--ctrl); background: var(--card); color: var(--ink); }
 .lexgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px,1fr));
   gap: .8rem; margin-top: .9rem; }
 .lexcard { border: 1px solid var(--line); border-radius: 8px; padding: .7rem .8rem;
@@ -235,7 +237,7 @@ select { font: .86rem var(--sans); padding: .4rem .5rem; border-radius: 8px;
 .lexcard .trow { display: flex; justify-content: space-between; gap: .5rem;
   font-size: .8rem; padding: .12rem 0; }
 .lexcard .trow .k { color: var(--muted); }
-.lexcard .tname { color: var(--meter); font-weight: 600; }
+.lexcard .tname { color: var(--meter-ink); font-weight: 600; }
 
 /* Inspector dialog */
 dialog { border: 1px solid var(--line); border-radius: 12px; padding: 1.1rem 1.2rem;
@@ -270,8 +272,10 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   .syl { transition: background .12s ease; }
 }
 @media (max-width: 640px) {
-  html { font-size: 15.5px; }
-  #surface { font-size: 1.2rem; }
+  html { font-size: 16px; }
+  #surface { font-size: 1.28rem; }
+  .hint, .legend, .subtitle, .badge, .meta, #meterLine .runs,
+  .stat .l, th, .tierrow .tl, .mergebtn, td.mono, .mono { font-size: .85rem; }
 }
 </style>
 </head>
@@ -311,11 +315,11 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
       research mode</label>
     <input id="participantId" type="text" placeholder="participant ID"
       style="display:none; font:.86rem var(--sans); padding:.4rem .5rem;
-      border:1px solid var(--line); border-radius:8px; width:9rem"
+      border:1px solid var(--ctrl); border-radius:8px; width:9rem"
       aria-label="Participant ID">
     <input id="studyId" type="text" placeholder="study / condition"
       style="display:none; font:.86rem var(--sans); padding:.4rem .5rem;
-      border:1px solid var(--line); border-radius:8px; width:11rem"
+      border:1px solid var(--ctrl); border-radius:8px; width:11rem"
       aria-label="Study and condition label">
     <button class="primary" id="analyzeBtn">Analyze rhythm</button>
   </div>
@@ -340,7 +344,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <label class="opt research"><input type="checkbox" id="sylBreaks"> syllable breaks</label>
     <label class="opt research" style="gap:.3rem">cues:
       <select id="density" style="font:.82rem var(--sans); padding:.15rem .3rem;
-        border:1px solid var(--line); border-radius:6px">
+        border:1px solid var(--ctrl); border-radius:6px">
         <option value="all">all beats</option>
         <option value="phrase">one per phrase</option>
         <option value="sentence">one per sentence</option>
