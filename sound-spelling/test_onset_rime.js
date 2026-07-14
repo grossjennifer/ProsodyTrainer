@@ -109,6 +109,27 @@ const computer = ORR.analyze('computer');
 eq('computer has 3 syllables', computer.syllableCount, 3);
 eq('computer final rime /\u0259r/', computer.syllables[2].rimeIPA, '\u0259r');
 
+// Regression for the coverage bug: common multisyllabic words must get the syllable
+// treatment (from the bundled word list) even if the shared dictionary lacks them,
+// NOT the old whole-word "onset + remainder" split.
+['elephant','computer','rabbit','teacher','remember','table','about'].forEach(function(w){
+  var a=ORR.analyze(w);
+  ok(w+' is treated as multisyllabic (not whole-word split)', a.multisyllabic===true && a.syllableCount>=2);
+  ok(w+' rime is not the whole remainder', a.syllables[0].text.length < w.length);
+});
+eq('elephant has 3 syllables', ORR.analyze('elephant').syllableCount, 3);
+
+// Out-of-lexicon multisyllabic words degrade gracefully to a spelling split (letters,
+// no fabricated sounds) rather than the broken single-cell view.
+var oov = ORR.analyze('splonktarp');
+eq('oov multisyllabic is flagged multisyllabic', oov.multisyllabic, true);
+eq('oov multisyllabic has no fabricated sound', oov.soundKnown, false);
+ok('oov multisyllabic splits into 2 syllables', oov.syllableCount===2);
+ok('oov syllables carry letter onset/rime', oov.syllables[0].text==='splonk' && oov.syllables[1].text==='tarp');
+ok('oov syllable 1 onset letters "spl"', oov.syllables[0].onsetL==='spl');
+// silent-e words are still one syllable (flake stays monosyllabic / estimated)
+eq('flake stays one syllable (silent e)', ORR.analyze('flake').syllableCount, 1);
+
 // the pure syllabifier is exposed and applies the stressed-lax-vowel-keeps-coda rule
 const sy = ORR.syllabify(['B','AE1','S','K','IH0','T']);   // basket
 eq('syllabify basket -> 2 syllables', sy.length, 2);

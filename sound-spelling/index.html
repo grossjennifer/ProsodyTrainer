@@ -137,6 +137,90 @@
   #sound-chips{display:block}
   .spell-row.plain{border-left-color:var(--line)}
   .spell-row .rank{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:.85rem;min-width:1.4ch;text-align:right}
+
+  /* multi-syllable read view */
+  .wordline.multi{display:flex;flex-wrap:wrap;align-items:baseline;gap:.1em}
+  .wordline .syl{color:var(--ink)}
+  .wordline .syl.stress{position:relative}
+  .wordline .syl.stress::after{content:"";position:absolute;left:8%;right:8%;bottom:-.06em;height:3px;border-radius:2px;background:var(--glow)}
+  .wordline .syl-dot{color:var(--line);font-weight:300;padding:0 .06em}
+  .acc{color:var(--glow-deep);font-weight:600;margin-left:.05em}
+  .syl-strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:.6rem;margin:.4rem 0 0}
+  .syl-arrow{display:flex;align-items:center;color:var(--line);font-size:1.4rem;font-weight:300}
+  .syl-card{flex:1 1 150px;min-width:140px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem}
+  .syl-text{font-family:var(--serif);font-size:1.9rem;line-height:1.1;margin:0 0 .55rem;color:var(--ink)}
+  .mini-row{display:flex;align-items:center;gap:.5rem;margin:.28rem 0}
+  .mini-tag{font-size:.66rem;font-weight:750;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:.14em .5em}
+  .mini-tag.onset{color:var(--onset);background:var(--onset-soft)}
+  .mini-tag.rime{color:var(--rime-ink);background:var(--rime-soft)}
+  .mini-sound{font-family:var(--serif);font-size:1.3rem}
+  .mini-sound.onset{color:var(--onset)}
+  .mini-sound.rime{color:var(--rime)}
+  .mini-sound.muted{font-family:var(--sans);font-size:.85rem;color:var(--ink-soft)}
+
+  /* grouped sound picker */
+  .sound-group-label{font-size:.72rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--glow-deep);margin:1.1rem 0 .45rem}
+  .sound-group-label:first-child{margin-top:.2rem}
+  .sound-chip-row{display:flex;gap:.4rem .5rem;flex-wrap:wrap}
+  #sound-chips{display:block}
+  .spell-row.plain{border-left-color:var(--line)}
+  .spell-row .rank{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:.85rem;min-width:1.4ch;text-align:right}
+
+  /* multi-syllable read view */
+  .wordline.multi{display:flex;flex-wrap:wrap;align-items:baseline;gap:.1em}
+  .wordline .syl{color:var(--ink)}
+  .wordline .syl.stress{position:relative}
+  .wordline .syl.stress::after{content:"";position:absolute;left:8%;right:8%;bottom:-.06em;height:3px;border-radius:2px;background:var(--glow)}
+  .wordline .syl-dot{color:var(--line);font-weight:300;padding:0 .06em}
+  .acc{color:var(--glow-deep);font-weight:600;margin-left:.05em}
+  .syl-strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:.6rem;margin:.4rem 0 0}
+  .syl-arrow{display:flex;align-items:center;color:var(--line);font-size:1.4rem;font-weight:300}
+  .syl-card{flex:1 1 150px;min-width:140px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem}
+  .syl-text{font-family:var(--serif);font-size:1.9rem;line-height:1.1;margin:0 0 .55rem;color:var(--ink)}
+  .mini-row{display:flex;align-items:center;gap:.5rem;margin:.28rem 0}
+  .mini-tag{font-size:.66rem;font-weight:750;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:.14em .5em}
+  .mini-tag.onset{color:var(--onset);background:var(--onset-soft)}
+  .mini-tag.rime{color:var(--rime-ink);background:var(--rime-soft)}
+  .mini-sound{font-family:var(--serif);font-size:1.3rem}
+  .mini-sound.onset{color:var(--onset)}
+  .mini-sound.rime{color:var(--rime)}
+  .mini-sound.muted{font-family:var(--sans);font-size:.85rem;color:var(--ink-soft)}
+
+  /* grouped sound picker */
+  .sound-group-label{font-size:.72rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--glow-deep);margin:1.1rem 0 .45rem}
+  .sound-group-label:first-child{margin-top:.2rem}
+  .sound-chip-row{display:flex;gap:.4rem .5rem;flex-wrap:wrap}
+  #sound-chips{display:block}
+  .spell-row.plain{border-left-color:var(--line)}
+  .spell-row .rank{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:.85rem;min-width:1.4ch;text-align:right}
+
+  /* multi-syllable read view */
+  .wordline.multi{display:flex;flex-wrap:wrap;align-items:baseline;gap:.1em}
+  .wordline .syl{color:var(--ink)}
+  .wordline .syl.stress{position:relative}
+  .wordline .syl.stress::after{content:"";position:absolute;left:8%;right:8%;bottom:-.06em;height:3px;border-radius:2px;background:var(--glow)}
+  .wordline .syl-dot{color:var(--line);font-weight:300;padding:0 .06em}
+  .acc{color:var(--glow-deep);font-weight:600;margin-left:.05em}
+  .syl-strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:.6rem;margin:.4rem 0 0}
+  .syl-arrow{display:flex;align-items:center;color:var(--line);font-size:1.4rem;font-weight:300}
+  .syl-card{flex:1 1 150px;min-width:140px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem}
+  .syl-text{font-family:var(--serif);font-size:1.9rem;line-height:1.1;margin:0 0 .55rem;color:var(--ink)}
+  .mini-row{display:flex;align-items:center;gap:.5rem;margin:.28rem 0}
+  .mini-tag{font-size:.66rem;font-weight:750;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:.14em .5em}
+  .mini-tag.onset{color:var(--onset);background:var(--onset-soft)}
+  .mini-tag.rime{color:var(--rime-ink);background:var(--rime-soft)}
+  .mini-sound{font-family:var(--serif);font-size:1.3rem}
+  .mini-sound.onset{color:var(--onset)}
+  .mini-sound.rime{color:var(--rime)}
+  .mini-sound.muted{font-family:var(--sans);font-size:.85rem;color:var(--ink-soft)}
+
+  /* grouped sound picker */
+  .sound-group-label{font-size:.72rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--glow-deep);margin:1.1rem 0 .45rem}
+  .sound-group-label:first-child{margin-top:.2rem}
+  .sound-chip-row{display:flex;gap:.4rem .5rem;flex-wrap:wrap}
+  #sound-chips{display:block}
+  .spell-row.plain{border-left-color:var(--line)}
+  .spell-row .rank{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:.85rem;min-width:1.4ch;text-align:right}
 </style>
 </head>
 <body>
@@ -183,6 +267,9 @@
     <p class="ref">Selkirk, E. O. (1982). The syllable. In H. van der Hulst &amp; N. Smith (Eds.), <i>The structure of phonological representations (Part II)</i> (pp. 337&ndash;383). Foris.</p>
     <p class="ref">Selkirk, E. O. (1984). <i>Phonology and syntax: The relation between sound and structure.</i> MIT Press.</p>
     <p class="ref">Share, D. L. (1995). Phonological recoding and self-teaching: <i>Sine qua non</i> of reading acquisition. <i>Cognition, 55</i>(2), 151&ndash;218.</p>
+    <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
+    <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
+    <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
     <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
     <p class="ref">Treiman, R., Mullennix, J., Bijeljac-Babic, R., &amp; Richmond-Welty, E. D. (1995). The special role of rimes in the description, use, and acquisition of English orthography. <i>Journal of Experimental Psychology: General, 124</i>(2), 107&ndash;136.</p>
     <p class="ref">Venezky, R. L. (1999). <i>The American way of spelling: The structure and origins of American English orthography.</i> Guilford Press.</p>
@@ -334,6 +421,49 @@
     return chunks;
   }
 
+  // ---- spelling-only syllable split (for words with no pronunciation available) ----
+  var ORTHO_ONSET = ['thr','shr','spl','spr','str','scr','sch','squ','ch','sh','th','wh','ph','bl','br','cl','cr',
+    'dr','fl','fr','gl','gr','pl','pr','sc','sk','sl','sm','sn','sp','st','sw','tr','tw','gn','kn','wr'];
+  function spellingNuclei(word){
+    var groups=[],i=0;
+    while(i<word.length){
+      if(isVowelLetter(word[i],i)){ var j=i; while(j<word.length && isVowelLetter(word[j],j)) j++; groups.push([i,j]); i=j; }
+      else i++;
+    }
+    if(groups.length<=1) return groups;
+    var last=groups[groups.length-1];
+    var finalE = last[1]===word.length && word.slice(last[0],last[1])==='e';
+    var endsCle = /[^aeiouy]le$/.test(word);
+    if(finalE && !endsCle) groups.pop();      // silent 'magic' e (cake, gene): not its own syllable
+    return groups;
+  }
+  function orthoSyllablesSpelling(word){
+    var nuclei=spellingNuclei(word), n=nuclei.length;
+    if(n<=1) return [word];
+    if(/[bcdfgkpstz]le$/.test(word)){                       // final -Cle is its own syllable (ta-ble)
+      var head=word.slice(0,-3);
+      var sub=orthoSyllablesSpelling(head);
+      if(sub) return sub.concat([word.slice(-3)]);
+    }
+    var breaks=[];
+    for(var k=0;k<nuclei.length-1;k++){
+      var cStart=nuclei[k][1], cEnd=nuclei[k+1][0], run=word.slice(cStart,cEnd), cut;
+      if(run.length===0) cut=cStart;                        // adjacent vowels
+      else if(run.length===2 && run[0]===run[1]) cut=cStart+1;   // rab|bit, hap|py
+      else if(run.length===1) cut=cStart;                   // V|CV
+      else {
+        var keep=1;
+        for(var d=0;d<ORTHO_ONSET.length;d++){ var g=ORTHO_ONSET[d]; if(g.length<run.length && word.substr(cEnd-g.length,g.length)===g){ keep=g.length; break; } }
+        cut=cEnd-keep;                                       // VC|CV or VC|CCV, keeping an onset blend
+      }
+      breaks.push(cut);
+    }
+    var chunks=[],prev=0;
+    for(var b=0;b<breaks.length;b++){ chunks.push(word.slice(prev,breaks[b])); prev=breaks[b]; }
+    chunks.push(word.slice(prev));
+    return chunks;
+  }
+
   // ---- families: rhyme families over MONOSYLLABIC words (word-final rime) ----
   function firstPron(s){ return String(s).split('|')[0].trim(); }
   function syllCount(ph){ var n=0,a=ph.split(' '),i; for(i=0;i<a.length;i++) if(VOWELS[bare(a[i])]) n++; return n; }
@@ -352,9 +482,504 @@
     for(var r in fam) fam[r].groups.sort(function(a,b){return b.words.length-a.words.length;});
     return fam;
   }
+  // Common words (mono + multi) bundled so the exhibit works even if the shared
+  // cmudict-subset.js is sparse. Multisyllabic entries never affect rime families
+  // (those are built from monosyllables only). Pronunciations are CMU (stress-marked).
+  var COMMON = {
+    'about':'AH0 B AW1 T',
+    'access':'AE1 K S EH2 S',
+    'accessories':'AE0 K S EH1 S ER0 IY0 Z',
+    'account':'AH0 K AW1 N T',
+    'action':'AE1 K SH AH0 N',
+    'add':'AE1 D',
+    'address':'AE1 D R EH2 S',
+    'advanced':'AH0 D V AE1 N S T',
+    'after':'AE1 F T ER0',
+    'again':'AH0 G EH1 N',
+    'all':'AO1 L',
+    'also':'AO1 L S OW0',
+    'am':'AE1 M',
+    'american':'AH0 M EH1 R AH0 K AH0 N',
+    'an':'AE1 N',
+    'and':'AH0 N D',
+    'animal':'AE1 N AH0 M AH0 L',
+    'another':'AH0 N AH1 DH ER0',
+    'any':'EH1 N IY0',
+    'apple':'AE1 P AH0 L',
+    'application':'AE2 P L AH0 K EY1 SH AH0 N',
+    'april':'EY1 P R AH0 L',
+    'are':'AA1 R',
+    'area':'EH1 R IY0 AH0',
+    'around':'ER0 AW1 N D',
+    'art':'AA1 R T',
+    'article':'AA1 R T AH0 K AH0 L',
+    'articles':'AA1 R T AH0 K AH0 L Z',
+    'as':'AE1 Z',
+    'at':'AE1 T',
+    'author':'AO1 TH ER0',
+    'available':'AH0 V EY1 L AH0 B AH0 L',
+    'away':'AH0 W EY1',
+    'back':'B AE1 K',
+    'banana':'B AH0 N AE1 N AH0',
+    'based':'B EY1 S T',
+    'be':'B IY1',
+    'beautiful':'B Y UW1 T AH0 F AH0 L',
+    'because':'B IH0 K AO1 Z',
+    'been':'B IH1 N',
+    'before':'B IH0 F AO1 R',
+    'being':'B IY1 IH0 NG',
+    'best':'B EH1 S T',
+    'better':'B EH1 T ER0',
+    'between':'B IH0 T W IY1 N',
+    'big':'B IH1 G',
+    'black':'B L AE1 K',
+    'board':'B AO1 R D',
+    'book':'B UH1 K',
+    'books':'B UH1 K S',
+    'both':'B OW1 TH',
+    'bread':'B R EH1 D',
+    'business':'B IH1 Z N AH0 S',
+    'but':'B AH1 T',
+    'buy':'B AY1',
+    'by':'B AY1',
+    'call':'K AO1 L',
+    'can':'K AE1 N',
+    'canada':'K AE1 N AH0 D AH0',
+    'car':'K AA1 R',
+    'card':'K AA1 R D',
+    'care':'K EH1 R',
+    'case':'K EY1 S',
+    'categories':'K AE1 T AH0 G AO2 R IY0 Z',
+    'category':'K AE1 T AH0 G AO2 R IY0',
+    'center':'S EH1 N T ER0',
+    'change':'CH EY1 N JH',
+    'check':'CH EH1 K',
+    'children':'CH IH1 L D R AH0 N',
+    'city':'S IH1 T IY0',
+    'class':'K L AE1 S',
+    'click':'K L IH1 K',
+    'code':'K OW1 D',
+    'college':'K AA1 L IH0 JH',
+    'comment':'K AA1 M EH0 N T',
+    'comments':'K AA1 M EH0 N T S',
+    'community':'K AH0 M Y UW1 N AH0 T IY0',
+    'company':'K AH1 M P AH0 N IY2',
+    'compare':'K AH0 M P EH1 R',
+    'complete':'K AH0 M P L IY1 T',
+    'computer':'K AH0 M P Y UW1 T ER0',
+    'conditions':'K AH0 N D IH1 SH AH0 N Z',
+    'contact':'K AA1 N T AE2 K T',
+    'content':'K AA1 N T EH0 N T',
+    'control':'K AH0 N T R OW1 L',
+    'copyright':'K AA1 P IY0 R AY2 T',
+    'could':'K UH1 D',
+    'country':'K AH1 N T R IY0',
+    'county':'K AW1 N T IY0',
+    'course':'K AO1 R S',
+    'credit':'K R EH1 D AH0 T',
+    'current':'K ER1 AH0 N T',
+    'customer':'K AH1 S T AH0 M ER0',
+    'data':'D EY1 T AH0',
+    'date':'D EY1 T',
+    'day':'D EY1',
+    'days':'D EY1 Z',
+    'de':'D IY1',
+    'december':'D IH0 S EH1 M B ER0',
+    'department':'D IH0 P AA1 R T M AH0 N T',
+    'description':'D IH0 S K R IH1 P SH AH0 N',
+    'design':'D IH0 Z AY1 N',
+    'details':'D IH0 T EY1 L Z',
+    'development':'D IH0 V EH1 L AH0 P M AH0 N T',
+    'did':'D IH1 D',
+    'different':'D IH1 F ER0 AH0 N T',
+    'digital':'D IH1 JH AH0 T AH0 L',
+    'directory':'D ER0 EH1 K T ER0 IY0',
+    'do':'D UW1',
+    'does':'D AH1 Z',
+    'down':'D AW1 N',
+    'download':'D AW1 N L OW2 D',
+    'during':'D UH1 R IH0 NG',
+    'dvd':'D IY2 V IY2 D IY1',
+    'each':'IY1 CH',
+    'ebay':'IY1 B EY2',
+    'education':'EH2 JH AH0 K EY1 SH AH0 N',
+    'elephant':'EH1 L AH0 F AH0 N T',
+    'email':'IY0 M EY1 L',
+    'end':'EH1 N D',
+    'english':'IH1 NG G L IH0 SH',
+    'estate':'IH0 S T EY1 T',
+    'even':'IY1 V IH0 N',
+    'events':'IH0 V EH1 N T S',
+    'every':'EH1 V ER0 IY0',
+    'family':'F AE1 M AH0 L IY0',
+    'favorite':'F EY1 V ER0 IH0 T',
+    'features':'F IY1 CH ER0 Z',
+    'feedback':'F IY1 D B AE2 K',
+    'file':'F AY1 L',
+    'financial':'F AH0 N AE1 N SH AH0 L',
+    'find':'F AY1 N D',
+    'first':'F ER1 S T',
+    'following':'F AA1 L OW0 IH0 NG',
+    'food':'F UW1 D',
+    'for':'F AO1 R',
+    'form':'F AO1 R M',
+    'forum':'F AO1 R AH0 M',
+    'forums':'F AO1 R AH0 M Z',
+    'found':'F AW1 N D',
+    'free':'F R IY1',
+    'from':'F R AH1 M',
+    'full':'F UH1 L',
+    'gallery':'G AE1 L ER0 IY0',
+    'game':'G EY1 M',
+    'games':'G EY1 M Z',
+    'general':'JH EH1 N ER0 AH0 L',
+    'get':'G EH1 T',
+    'go':'G OW1',
+    'going':'G OW1 IH0 NG',
+    'good':'G UH1 D',
+    'government':'G AH1 V ER0 M AH0 N T',
+    'great':'G R EY1 T',
+    'group':'G R UW1 P',
+    'guide':'G AY1 D',
+    'had':'HH AE1 D',
+    'has':'HH AE1 Z',
+    'have':'HH AE1 V',
+    'he':'HH IY1',
+    'health':'HH EH1 L TH',
+    'help':'HH EH1 L P',
+    'her':'HH ER1',
+    'here':'HH IY1 R',
+    'high':'HH AY1',
+    'him':'HH IH1 M',
+    'his':'HH IH1 Z',
+    'history':'HH IH1 S T ER0 IY0',
+    'holiday':'HH AA1 L AH0 D EY2',
+    'home':'HH OW1 M',
+    'hotel':'HH OW0 T EH1 L',
+    'hotels':'HH OW0 T EH1 L Z',
+    'hours':'AW1 ER0 Z',
+    'house':'HH AW1 S',
+    'how':'HH AW1',
+    'however':'HH AW2 EH1 V ER0',
+    'human':'HH Y UW1 M AH0 N',
+    'if':'IH1 F',
+    'image':'IH1 M AH0 JH',
+    'important':'IH2 M P AO1 R T AH0 N T',
+    'in':'IH0 N',
+    'include':'IH2 N K L UW1 D',
+    'including':'IH2 N K L UW1 D IH0 NG',
+    'index':'IH1 N D EH0 K S',
+    'industry':'IH1 N D AH0 S T R IY0',
+    'info':'IH1 N F OW0',
+    'information':'IH2 N F ER0 M EY1 SH AH0 N',
+    'insurance':'IH2 N SH UH1 R AH0 N S',
+    'international':'IH2 N T ER0 N AE1 SH AH0 N AH0 L',
+    'internet':'IH1 N T ER0 N EH2 T',
+    'into':'IH1 N T UW0',
+    'is':'IH1 Z',
+    'issues':'IH1 SH UW0 Z',
+    'it':'IH1 T',
+    'item':'AY1 T AH0 M',
+    'items':'AY1 T AH0 M Z',
+    'its':'IH1 T S',
+    'jan':'JH AE1 N',
+    'january':'JH AE1 N Y UW0 EH2 R IY0',
+    'job':'JH AA1 B',
+    'jobs':'JH AA1 B Z',
+    'john':'JH AA1 N',
+    'july':'JH UW2 L AY1',
+    'just':'JH AH1 S T',
+    'know':'N OW1',
+    'last':'L AE1 S T',
+    'law':'L AO1',
+    'learn':'L ER1 N',
+    'level':'L EH1 V AH0 L',
+    'library':'L AY1 B R EH0 R IY2',
+    'life':'L AY1 F',
+    'light':'L AY1 T',
+    'like':'L AY1 K',
+    'line':'L AY1 N',
+    'link':'L IH1 NG K',
+    'links':'L IH1 NG K S',
+    'list':'L IH1 S T',
+    'listing':'L IH1 S T IH0 NG',
+    'little':'L IH1 T AH0 L',
+    'local':'L OW1 K AH0 L',
+    'location':'L OW0 K EY1 SH AH0 N',
+    'long':'L AO1 NG',
+    'looking':'L UH1 K IH0 NG',
+    'love':'L AH1 V',
+    'low':'L OW1',
+    'made':'M EY1 D',
+    'mail':'M EY1 L',
+    'main':'M EY1 N',
+    'make':'M EY1 K',
+    'man':'M AE1 N',
+    'management':'M AE1 N AH0 JH M AH0 N T',
+    'many':'M EH1 N IY0',
+    'map':'M AE1 P',
+    'market':'M AA1 R K AH0 T',
+    'may':'M EY1',
+    'me':'M IY1',
+    'media':'M IY1 D IY0 AH0',
+    'medical':'M EH1 D AH0 K AH0 L',
+    'member':'M EH1 M B ER0',
+    'members':'M EH1 M B ER0 Z',
+    'message':'M EH1 S AH0 JH',
+    'model':'M AA1 D AH0 L',
+    'money':'M AH1 N IY0',
+    'more':'M AO1 R',
+    'most':'M OW1 S T',
+    'movie':'M UW1 V IY0',
+    'movies':'M UW1 V IY0 Z',
+    'much':'M AH1 CH',
+    'music':'M Y UW1 Z IH0 K',
+    'must':'M AH1 S T',
+    'my':'M AY1',
+    'name':'N EY1 M',
+    'national':'N AE1 SH AH0 N AH0 L',
+    'need':'N IY1 D',
+    'network':'N EH1 T W ER2 K',
+    'never':'N EH1 V ER0',
+    'new':'N UW1',
+    'news':'N UW1 Z',
+    'next':'N EH1 K S T',
+    'night':'N AY1 T',
+    'no':'N OW1',
+    'non':'N AA1 N',
+    'north':'N AO1 R TH',
+    'not':'N AA1 T',
+    'november':'N OW0 V EH1 M B ER0',
+    'now':'N AW1',
+    'number':'N AH1 M B ER0',
+    'october':'AA0 K T OW1 B ER0',
+    'of':'AH1 V',
+    'off':'AO1 F',
+    'office':'AO1 F IH0 S',
+    'old':'OW1 L D',
+    'on':'AA1 N',
+    'one':'W AH1 N',
+    'online':'AO1 N L AY2 N',
+    'only':'OW1 N L IY0',
+    'open':'OW1 P AH0 N',
+    'or':'AO1 R',
+    'orange':'AO1 R AH0 N JH',
+    'order':'AO1 R D ER0',
+    'other':'AH1 DH ER0',
+    'our':'AW1 ER0',
+    'out':'AW1 T',
+    'over':'OW1 V ER0',
+    'own':'OW1 N',
+    'page':'P EY1 JH',
+    'pages':'P EY1 JH AH0 Z',
+    'part':'P AA1 R T',
+    'pencil':'P EH1 N S AH0 L',
+    'people':'P IY1 P AH0 L',
+    'per':'P ER1',
+    'personal':'P ER1 S IH0 N AH0 L',
+    'phone':'F OW1 N',
+    'photo':'F OW1 T OW2',
+    'photos':'F OW1 T OW2 Z',
+    'pictures':'P IH1 K CH ER0 Z',
+    'place':'P L EY1 S',
+    'please':'P L IY1 Z',
+    'policy':'P AA1 L AH0 S IY0',
+    'post':'P OW1 S T',
+    'posted':'P OW1 S T IH0 D',
+    'posts':'P OW1 S T S',
+    'potato':'P AH0 T EY1 T OW2',
+    'power':'P AW1 ER0',
+    'press':'P R EH1 S',
+    'previous':'P R IY1 V IY0 AH0 S',
+    'price':'P R AY1 S',
+    'prices':'P R AY1 S AH0 Z',
+    'print':'P R IH1 N T',
+    'privacy':'P R AY1 V AH0 S IY0',
+    'private':'P R AY1 V AH0 T',
+    'process':'P R AA1 S EH2 S',
+    'product':'P R AA1 D AH0 K T',
+    'products':'P R AA1 D AH0 K T S',
+    'profile':'P R OW1 F AY2 L',
+    'program':'P R OW1 G R AE2 M',
+    'project':'P R AA1 JH EH0 K T',
+    'property':'P R AA1 P ER0 T IY0',
+    'provide':'P R AH0 V AY1 D',
+    'provided':'P R AH0 V AY1 D IH0 D',
+    'public':'P AH1 B L IH0 K',
+    'pumpkin':'P AH1 M P K IH0 N',
+    'purple':'P ER1 P AH0 L',
+    'quality':'K W AA1 L AH0 T IY0',
+    'questions':'K W EH1 S CH AH0 N Z',
+    'rabbit':'R AE1 B AH0 T',
+    'rate':'R EY1 T',
+    'rating':'R EY1 T IH0 NG',
+    're':'R EY1',
+    'read':'R EH1 D',
+    'real':'R IY1 L',
+    'really':'R IH1 L IY0',
+    'register':'R EH1 JH IH0 S T ER0',
+    'related':'R IH0 L EY1 T IH0 D',
+    'remember':'R IH0 M EH1 M B ER0',
+    'reply':'R IH0 P L AY1',
+    'report':'R IY0 P AO1 R T',
+    'required':'R IY0 K W AY1 ER0 D',
+    'research':'R IY0 S ER1 CH',
+    'reserved':'R IH0 Z ER1 V D',
+    'resources':'R IY1 S AO0 R S IH0 Z',
+    'results':'R IH0 Z AH1 L T S',
+    'return':'R IH0 T ER1 N',
+    'review':'R IY2 V Y UW1',
+    'reviews':'R IY0 V Y UW1 Z',
+    'right':'R AY1 T',
+    'rights':'R AY1 T S',
+    'room':'R UW1 M',
+    'said':'S EH1 D',
+    'sale':'S EY1 L',
+    'same':'S EY1 M',
+    'save':'S EY1 V',
+    'school':'S K UW1 L',
+    'science':'S AY1 AH0 N S',
+    'search':'S ER1 CH',
+    'second':'S EH1 K AH0 N D',
+    'section':'S EH1 K SH AH0 N',
+    'security':'S IH0 K Y UH1 R AH0 T IY0',
+    'see':'S IY1',
+    'select':'S AH0 L EH1 K T',
+    'send':'S EH1 N D',
+    'september':'S EH0 P T EH1 M B ER0',
+    'series':'S IH1 R IY0 Z',
+    'server':'S ER1 V ER0',
+    'service':'S ER1 V AH0 S',
+    'services':'S ER1 V AH0 S AH0 Z',
+    'set':'S EH1 T',
+    'shall':'SH AE1 L',
+    'she':'SH IY1',
+    'shipping':'SH IH1 P IH0 NG',
+    'shop':'SH AA1 P',
+    'shopping':'SH AA1 P IH0 NG',
+    'should':'SH UH1 D',
+    'show':'SH OW1',
+    'sign':'S AY1 N',
+    'since':'S IH1 N S',
+    'site':'S AY1 T',
+    'sites':'S AY1 T S',
+    'size':'S AY1 Z',
+    'small':'S M AO1 L',
+    'so':'S OW1',
+    'software':'S AO1 F T W EH2 R',
+    'some':'S AH1 M',
+    'source':'S AO1 R S',
+    'south':'S AW1 TH',
+    'special':'S P EH1 SH AH0 L',
+    'sports':'S P AO1 R T S',
+    'state':'S T EY1 T',
+    'states':'S T EY1 T S',
+    'still':'S T IH1 L',
+    'stock':'S T AA1 K',
+    'store':'S T AO1 R',
+    'students':'S T UW1 D AH0 N T S',
+    'study':'S T AH1 D IY0',
+    'subject':'S AH0 B JH EH1 K T',
+    'such':'S AH1 CH',
+    'summer':'S AH1 M ER0',
+    'support':'S AH0 P AO1 R T',
+    'system':'S IH1 S T AH0 M',
+    'systems':'S IH1 S T AH0 M Z',
+    'table':'T EY1 B AH0 L',
+    'take':'T EY1 K',
+    'teacher':'T IY1 CH ER0',
+    'technology':'T EH0 K N AA1 L AH0 JH IY0',
+    'teen':'T IY1 N',
+    'terms':'T ER1 M Z',
+    'text':'T EH1 K S T',
+    'than':'DH AE1 N',
+    'that':'DH AE1 T',
+    'the':'DH AH0',
+    'their':'DH EH1 R',
+    'them':'DH EH1 M',
+    'then':'DH EH1 N',
+    'there':'DH EH1 R',
+    'these':'DH IY1 Z',
+    'they':'DH EY1',
+    'think':'TH IH1 NG K',
+    'this':'DH IH1 S',
+    'those':'DH OW1 Z',
+    'three':'TH R IY1',
+    'through':'TH R UW1',
+    'time':'T AY1 M',
+    'times':'T AY1 M Z',
+    'title':'T AY1 T AH0 L',
+    'to':'T UW1',
+    'today':'T AH0 D EY1',
+    'together':'T AH0 G EH1 DH ER0',
+    'tomato':'T AH0 M EY1 T OW2',
+    'tomorrow':'T AH0 M AA1 R OW2',
+    'tools':'T UW1 L Z',
+    'top':'T AA1 P',
+    'topic':'T AA1 P IH0 K',
+    'total':'T OW1 T AH0 L',
+    'training':'T R EY1 N IH0 NG',
+    'travel':'T R AE1 V AH0 L',
+    'two':'T UW1',
+    'type':'T AY1 P',
+    'under':'AH1 N D ER0',
+    'united':'Y UW0 N AY1 T IH0 D',
+    'university':'Y UW2 N AH0 V ER1 S AH0 T IY0',
+    'up':'AH1 P',
+    'us':'AH1 S',
+    'usa':'Y UW2 EH2 S EY1',
+    'use':'Y UW1 S',
+    'used':'Y UW1 Z D',
+    'user':'Y UW1 Z ER0',
+    'users':'Y UW1 Z ER0 Z',
+    'using':'Y UW1 Z IH0 NG',
+    'value':'V AE1 L Y UW0',
+    'version':'V ER1 ZH AH0 N',
+    'very':'V EH1 R IY0',
+    'video':'V IH1 D IY0 OW0',
+    'view':'V Y UW1',
+    'visit':'V IH1 Z IH0 T',
+    'want':'W AA1 N T',
+    'was':'W AA1 Z',
+    'water':'W AO1 T ER0',
+    'way':'W EY1',
+    'we':'W IY1',
+    'web':'W EH1 B',
+    'website':'W EH1 B S AY2 T',
+    'well':'W EH1 L',
+    'were':'W ER1',
+    'what':'W AH1 T',
+    'when':'W EH1 N',
+    'where':'W EH1 R',
+    'which':'W IH1 CH',
+    'while':'W AY1 L',
+    'white':'W AY1 T',
+    'who':'HH UW1',
+    'why':'W AY1',
+    'will':'W IH1 L',
+    'window':'W IH1 N D OW0',
+    'windows':'W IH1 N D OW0 Z',
+    'winter':'W IH1 N T ER0',
+    'with':'W IH1 DH',
+    'within':'W IH0 DH IH1 N',
+    'without':'W IH0 TH AW1 T',
+    'women':'W IH1 M AH0 N',
+    'work':'W ER1 K',
+    'world':'W ER1 L D',
+    'would':'W UH1 D',
+    'yahoo':'Y AA1 HH UW2',
+    'year':'Y IH1 R',
+    'years':'Y IH1 R Z',
+    'yellow':'Y EH1 L OW0',
+    'yesterday':'Y EH1 S T ER0 D EY2',
+    'york':'Y AO1 R K',
+    'you':'Y UW1',
+    'your':'Y AO1 R',
+  };
   (function buildLexicon(){
     var cmu=(typeof window!=='undefined' && window.CMUDICT_SUBSET) || {};
     for(var w in cmu){ if(!/^[a-z]+$/i.test(w)) continue; LEX[w.toLowerCase()]=firstPron(cmu[w]); }
+    for(var c in COMMON){ if(!(c in LEX)) LEX[c]=COMMON[c]; }       // fill common-word gaps
     for(var k in SUPPLEMENT){ if(!(k in LEX)) LEX[k]=SUPPLEMENT[k]; }
   })();
   var families=buildFamilies();
@@ -369,7 +994,7 @@
     if(LEX[word]){
       var phones=LEX[word].split(' ');
       var sylls=syllabify(phones);
-      out.source='lexicon';
+      out.source='lexicon'; out.soundKnown=true;
       out.syllableCount=sylls.length;
       out.multisyllabic=sylls.length>1;
       var chunks=orthoSyllables(word,sylls) || [word];
@@ -387,17 +1012,32 @@
       return out;
     }
 
-    // out of lexicon: estimate as a single unit (onset by grapheme rules, rime by analogy)
+    // ---- out of lexicon ----
+    if(spellingNuclei(word).length>1){
+      // multisyllabic word with no pronunciation: split the SPELLING into syllables and show
+      // each syllable's onset & rime in LETTERS. Sounds are omitted (not fabricated).
+      var chunks=orthoSyllablesSpelling(word);
+      out.source='oov'; out.multisyllabic=true; out.soundKnown=false; out.rimeKnown=false;
+      out.syllableCount=chunks.length; out.spellingSplit=true;
+      out.onsetIPA=''; out.rimeIPA='';
+      out.syllables=chunks.map(function(ch){
+        var s=splitLettersOnsetRime(ch);
+        return { text:ch, onsetL:s.onset, rimeL:s.rime, onsetIPA:'', rimeIPA:'',
+                 onsetArpa:[], rimeArpa:[], stress:0, soundKnown:false };
+      });
+      return out;
+    }
+    // monosyllabic word with no pronunciation: onset by grapheme rules, rime by family analogy
     var onsetPhones=onsetToPhones(onsetL), rimePhones, source, rimeKnown=true;
     var fam=families[rimeL];
     if(fam){ rimePhones=fam.groups[0].arpa.slice(); source='estimated'; }
     else { rimePhones=[]; source='unknown'; rimeKnown=false; }
-    out.source=source; out.rimeKnown=rimeKnown;
+    out.source=source; out.rimeKnown=rimeKnown; out.soundKnown=rimeKnown;
     out.onsetPhones=onsetPhones; out.rimePhones=rimePhones;
     out.onsetIPA=ipaString(onsetPhones); out.rimeIPA=ipaString(rimePhones);
     out.syllableCount=1; out.multisyllabic=false; out.spellingSplit=true;
     out.syllables=[{text:word,onsetIPA:out.onsetIPA,rimeIPA:out.rimeIPA,
-      onsetArpa:onsetPhones.map(bare),rimeArpa:rimePhones.map(bare),stress:1}];
+      onsetArpa:onsetPhones.map(bare),rimeArpa:rimePhones.map(bare),stress:1,soundKnown:rimeKnown}];
     return out;
   }
 
@@ -514,10 +1154,18 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
       return '<span class="'+cls+'">'+esc(s.text||'')+'</span>';
     }).join('<span class="syl-dot">\u00B7</span>');
 
+    var oov = a.soundKnown===false;
     var cards=a.syllables.map(function(s){
-      var on = s.onsetIPA ? '<span class="mini-sound onset">/'+esc(s.onsetIPA)+'/</span>'
-                          : '<span class="mini-sound muted">no onset</span>';
-      var rm = '<span class="mini-sound rime">/'+esc(s.rimeIPA)+'/</span>';
+      var on, rm;
+      if(oov){
+        on = s.onsetL ? '<span class="mini-sound onset">'+esc(s.onsetL)+'</span>'
+                      : '<span class="mini-sound muted">no onset</span>';
+        rm = '<span class="mini-sound rime">'+esc(s.rimeL)+'</span>';
+      } else {
+        on = s.onsetIPA ? '<span class="mini-sound onset">/'+esc(s.onsetIPA)+'/</span>'
+                        : '<span class="mini-sound muted">no onset</span>';
+        rm = '<span class="mini-sound rime">/'+esc(s.rimeIPA)+'/</span>';
+      }
       return '<div class="syl-card">'+
         '<div class="syl-text">'+esc(s.text||'')+stressMark(s)+'</div>'+
         '<div class="mini-row"><span class="mini-tag onset">Onset</span>'+on+'</div>'+
@@ -525,14 +1173,20 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
         '</div>';
     }).join('<span class="syl-arrow">+</span>');
 
-    var n=a.syllables.length;
-    var lead='<p class="note"><strong>'+n+' syllables.</strong> Each one has its own onset and rime &mdash; '+
-      'onset and rime are parts of the <em>syllable</em>, not slots in the whole word '+
-      '(Treiman, Fowler, Gross, Berch &amp; Weatherston, 1995).</p>';
+    var n=a.syllables.length, lead, note;
+    if(oov){
+      lead='<p class="note est">&ldquo;'+esc(a.word)+'&rdquo; isn&rsquo;t in the pronunciation lexicon, so its sounds aren&rsquo;t shown. '+
+        'Its spelling still splits into <strong>'+n+' syllables</strong>, each with an onset and a rime (in letters).</p>';
+      note='<p class="src-note">Syllable division of the spelling follows common orthographic rules (split doubled consonants, keep blends together, treat a final consonant+<em>le</em> as its own syllable). Add the word to the lexicon to see its sounds.</p>';
+    } else {
+      lead='<p class="note"><strong>'+n+' syllables.</strong> Each one has its own onset and rime &mdash; '+
+        'onset and rime are parts of the <em>syllable</em>, not slots in the whole word '+
+        '(Treiman, Fowler, Gross, Berch &amp; Weatherston, 1995).</p>';
+      note='<p class="src-note">Syllable boundaries follow the Maximum Onset Principle, with a stressed short vowel keeping a following consonant in its rime (so <em>rab&middot;bit</em>, not <em>ra&middot;bbit</em>). Spelling of each syllable is an approximate reading aid; the onset and rime shown in sound are the phonological units.</p>';
+    }
 
     result.innerHTML='<div class="wordline multi">'+wl+'</div>'+lead+
-      '<div class="syl-strip">'+cards+'</div>'+
-      '<p class="src-note">Syllable boundaries follow the Maximum Onset Principle, with a stressed short vowel keeping a following consonant in its rime (so <em>rab&middot;bit</em>, not <em>ra&middot;bbit</em>). Spelling of each syllable is an approximate reading aid; the onset and rime shown in sound are the phonological units.</p>';
+      '<div class="syl-strip">'+cards+'</div>'+note;
   }
 
   function familyHTML(a){
