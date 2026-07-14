@@ -109,6 +109,34 @@
   .refs>summary{cursor:pointer;font-weight:700;color:var(--glow-deep);font-size:1rem}
   .refs>summary:hover,.refs>summary:focus-visible{color:var(--ink)}
   .ref{margin:.55rem 0 0;padding-left:1.5rem;text-indent:-1.5rem;color:var(--ink-soft);font-size:.9rem;line-height:1.55}
+
+  /* multi-syllable read view */
+  .wordline.multi{display:flex;flex-wrap:wrap;align-items:baseline;gap:.1em}
+  .wordline .syl{color:var(--ink)}
+  .wordline .syl.stress{position:relative}
+  .wordline .syl.stress::after{content:"";position:absolute;left:8%;right:8%;bottom:-.06em;height:3px;border-radius:2px;background:var(--glow)}
+  .wordline .syl-dot{color:var(--line);font-weight:300;padding:0 .06em}
+  .acc{color:var(--glow-deep);font-weight:600;margin-left:.05em}
+  .syl-strip{display:flex;flex-wrap:wrap;align-items:stretch;gap:.6rem;margin:.4rem 0 0}
+  .syl-arrow{display:flex;align-items:center;color:var(--line);font-size:1.4rem;font-weight:300}
+  .syl-card{flex:1 1 150px;min-width:140px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:.9rem 1rem}
+  .syl-text{font-family:var(--serif);font-size:1.9rem;line-height:1.1;margin:0 0 .55rem;color:var(--ink)}
+  .mini-row{display:flex;align-items:center;gap:.5rem;margin:.28rem 0}
+  .mini-tag{font-size:.66rem;font-weight:750;letter-spacing:.07em;text-transform:uppercase;border-radius:999px;padding:.14em .5em}
+  .mini-tag.onset{color:var(--onset);background:var(--onset-soft)}
+  .mini-tag.rime{color:var(--rime-ink);background:var(--rime-soft)}
+  .mini-sound{font-family:var(--serif);font-size:1.3rem}
+  .mini-sound.onset{color:var(--onset)}
+  .mini-sound.rime{color:var(--rime)}
+  .mini-sound.muted{font-family:var(--sans);font-size:.85rem;color:var(--ink-soft)}
+
+  /* grouped sound picker */
+  .sound-group-label{font-size:.72rem;font-weight:750;letter-spacing:.09em;text-transform:uppercase;color:var(--glow-deep);margin:1.1rem 0 .45rem}
+  .sound-group-label:first-child{margin-top:.2rem}
+  .sound-chip-row{display:flex;gap:.4rem .5rem;flex-wrap:wrap}
+  #sound-chips{display:block}
+  .spell-row.plain{border-left-color:var(--line)}
+  .spell-row .rank{font-variant-numeric:tabular-nums;color:var(--ink-soft);font-size:.85rem;min-width:1.4ch;text-align:right}
 </style>
 </head>
 <body>
@@ -125,7 +153,7 @@
   <div id="read-view">
     <p class="subhead">Read a word &mdash; onset &amp; rime</p>
     <div class="ask">
-      <input id="word" type="text" autocomplete="off" spellcheck="false" placeholder="Type a one-syllable word" aria-label="Word to analyze">
+      <input id="word" type="text" autocomplete="off" spellcheck="false" placeholder="Type a word — one syllable or many" aria-label="Word to analyze">
       <button class="go" id="go" type="button">Show</button>
     </div>
     <div class="chips" id="chips"><span class="label">Or try:</span></div>
@@ -139,7 +167,7 @@
   </div>
 
   <div class="science">
-    <strong>Why the rime?</strong> English letter&ndash;sound mappings are <strong>inconsistent in both directions</strong>. One letter can stand for several sounds &mdash; <em>t</em> is /t/ in <em>top</em>, /&#643;/ in <em>nation</em>, and silent in <em>listen</em> &mdash; and one sound can be spelled several ways &mdash; /k/ appears as <em>c</em> in <em>cat</em>, <em>k</em> in <em>king</em>, <em>ck</em> in <em>back</em>, and <em>ch</em> in <em>school</em>. The rime unit is far steadier, so readers lean on it to pronounce new words by analogy (Treiman et al., 1995; Ziegler &amp; Goswami, 2005). This prototype shows that directly: consistent rimes like <span style="color:var(--rime)">-ake</span> keep one sound across the whole family, while <span style="color:var(--rime)">-ove</span> and <span style="color:var(--rime)">-ead</span> split several ways. Pronunciations are General American (a small demo lexicon); words outside it are estimated by rime analogy and marked as such.
+    <strong>Why the rime?</strong> English letter&ndash;sound mappings are <strong>inconsistent in both directions</strong>. One letter can stand for several sounds &mdash; <em>t</em> is /t/ in <em>top</em>, /&#643;/ in <em>nation</em>, and silent in <em>listen</em> &mdash; and one sound can be spelled several ways &mdash; /k/ appears as <em>c</em> in <em>cat</em>, <em>k</em> in <em>king</em>, <em>ck</em> in <em>back</em>, and <em>ch</em> in <em>school</em>. The rime unit is far steadier, so readers lean on it to pronounce new words by analogy (Treiman, Mullennix, Bijeljac-Babic, &amp; Richmond-Welty, 1995; Ziegler &amp; Goswami, 2005). And crucially, onset and rime are parts of the <strong>syllable</strong>, not the whole word: a word like <em>rabbit</em> has <em>two</em> onsets and <em>two</em> rimes (<span style="color:var(--rime)">rab</span> + <span style="color:var(--rime)">bit</span>). The evidence for this comes from word games with multisyllabic stimuli (Treiman, Fowler, Gross, Berch, &amp; Weatherston, 1995). This prototype shows both directly: consistent rimes like <span style="color:var(--rime)">-ake</span> keep one sound across the whole family, while <span style="color:var(--rime)">-ove</span> and <span style="color:var(--rime)">-ead</span> split several ways. Pronunciations are General American (a small demo lexicon); words outside it are estimated by rime analogy and marked as such.
   </div>
 
   <details class="refs">
@@ -155,6 +183,7 @@
     <p class="ref">Selkirk, E. O. (1982). The syllable. In H. van der Hulst &amp; N. Smith (Eds.), <i>The structure of phonological representations (Part II)</i> (pp. 337&ndash;383). Foris.</p>
     <p class="ref">Selkirk, E. O. (1984). <i>Phonology and syntax: The relation between sound and structure.</i> MIT Press.</p>
     <p class="ref">Share, D. L. (1995). Phonological recoding and self-teaching: <i>Sine qua non</i> of reading acquisition. <i>Cognition, 55</i>(2), 151&ndash;218.</p>
+    <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
     <p class="ref">Treiman, R., Mullennix, J., Bijeljac-Babic, R., &amp; Richmond-Welty, E. D. (1995). The special role of rimes in the description, use, and acquisition of English orthography. <i>Journal of Experimental Psychology: General, 124</i>(2), 107&ndash;136.</p>
     <p class="ref">Venezky, R. L. (1999). <i>The American way of spelling: The structure and origins of American English orthography.</i> Guilford Press.</p>
     <p class="ref">Ziegler, J. C., &amp; Goswami, U. (2005). Reading acquisition, developmental dyslexia, and skilled reading across languages: A psycholinguistic grain size theory. <i>Psychological Bulletin, 131</i>(1), 3&ndash;29.</p>
@@ -166,37 +195,52 @@
 /* ---- engine (pure, testable; no DOM) ---- */
 (function(g){
   "use strict";
-  var LEX = {};
-  // Supplementary monosyllables merged under the CMU subset to enrich rime families.
+  var LEX = {};   // full lexicon (mono + multi), word -> ARPAbet with stress digits
+  // Supplementary monosyllables merged under the CMU subset to keep rime families rich.
   var SUPPLEMENT = {
-    cake:'K EY K',lake:'L EY K',make:'M EY K',snake:'S N EY K',shake:'SH EY K',bake:'B EY K',take:'T EY K',wake:'W EY K',brake:'B R EY K',
-    cat:'K AE T',bat:'B AE T',hat:'HH AE T',mat:'M AE T',rat:'R AE T',sat:'S AE T',flat:'F L AE T',that:'DH AE T',
-    light:'L AY T',night:'N AY T',sight:'S AY T',fight:'F AY T',bright:'B R AY T',right:'R AY T',might:'M AY T',
-    king:'K IH NG',ring:'R IH NG',sing:'S IH NG',wing:'W IH NG',thing:'TH IH NG',bring:'B R IH NG',
-    day:'D EY',play:'P L EY',say:'S EY',way:'W EY',stay:'S T EY',gray:'G R EY',
-    eat:'IY T',meat:'M IY T',heat:'HH IY T',seat:'S IY T',beat:'B IY T',treat:'T R IY T',great:'G R EY T',threat:'TH R EH T',sweat:'S W EH T',
-    head:'HH EH D',bread:'B R EH D',dead:'D EH D',spread:'S P R EH D',bead:'B IY D',plead:'P L IY D',knead:'N IY D',
-    love:'L AH V',dove:'D AH V',glove:'G L AH V',move:'M UW V',prove:'P R UW V',cove:'K OW V',stove:'S T OW V',drove:'D R OW V',wove:'W OW V',
-    cost:'K AO S T',lost:'L AO S T',frost:'F R AO S T',most:'M OW S T',post:'P OW S T',host:'HH OW S T',
-    down:'D AW N',town:'T AW N',brown:'B R AW N',gown:'G AW N',own:'OW N',grown:'G R OW N',shown:'SH OW N',thrown:'TH R OW N',
-    bone:'B OW N',stone:'S T OW N',cone:'K OW N',phone:'F OW N',none:'N AH N',done:'D AH N',
-    could:'K UH D',would:'W UH D',should:'SH UH D'
+    cake:'K EY1 K',lake:'L EY1 K',make:'M EY1 K',snake:'S N EY1 K',shake:'SH EY1 K',bake:'B EY1 K',take:'T EY1 K',wake:'W EY1 K',brake:'B R EY1 K',
+    cat:'K AE1 T',bat:'B AE1 T',hat:'HH AE1 T',mat:'M AE1 T',rat:'R AE1 T',sat:'S AE1 T',flat:'F L AE1 T',that:'DH AE1 T',
+    light:'L AY1 T',night:'N AY1 T',sight:'S AY1 T',fight:'F AY1 T',bright:'B R AY1 T',right:'R AY1 T',might:'M AY1 T',
+    king:'K IH1 NG',ring:'R IH1 NG',sing:'S IH1 NG',wing:'W IH1 NG',thing:'TH IH1 NG',bring:'B R IH1 NG',
+    day:'D EY1',play:'P L EY1',say:'S EY1',way:'W EY1',stay:'S T EY1',gray:'G R EY1',
+    eat:'IY1 T',meat:'M IY1 T',heat:'HH IY1 T',seat:'S IY1 T',beat:'B IY1 T',treat:'T R IY1 T',great:'G R EY1 T',threat:'TH R EH1 T',sweat:'S W EH1 T',
+    head:'HH EH1 D',bread:'B R EH1 D',dead:'D EH1 D',spread:'S P R EH1 D',bead:'B IY1 D',plead:'P L IY1 D',knead:'N IY1 D',
+    love:'L AH1 V',dove:'D AH1 V',glove:'G L AH1 V',move:'M UW1 V',prove:'P R UW1 V',cove:'K OW1 V',stove:'S T OW1 V',drove:'D R OW1 V',wove:'W OW1 V',
+    cost:'K AO1 S T',lost:'L AO1 S T',frost:'F R AO1 S T',most:'M OW1 S T',post:'P OW1 S T',host:'HH OW1 S T',
+    down:'D AW1 N',town:'T AW1 N',brown:'B R AW1 N',gown:'G AW1 N',own:'OW1 N',grown:'G R OW1 N',shown:'SH OW1 N',thrown:'TH R OW1 N',
+    bone:'B OW1 N',stone:'S T OW1 N',cone:'K OW1 N',phone:'F OW1 N',none:'N AH1 N',done:'D AH1 N',
+    could:'K UH1 D',would:'W UH1 D',should:'SH UH1 D'
   };
   var VOWELS = {AA:1,AE:1,AH:1,AO:1,AW:1,AY:1,EH:1,ER:1,EY:1,IH:1,IY:1,OW:1,OY:1,UH:1,UW:1};
+  var LAX = {AE:1,EH:1,IH:1,AH:1,UH:1};   // checked vowels: don't end a stressed syllable open
   var IPA = {AA:'\u0251\u02D0',AE:'\u00E6',AH:'\u028C',AO:'\u0254\u02D0',AW:'a\u028A',AY:'a\u026A',
     EH:'\u025B',ER:'\u025C\u02D0r',EY:'e\u026A',IH:'\u026A',IY:'i\u02D0',OW:'o\u028A',OY:'\u0254\u026A',
     UH:'\u028A',UW:'u\u02D0',B:'b',CH:'t\u0283',D:'d',DH:'\u00F0',F:'f',G:'\u0261',HH:'h',JH:'d\u0292',
     K:'k',L:'l',M:'m',N:'n',NG:'\u014B',P:'p',R:'r',S:'s',SH:'\u0283',T:'t',TH:'\u03B8',V:'v',W:'w',Y:'j',Z:'z',ZH:'\u0292'};
+  // legal English onset clusters (phone level), for the Maximum-Onset split
+  var TWO_ONSET = {}, THREE_ONSET = {};
+  ('P R,P L,B R,B L,T R,D R,K R,K L,G R,G L,T W,D W,K W,G W,P Y,B Y,K Y,G Y,M Y,F Y,V Y,HH Y,T Y,D Y,N Y,L Y,S Y,'+
+   'F R,F L,TH R,SH R,S L,TH W,S W,S P,S T,S K,S M,S N,S F').split(',').forEach(function(c){TWO_ONSET[c]=1;});
+  ('S P R,S P L,S T R,S K R,S K W,S K L,S P Y,S K Y,S T Y').split(',').forEach(function(c){THREE_ONSET[c]=1;});
   var ONSET_G = [['sch','S K'],['shr','SH R'],['squ','S K W'],['str','S T R'],['scr','S K R'],['spr','S P R'],['spl','S P L'],['thr','TH R'],
     ['sh','SH'],['ch','CH'],['th','TH'],['wh','W'],['ph','F'],['ck','K'],['qu','K W'],['wr','R'],['kn','N'],['gn','N'],['gh',''],
     ['b','B'],['c','K'],['d','D'],['f','F'],['g','G'],['h','HH'],['j','JH'],['k','K'],['l','L'],['m','M'],['n','N'],['p','P'],['q','K'],
     ['r','R'],['s','S'],['t','T'],['v','V'],['w','W'],['x','K S'],['y','Y'],['z','Z']];
 
   function bare(p){return p.replace(/[0-9]/g,'');}
+  function stressOf(p){var m=p.match(/[0-9]/);return m?+m[0]:0;}
   function isVowelPhone(p){return !!VOWELS[bare(p)];}
   function isVowelLetter(ch,i){return 'aeiou'.indexOf(ch)>=0 || (ch==='y'&&i>0);}
-  function ipaString(phones){return phones.map(function(p){return IPA[bare(p)]||bare(p).toLowerCase();}).join('');}
+  function phoneIPA(p){
+    var b=bare(p);
+    // CMU collapses full and reduced vowels: split them back out for AH and ER
+    if(b==='AH') return stressOf(p)>0 ? '\u028C' : '\u0259';         // ʌ vs ə (schwa)
+    if(b==='ER') return stressOf(p)>0 ? '\u025C\u02D0r' : '\u0259r'; // ɜːr vs ər (schwar)
+    return IPA[b]||b.toLowerCase();
+  }
+  function ipaString(phones){return phones.map(phoneIPA).join('');}
 
+  // ---- monosyllable letter / phone splits (kept for the one-syllable view + families) ----
   function splitLettersOnsetRime(w){
     var i=0; while(i<w.length && !isVowelLetter(w[i],i)) i++;
     if(i>=w.length) return {onset:w,rime:''};
@@ -217,70 +261,206 @@
     }
     return out;
   }
+
+  // ---- phonological syllabifier: Maximum Onset Principle + legality, with the
+  //      constraint that a stressed lax vowel keeps a coda (so rab.bit, not ra.bbit).
+  //      Onset/rime are syllable-internal constituents (Treiman, Fowler, Gross,
+  //      Berch & Weatherston, 1995; Selkirk, 1982). ----
+  function legalOnset(cl){
+    if(cl.length===0) return true;
+    if(cl.length===1) return cl[0]!=='NG';
+    if(cl.length===2) return !!TWO_ONSET[cl.join(' ')];
+    if(cl.length===3) return !!THREE_ONSET[cl.join(' ')];
+    return false;
+  }
+  function maxLegalOnset(cluster, forceCoda){
+    var n=cluster.length, top=forceCoda?n-1:n, k, onset;
+    for(k=top;k>=0;k--){ onset=cluster.slice(n-k).map(bare); if(legalOnset(onset)) return k; }
+    return 0;
+  }
+  function syllabify(phones){
+    var vi=[],i; for(i=0;i<phones.length;i++) if(isVowelPhone(phones[i])) vi.push(i);
+    if(vi.length===0) return null;
+    var codaLens=[];
+    for(var s=0;s<vi.length;s++){
+      var v=vi[s], nextV=(s+1<vi.length)?vi[s+1]:phones.length, between=phones.slice(v+1,nextV);
+      if(s+1<vi.length){
+        var stressed=stressOf(phones[v])>0, lax=!!LAX[bare(phones[v])];
+        var onsetLen=maxLegalOnset(between, stressed&&lax);
+        codaLens.push(between.length-onsetLen);
+      } else codaLens.push(between.length);
+    }
+    var out=[], idx=0;
+    for(s=0;s<vi.length;s++){
+      var vv=vi[s], onset=phones.slice(idx,vv), nucleus=phones[vv], coda=phones.slice(vv+1,vv+1+codaLens[s]);
+      idx=vv+1+codaLens[s];
+      out.push({onset:onset,nucleus:nucleus,coda:coda,rime:[nucleus].concat(coda),stress:stressOf(nucleus)});
+    }
+    return out;
+  }
+
+  // ---- orthographic syllable split (readability aid), aligned to the phonology ----
+  var DOUBLES=/^(bb|cc|dd|ff|gg|ll|mm|nn|pp|rr|ss|tt|zz)$/;
+  function orthoSyllables(word, sylls){
+    var n=sylls.length; if(n<=1) return [word];
+    if(n>=2 && /[bcdfgkpstz]le$/.test(word)){
+      var sub=orthoSyllables(word.slice(0,-3), sylls.slice(0,n-1));
+      if(sub) return sub.concat([word.slice(-3)]);
+    }
+    var groups=[],i=0;
+    while(i<word.length){
+      if(isVowelLetter(word[i],i)){ var j=i; while(j<word.length && isVowelLetter(word[j],j)) j++; groups.push([i,j]); i=j; }
+      else i++;
+    }
+    if(groups.length<n) return null;
+    var breaks=[];
+    for(var k=0;k<n-1;k++){
+      var cStart=groups[k][1], cEnd=groups[k+1][0], run=word.slice(cStart,cEnd);
+      var target=sylls[k+1].onset.map(bare).join(' '), cut;
+      if(run.length===0) cut=cStart;
+      else if(DOUBLES.test(run)) cut=cStart+1;
+      else {
+        var found=-1;
+        for(var t=run.length;t>=0;t--){ var suf=run.slice(run.length-t); if(onsetToPhones(suf).map(bare).join(' ')===target){found=run.length-t;break;} }
+        if(found>=0) cut=cStart+found;
+        else if(run.length===1) cut=cStart;
+        else cut=cEnd-1;
+      }
+      breaks.push(cut);
+    }
+    var chunks=[],prev=0;
+    for(var b=0;b<breaks.length;b++){ chunks.push(word.slice(prev,breaks[b])); prev=breaks[b]; }
+    chunks.push(word.slice(prev));
+    return chunks;
+  }
+
+  // ---- families: rhyme families over MONOSYLLABIC words (word-final rime) ----
+  function firstPron(s){ return String(s).split('|')[0].trim(); }
+  function syllCount(ph){ var n=0,a=ph.split(' '),i; for(i=0;i<a.length;i++) if(VOWELS[bare(a[i])]) n++; return n; }
   function buildFamilies(){
     var fam={};
     for(var w in LEX){
+      var ph=LEX[w]; if(syllCount(ph)!==1) continue;   // rhyme families are word-level (monosyllables)
       var rl=splitLettersOnsetRime(w).rime;
-      var rp=splitPhonesOnsetRime(LEX[w].split(' ')).rime;
+      var rp=splitPhonesOnsetRime(ph.split(' ')).rime;
       var ipa=ipaString(rp);
       if(!fam[rl]) fam[rl]={rime:rl,groups:[]};
-      var grp=null; for(var j=0;j<fam[rl].groups.length;j++){ if(fam[rl].groups[j].ipa===ipa){grp=fam[rl].groups[j];break;} }
+      var grp=null; for(var jx=0;jx<fam[rl].groups.length;jx++){ if(fam[rl].groups[jx].ipa===ipa){grp=fam[rl].groups[jx];break;} }
       if(!grp){grp={ipa:ipa,arpa:rp.slice(),words:[]};fam[rl].groups.push(grp);}
       grp.words.push(w);
     }
     for(var r in fam) fam[r].groups.sort(function(a,b){return b.words.length-a.words.length;});
     return fam;
   }
-  // Reading lexicon = monosyllabic CMU-subset entries (first pronunciation),
-  // supplemented with the curated words above so rime families stay rich.
-  function firstPron(s){ return String(s).split('|')[0].trim(); }
-  function syllCount(ph){ var n=0,a=ph.split(' '); for(var i=0;i<a.length;i++) if(VOWELS[bare(a[i])]) n++; return n; }
   (function buildLexicon(){
     var cmu=(typeof window!=='undefined' && window.CMUDICT_SUBSET) || {};
-    for(var w in cmu){
-      if(!/^[a-z]+$/i.test(w)) continue;
-      var ph=firstPron(cmu[w]);
-      if(syllCount(ph)===1) LEX[w.toLowerCase()]=ph;
-    }
+    for(var w in cmu){ if(!/^[a-z]+$/i.test(w)) continue; LEX[w.toLowerCase()]=firstPron(cmu[w]); }
     for(var k in SUPPLEMENT){ if(!(k in LEX)) LEX[k]=SUPPLEMENT[k]; }
   })();
-
   var families=buildFamilies();
 
+  // ---- analyze: syllable-level onset & rime for any word ----
   function analyze(raw){
     var word=(raw||'').toLowerCase().replace(/[^a-z]/g,'');
     if(!word) return null;
     var sl=splitLettersOnsetRime(word), onsetL=sl.onset, rimeL=sl.rime;
-    var onsetPhones,rimePhones,source,rimeKnown=true;
+    var out={word:word,onsetL:onsetL,rimeL:rimeL,rimeKnown:true};
+
     if(LEX[word]){
-      var sp=splitPhonesOnsetRime(LEX[word].split(' '));
-      onsetPhones=sp.onset; rimePhones=sp.rime; source='lexicon';
-    } else {
-      onsetPhones=onsetToPhones(onsetL);
-      var fam=families[rimeL];
-      if(fam){ rimePhones=fam.groups[0].arpa.slice(); source='estimated'; }
-      else { rimePhones=[]; source='unknown'; rimeKnown=false; }
+      var phones=LEX[word].split(' ');
+      var sylls=syllabify(phones);
+      out.source='lexicon';
+      out.syllableCount=sylls.length;
+      out.multisyllabic=sylls.length>1;
+      var chunks=orthoSyllables(word,sylls) || [word];
+      if(chunks.length!==sylls.length) chunks=null;      // spelling split unavailable -> phones only
+      out.syllables=sylls.map(function(sy,i){
+        return { text: chunks?chunks[i]:'',
+                 onsetIPA: ipaString(sy.onset), rimeIPA: ipaString(sy.rime),
+                 onsetArpa: sy.onset.map(bare), rimeArpa: sy.rime.map(bare), stress: sy.stress };
+      });
+      out.spellingSplit=!!chunks;
+      // backward-compatible one-syllable fields (whole-word onset + rime of the phonemes)
+      var sp=splitPhonesOnsetRime(phones);
+      out.onsetPhones=sp.onset; out.rimePhones=sp.rime;
+      out.onsetIPA=ipaString(sp.onset); out.rimeIPA=ipaString(sp.rime);
+      return out;
     }
-    return {word:word,onsetL:onsetL,rimeL:rimeL,onsetPhones:onsetPhones,rimePhones:rimePhones,
-      onsetIPA:ipaString(onsetPhones),rimeIPA:ipaString(rimePhones),source:source,rimeKnown:rimeKnown};
+
+    // out of lexicon: estimate as a single unit (onset by grapheme rules, rime by analogy)
+    var onsetPhones=onsetToPhones(onsetL), rimePhones, source, rimeKnown=true;
+    var fam=families[rimeL];
+    if(fam){ rimePhones=fam.groups[0].arpa.slice(); source='estimated'; }
+    else { rimePhones=[]; source='unknown'; rimeKnown=false; }
+    out.source=source; out.rimeKnown=rimeKnown;
+    out.onsetPhones=onsetPhones; out.rimePhones=rimePhones;
+    out.onsetIPA=ipaString(onsetPhones); out.rimeIPA=ipaString(rimePhones);
+    out.syllableCount=1; out.multisyllabic=false; out.spellingSplit=true;
+    out.syllables=[{text:word,onsetIPA:out.onsetIPA,rimeIPA:out.rimeIPA,
+      onsetArpa:onsetPhones.map(bare),rimeArpa:rimePhones.map(bare),stress:1}];
+    return out;
   }
 
+  // ---- sound -> spelling inventory (full English phoneme set) ----
+  // Percentages (type shares, Hanna/Fry tradition) are given only where corpus-backed;
+  // for the remaining phonemes the spellings are ordered most- to least-typical, with
+  // examples, and pct is null (no fabricated figures). Every example marks its grapheme [ ].
+  function sp(g,ex,pct){ return pct==null?{g:g,ex:ex}:{g:g,ex:ex,pct:pct}; }
   var SPELLINGS = [
-    {ipa:'k', spellings:[{g:'c',pct:68,ex:['[c]at','[c]up']},{g:'k',pct:18,ex:['[k]ing','[k]ite']},{g:'ck',pct:9,ex:['ba[ck]','du[ck]']},{g:'ch',pct:3,ex:['s[ch]ool','a[ch]e']},{g:'que',pct:0.3,ex:['anti[que]','pla[que]']}]},
-    {ipa:'f', spellings:[{g:'f',pct:81,ex:['[f]ish','[f]un']},{g:'ph',pct:10,ex:['[ph]one','gra[ph]']},{g:'ff',pct:9,ex:['o[ff]','cli[ff]']},{g:'gh',pct:0.9,ex:['rou[gh]','lau[gh]']}]},
-    {ipa:'s', spellings:[{g:'s',pct:78,ex:['[s]un','bu[s]']},{g:'c',pct:9,ex:['[c]ity','[c]ent']},{g:'ss',pct:7,ex:['gra[ss]','mi[ss]']},{g:'ce',pct:2,ex:['fen[ce]','ra[ce]']},{g:'sc',pct:0.8,ex:['[sc]ene','[sc]ience']}]},
-    {ipa:'\u0283', spellings:[{g:'ti',pct:44,ex:['na[ti]on','sta[ti]on']},{g:'sh',pct:39,ex:['[sh]ip','fi[sh]']},{g:'ci',pct:5,ex:['spe[ci]al','so[ci]al']},{g:'ch',pct:3,ex:['[ch]ef','ma[ch]ine']}]},
-    {ipa:'e\u026A', spellings:[{g:'a',pct:51,ex:['[a]pron','p[a]per']},{g:'a_e',pct:21,ex:['c[a]k[e]','n[a]m[e]']},{g:'ai',pct:13,ex:['r[ai]n','tr[ai]n']},{g:'ay',pct:6,ex:['d[ay]','pl[ay]']},{g:'eigh',pct:0.7,ex:['[eigh]t','w[eigh]']}]},
-    {ipa:'i\u02D0', spellings:[{g:'e',pct:32,ex:['h[e]','m[e]']},{g:'y',pct:30,ex:['happ[y]','cit[y]']},{g:'i',pct:15,ex:['sk[i]','k[i]lo']},{g:'ea',pct:9,ex:['s[ea]','t[ea]']},{g:'ee',pct:8,ex:['tr[ee]','s[ee]']}]},
-    {ipa:'o\u028A', spellings:[{g:'o',pct:71,ex:['g[o]','s[o]']},{g:'o_e',pct:11,ex:['b[o]n[e]','h[o]m[e]']},{g:'oa',pct:6,ex:['b[oa]t','r[oa]d']},{g:'ow',pct:6,ex:['sn[ow]','gr[ow]']}]},
-    {ipa:'u\u02D0', spellings:[{g:'u',pct:36,ex:['tr[u]th','fl[u]']},{g:'oo',pct:28,ex:['m[oo]n','s[oo]n']},{g:'u_e',pct:9,ex:['fl[u]t[e]','t[u]n[e]']},{g:'ew',pct:8,ex:['fl[ew]','n[ew]']},{g:'ue',pct:4,ex:['bl[ue]','tr[ue]']}]}
+    // --- consonants ---
+    {ipa:'p', type:'consonant', spellings:[sp('p',['[p]en','[p]ig']),sp('pp',['ha[pp]y','sto[pp]ed'])]},
+    {ipa:'b', type:'consonant', spellings:[sp('b',['[b]at','[b]ig']),sp('bb',['ra[bb]it','ru[bb]er'])]},
+    {ipa:'t', type:'consonant', spellings:[sp('t',['[t]op','ca[t]']),sp('tt',['bu[tt]er','ma[tt]er']),sp('ed',['walk[ed]','jump[ed]'])]},
+    {ipa:'d', type:'consonant', spellings:[sp('d',['[d]og','sa[d]']),sp('dd',['la[dd]er','a[dd]']),sp('ed',['play[ed]','clean[ed]'])]},
+    {ipa:'k', type:'consonant', spellings:[sp('c',['[c]at','[c]up'],68),sp('k',['[k]ing','[k]ite'],18),sp('ck',['ba[ck]','du[ck]'],9),sp('ch',['s[ch]ool','a[ch]e'],3),sp('que',['anti[que]','pla[que]'],0.3)]},
+    {ipa:'\u0261', type:'consonant', spellings:[sp('g',['[g]o','[g]ate']),sp('gg',['e[gg]','di[gg]er']),sp('gu',['[gu]ess','[gu]itar']),sp('gh',['[gh]ost','spa[gh]etti'])]},
+    {ipa:'t\u0283', type:'consonant', spellings:[sp('ch',['[ch]air','ri[ch]']),sp('tch',['wa[tch]','ma[tch]']),sp('t',['na[t]ure','fu[t]ure'])]},
+    {ipa:'d\u0292', type:'consonant', spellings:[sp('j',['[j]am','[j]oy']),sp('g',['[g]iant','[g]ym']),sp('dge',['bri[dge]','e[dge]']),sp('ge',['ca[ge]','lar[ge]'])]},
+    {ipa:'f', type:'consonant', spellings:[sp('f',['[f]ish','[f]un'],81),sp('ph',['[ph]one','gra[ph]'],10),sp('ff',['o[ff]','cli[ff]'],9),sp('gh',['rou[gh]','lau[gh]'],0.9)]},
+    {ipa:'v', type:'consonant', spellings:[sp('v',['[v]an','[v]ine']),sp('ve',['ha[ve]','gi[ve]'])]},
+    {ipa:'\u03B8', type:'consonant', spellings:[sp('th',['[th]in','ba[th]'])]},
+    {ipa:'\u00F0', type:'consonant', spellings:[sp('th',['[th]is','mo[th]er'])]},
+    {ipa:'s', type:'consonant', spellings:[sp('s',['[s]un','bu[s]'],78),sp('c',['[c]ity','[c]ent'],9),sp('ss',['gra[ss]','mi[ss]'],7),sp('ce',['fen[ce]','ra[ce]'],2),sp('sc',['[sc]ene','[sc]ience'],0.8)]},
+    {ipa:'z', type:'consonant', spellings:[sp('s',['dog[s]','ha[s]']),sp('z',['[z]oo','[z]ero']),sp('zz',['bu[zz]','fi[zz]']),sp('se',['chee[se]','no[se]'])]},
+    {ipa:'\u0283', type:'consonant', spellings:[sp('ti',['na[ti]on','sta[ti]on'],44),sp('sh',['[sh]ip','fi[sh]'],39),sp('ci',['spe[ci]al','so[ci]al'],5),sp('ch',['[ch]ef','ma[ch]ine'],3)]},
+    {ipa:'\u0292', type:'consonant', spellings:[sp('si',['vi[si]on','deci[si]on']),sp('s',['mea[s]ure','plea[s]ure']),sp('ge',['gara[ge]','bei[ge]'])]},
+    {ipa:'h', type:'consonant', spellings:[sp('h',['[h]at','[h]ome']),sp('wh',['[wh]o','[wh]ole'])]},
+    {ipa:'m', type:'consonant', spellings:[sp('m',['[m]an','[m]oon']),sp('mm',['ha[mm]er','su[mm]er']),sp('mb',['thu[mb]','la[mb]']),sp('mn',['autu[mn]','hy[mn]'])]},
+    {ipa:'n', type:'consonant', spellings:[sp('n',['[n]et','su[n]']),sp('nn',['di[nn]er','fu[nn]y']),sp('kn',['[kn]ee','[kn]ot']),sp('gn',['[gn]aw','si[gn]'])]},
+    {ipa:'\u014B', type:'consonant', spellings:[sp('ng',['si[ng]','lo[ng]']),sp('n',['thi[n]k','ba[n]k'])]},
+    {ipa:'l', type:'consonant', spellings:[sp('l',['[l]eg','[l]ake']),sp('ll',['be[ll]','ye[ll]ow'])]},
+    {ipa:'r', type:'consonant', spellings:[sp('r',['[r]un','[r]ed']),sp('rr',['ca[rr]ot','so[rr]y']),sp('wr',['[wr]ite','[wr]ap'])]},
+    {ipa:'w', type:'consonant', spellings:[sp('w',['[w]in','[w]et']),sp('wh',['[wh]ale','[wh]eel']),sp('u',['q[u]een','q[u]ick'])]},
+    {ipa:'j', type:'consonant', spellings:[sp('y',['[y]es','[y]ard']),sp('i',['on[i]on','famil[i]ar']),sp('u',['c[u]te','m[u]sic'])]},
+    // --- vowels ---
+    {ipa:'i\u02D0', type:'vowel', spellings:[sp('e',['h[e]','m[e]'],32),sp('y',['happ[y]','cit[y]'],30),sp('i',['sk[i]','k[i]lo'],15),sp('ea',['s[ea]','t[ea]'],9),sp('ee',['tr[ee]','s[ee]'],8)]},
+    {ipa:'\u026A', type:'vowel', spellings:[sp('i',['s[i]t','b[i]g']),sp('y',['g[y]m','m[y]th']),sp('e',['pr[e]tty','[E]ngland'])]},
+    {ipa:'e\u026A', type:'vowel', spellings:[sp('a',['[a]pron','p[a]per'],51),sp('a_e',['c[a]k[e]','n[a]m[e]'],21),sp('ai',['r[ai]n','tr[ai]n'],13),sp('ay',['d[ay]','pl[ay]'],6),sp('eigh',['[eigh]t','w[eigh]'],0.7)]},
+    {ipa:'\u025B', type:'vowel', spellings:[sp('e',['b[e]d','r[e]d']),sp('ea',['h[ea]d','br[ea]d']),sp('a',['m[a]ny','[a]ny'])]},
+    {ipa:'\u00E6', type:'vowel', spellings:[sp('a',['c[a]t','h[a]t'])]},
+    {ipa:'\u0251\u02D0', type:'vowel', spellings:[sp('o',['h[o]t','st[o]p']),sp('a',['f[a]ther','sp[a]']),sp('al',['c[al]m','p[al]m'])]},
+    {ipa:'\u0254\u02D0', type:'vowel', spellings:[sp('aw',['s[aw]','dr[aw]']),sp('au',['[au]tumn','h[au]l']),sp('o',['d[o]g','[o]ff']),sp('ough',['b[ough]t','th[ough]t']),sp('augh',['c[augh]t','t[augh]t'])]},
+    {ipa:'o\u028A', type:'vowel', spellings:[sp('o',['g[o]','s[o]'],71),sp('o_e',['b[o]n[e]','h[o]m[e]'],11),sp('oa',['b[oa]t','r[oa]d'],6),sp('ow',['sn[ow]','gr[ow]'],6)]},
+    {ipa:'\u028A', type:'vowel', spellings:[sp('oo',['b[oo]k','l[oo]k']),sp('u',['p[u]t','f[u]ll']),sp('oul',['c[oul]d','w[oul]d'])]},
+    {ipa:'u\u02D0', type:'vowel', spellings:[sp('u',['tr[u]th','fl[u]'],36),sp('oo',['m[oo]n','s[oo]n'],28),sp('u_e',['fl[u]t[e]','t[u]n[e]'],9),sp('ew',['fl[ew]','n[ew]'],8),sp('ue',['bl[ue]','tr[ue]'],4)]},
+    {ipa:'\u028C', type:'vowel', spellings:[sp('u',['c[u]p','b[u]s']),sp('o',['s[o]n','c[o]me']),sp('ou',['t[ou]ch','en[ou]gh']),sp('oo',['bl[oo]d','fl[oo]d'])]},
+    {ipa:'\u0259', type:'vowel', spellings:[sp('a',['[a]bout','sof[a]']),sp('e',['tak[e]n','th[e]']),sp('o',['lem[o]n','wag[o]n']),sp('u',['s[u]pply','circ[u]s'])]},
+    {ipa:'a\u026A', type:'vowel', spellings:[sp('i',['f[i]nd','k[i]nd']),sp('y',['m[y]','cr[y]']),sp('igh',['h[igh]','l[igh]t']),sp('i_e',['t[i]m[e]','r[i]d[e]']),sp('ie',['p[ie]','t[ie]'])]},
+    {ipa:'a\u028A', type:'vowel', spellings:[sp('ou',['[ou]t','l[ou]d']),sp('ow',['c[ow]','n[ow]'])]},
+    {ipa:'\u0254\u026A', type:'vowel', spellings:[sp('oi',['c[oi]n','[oi]l']),sp('oy',['b[oy]','t[oy]'])]},
+    {ipa:'\u025C\u02D0r', type:'vowel', spellings:[sp('er',['h[er]','f[er]n']),sp('ir',['b[ir]d','g[ir]l']),sp('ur',['t[ur]n','b[ur]n']),sp('or',['w[or]d','w[or]k']),sp('ear',['[ear]th','l[ear]n'])]}
   ];
   function spellingsFor(ipa){ for(var i=0;i<SPELLINGS.length;i++){ if(SPELLINGS[i].ipa===ipa) return SPELLINGS[i]; } return null; }
   function soundInventory(){ return SPELLINGS.map(function(s){return s.ipa;}); }
+  function soundGroups(){
+    var c=[],v=[]; SPELLINGS.forEach(function(s){ (s.type==='vowel'?v:c).push(s.ipa); });
+    return [{label:'Consonants',sounds:c},{label:'Vowels',sounds:v}];
+  }
 
   g.ORR = {LEX:LEX,families:families,analyze:analyze,ipaString:ipaString,
     splitLettersOnsetRime:splitLettersOnsetRime,splitPhonesOnsetRime:splitPhonesOnsetRime,buildFamilies:buildFamilies,
-    SPELLINGS:SPELLINGS,spellingsFor:spellingsFor,soundInventory:soundInventory};
+    syllabify:syllabify,orthoSyllables:orthoSyllables,
+    SPELLINGS:SPELLINGS,spellingsFor:spellingsFor,soundInventory:soundInventory,soundGroups:soundGroups};
 })(typeof window!=='undefined'?window:globalThis);
 if (typeof module!=='undefined' && module.exports) module.exports = (typeof window!=='undefined'?window:globalThis).ORR;
 </script>
@@ -291,14 +471,20 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
   if (typeof document==='undefined') return;
   var ORR=window.ORR;
   var input=document.getElementById('word'), result=document.getElementById('result');
-  var EXAMPLES=['cake','night','that','sing','play','eat','great','bread','move','cost','brown','could','flake'];
+  var EXAMPLES=['cat','night','shake','great','bread','flake','rabbit','about','computer','banana','elephant','remember','table','teacher'];
 
   function esc(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+  function stressMark(s){ return s.stress===1 ? '<span class="acc" title="stressed syllable">\u02C8</span>' : ''; }
 
   function show(raw){
     var a=ORR.analyze(raw);
     if(!a){result.innerHTML='';return;}
     input.value=a.word;
+    if(a.multisyllabic) showMulti(a); else showMono(a);
+  }
+
+  /* ---- one-syllable view (letters map cleanly to onset + rime) ---- */
+  function showMono(a){
     var onsetHTML = a.onsetL ? '<span class="seg-onset">'+esc(a.onsetL)+'</span>' : '';
     var div = a.onsetL ? '<span class="seg-div">|</span>' : '';
     var wordline = onsetHTML + div + '<span class="seg-rime">'+esc(a.rimeL)+'</span>';
@@ -321,6 +507,34 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
     wireFamily();
   }
 
+  /* ---- multi-syllable view: one onset + rime per syllable ---- */
+  function showMulti(a){
+    var wl=a.syllables.map(function(s,i){
+      var cls = s.stress===1 ? 'syl stress' : 'syl';
+      return '<span class="'+cls+'">'+esc(s.text||'')+'</span>';
+    }).join('<span class="syl-dot">\u00B7</span>');
+
+    var cards=a.syllables.map(function(s){
+      var on = s.onsetIPA ? '<span class="mini-sound onset">/'+esc(s.onsetIPA)+'/</span>'
+                          : '<span class="mini-sound muted">no onset</span>';
+      var rm = '<span class="mini-sound rime">/'+esc(s.rimeIPA)+'/</span>';
+      return '<div class="syl-card">'+
+        '<div class="syl-text">'+esc(s.text||'')+stressMark(s)+'</div>'+
+        '<div class="mini-row"><span class="mini-tag onset">Onset</span>'+on+'</div>'+
+        '<div class="mini-row"><span class="mini-tag rime">Rime</span>'+rm+'</div>'+
+        '</div>';
+    }).join('<span class="syl-arrow">+</span>');
+
+    var n=a.syllables.length;
+    var lead='<p class="note"><strong>'+n+' syllables.</strong> Each one has its own onset and rime &mdash; '+
+      'onset and rime are parts of the <em>syllable</em>, not slots in the whole word '+
+      '(Treiman, Fowler, Gross, Berch &amp; Weatherston, 1995).</p>';
+
+    result.innerHTML='<div class="wordline multi">'+wl+'</div>'+lead+
+      '<div class="syl-strip">'+cards+'</div>'+
+      '<p class="src-note">Syllable boundaries follow the Maximum Onset Principle, with a stressed short vowel keeping a following consonant in its rime (so <em>rab&middot;bit</em>, not <em>ra&middot;bbit</em>). Spelling of each syllable is an approximate reading aid; the onset and rime shown in sound are the phonological units.</p>';
+  }
+
   function familyHTML(a){
     var fam=ORR.families[a.rimeL];
     if(!fam) return '';
@@ -330,7 +544,7 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
       : '<span class="verdict ok">Same sound every time</span>';
     var body='';
     groups.forEach(function(g){
-      var chips=g.words.map(function(w){
+      var chips=g.words.slice(0,14).map(function(w){
         var here = w===a.word ? ' here' : '';
         return '<button class="fw'+here+'" type="button" data-w="'+esc(w)+'">'+esc(w)+'</button>';
       }).join('');
@@ -366,29 +580,50 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
     return out;
   }
   function pctLabel(p){ return p<1 ? '<1%' : Math.round(p)+'%'; }
+  function hasShares(e){ return e.spellings.length>0 && typeof e.spellings[0].pct==='number'; }
+
   function showSound(ipa){
     var e=ORR.spellingsFor(ipa); if(!e) return;
     currentSound=ipa;
     var cs=soundChips.querySelectorAll('.sound-chip');
     for(var k=0;k<cs.length;k++) cs[k].classList.toggle('here',cs[k].getAttribute('data-ipa')===ipa);
-    var top=e.spellings[0];
-    var rows=e.spellings.map(function(sp){
-      var ex=sp.ex.map(function(w){return '<span>'+hiWord(w)+'</span>';}).join('');
-      var w=Math.max(sp.pct,1.5);
-      return '<div class="spell-row"><span class="spell-g">'+esc(sp.g)+'</span>'+
-        '<span class="freq"><span class="freq-track"><span class="freq-fill" style="width:'+w+'%"></span></span>'+
-        '<span class="freq-pct">'+pctLabel(sp.pct)+'</span></span>'+
-        '<span class="spell-ex">'+ex+'</span></div>';
-    }).join('');
-    spellResult.innerHTML='<div class="big-sound">/'+esc(ipa)+'/</div>'+
-      '<span class="verdict vary">'+e.spellings.length+' common spellings &mdash; <strong>'+esc(top.g)+'</strong> covers about '+pctLabel(top.pct)+'</span>'+
-      '<div class="spell-list">'+rows+'</div>'+
-      '<p class="src-note">Shares are the percentage of word <em>types</em> using each spelling in a ~33,000-word corpus (Phonics &amp; Stuff, in the Hanna\u2013Fry tradition). Counting by how often words actually appear in running text would shift these.</p>';
+
+    var rows, header, note;
+    if(hasShares(e)){
+      var top=e.spellings[0];
+      rows=e.spellings.map(function(sp){
+        var ex=sp.ex.map(function(w){return '<span>'+hiWord(w)+'</span>';}).join('');
+        var w=Math.max(sp.pct,1.5);
+        return '<div class="spell-row"><span class="spell-g">'+esc(sp.g)+'</span>'+
+          '<span class="freq"><span class="freq-track"><span class="freq-fill" style="width:'+w+'%"></span></span>'+
+          '<span class="freq-pct">'+pctLabel(sp.pct)+'</span></span>'+
+          '<span class="spell-ex">'+ex+'</span></div>';
+      }).join('');
+      header='<span class="verdict vary">'+e.spellings.length+' common spellings &mdash; <strong>'+esc(top.g)+'</strong> covers about '+pctLabel(top.pct)+'</span>';
+      note='<p class="src-note">Shares are the percentage of word <em>types</em> using each spelling in a ~33,000-word corpus (Phonics &amp; Stuff, in the Hanna\u2013Fry tradition). Counting by how often words actually appear in running text would shift these.</p>';
+    } else {
+      rows=e.spellings.map(function(sp,i){
+        var ex=sp.ex.map(function(w){return '<span>'+hiWord(w)+'</span>';}).join('');
+        return '<div class="spell-row plain"><span class="rank">'+(i+1)+'</span><span class="spell-g">'+esc(sp.g)+'</span>'+
+          '<span class="spell-ex">'+ex+'</span></div>';
+      }).join('');
+      header='<span class="verdict vary">'+e.spellings.length+' spelling'+(e.spellings.length>1?'s':'')+' &mdash; ordered by how common each is</span>';
+      note='<p class="src-note">Spellings are ordered most- to least-typical. Precise corpus shares (Hanna, 1966; Fry, 2004) are shown for the sounds that carry a frequency bar; the rest list their spellings without a fabricated figure.</p>';
+    }
+    spellResult.innerHTML='<div class="big-sound">/'+esc(ipa)+'/</div>'+header+
+      '<div class="spell-list">'+rows+'</div>'+note;
   }
-  ORR.soundInventory().forEach(function(ipa){
-    var b=document.createElement('button'); b.className='sound-chip'; b.type='button';
-    b.setAttribute('data-ipa',ipa); b.textContent='/'+ipa+'/';
-    b.addEventListener('click',function(){showSound(ipa);}); soundChips.appendChild(b);
+
+  ORR.soundGroups().forEach(function(group){
+    var h=document.createElement('div'); h.className='sound-group-label'; h.textContent=group.label;
+    soundChips.appendChild(h);
+    var row=document.createElement('div'); row.className='sound-chip-row';
+    group.sounds.forEach(function(ipa){
+      var b=document.createElement('button'); b.className='sound-chip'; b.type='button';
+      b.setAttribute('data-ipa',ipa); b.textContent='/'+ipa+'/';
+      b.addEventListener('click',function(){showSound(ipa);}); row.appendChild(b);
+    });
+    soundChips.appendChild(row);
   });
 
   /* ---- mode toggle ---- */
@@ -404,7 +639,7 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
   mRead.addEventListener('click',function(){setMode('read');});
   mSpell.addEventListener('click',function(){setMode('spell');});
 
-  show('shake');
+  show('rabbit');
 })();
 </script>
 </body>
