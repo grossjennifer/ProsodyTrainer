@@ -23,15 +23,9 @@
   let queue = [];
   const advance = { id: null, remaining: 0, startedAt: 0 };
 
-  const INTRO_KEY = "prosodyTrainerIntroSeen";
-  function introSeen() {
-    try { return window.localStorage.getItem(INTRO_KEY) === "1"; }
-    catch (error) { return false; }
-  }
-  function markIntroSeen() {
-    try { window.localStorage.setItem(INTRO_KEY, "1"); }
-    catch (error) { /* storage unavailable; intro simply replays */ }
-  }
+  // The opening exhibit is a teaching piece: it plays on every visit, and the
+  // reader can leave at any time with "Skip intro" (or "Explore the full site"
+  // on the final panel). No visit is tracked or stored.
 
   function arm(item) {
     item.startedAt = Date.now();
@@ -216,7 +210,6 @@
     }
 
     document.body.classList.add("exhibit-complete");
-    markIntroSeen();
     const replay = document.getElementById("replay-intro");
     if (replay) replay.hidden = false;
     try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }
@@ -256,18 +249,17 @@
     });
   });
 
-  const replayButton = document.getElementById("replay-intro");
-  if (replayButton) {
-    replayButton.addEventListener("click", function () {
-      try { window.localStorage.removeItem(INTRO_KEY); } catch (error) {}
-      try { window.location.reload(); }
-      catch (error) { window.location.href = window.location.href; }
-    });
+  // Replay just restarts the exhibit; since it plays on every visit, a reload
+  // is enough (and still works after the reader has entered the site).
+  function requestReplay() {
+    try { window.location.reload(); }
+    catch (error) { window.location.href = window.location.href; }
   }
+  Array.prototype.forEach.call(
+    document.querySelectorAll(".js-replay-intro"),
+    function (button) { button.addEventListener("click", requestReplay); }
+  );
 
-  if (introSeen()) {
-    completeExhibit();
-  } else {
-    next();
-  }
+  // Always play the welcome; the reader can skip at any time.
+  next();
 })();

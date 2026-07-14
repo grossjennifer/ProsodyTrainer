@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sound &amp; Spelling — Prosody Trainer</title>
+<style>
+  :root {
+    --paper:#FAF6EF; --ink:#2E2B27; --ink-soft:#6E675E; --line:#D9D0C2;
+    --glow:#C98A2E; --glow-deep:#8C5A12; --glow-halo:rgba(214,158,74,.38);
+    --onset:#0F6E56; --onset-soft:#E1F5EE;      /* teal: the beginning */
+    --rime:#A03052;  --rime-soft:#F6E7EC; --rime-ink:#6E2138;  /* raspberry: the sound-carrier */
+    --ok:#3B6D11; --ok-soft:#EAF3DE; --vary:#854F0B; --vary-soft:#FAEEDA;
+    --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
+    --sans:system-ui,-apple-system,"Segoe UI",Helvetica,Arial,sans-serif;
+    --ease:cubic-bezier(.33,0,.2,1);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);line-height:1.6}
+  .wrap{width:min(100% - 2.5rem,880px);margin-inline:auto;padding:2.6rem 0 4rem}
+  .kicker{text-transform:uppercase;letter-spacing:.15em;font-size:.78rem;font-weight:750;color:var(--glow-deep)}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(2.1rem,5vw,3rem);line-height:1.1;margin:.5rem 0 .6rem}
+  .lede{max-width:60ch;color:var(--ink-soft);font-size:1.08rem;margin:0 0 1.8rem}
+  .ask{display:flex;gap:.6rem;flex-wrap:wrap;align-items:center}
+  #word{flex:1 1 260px;min-width:0;font-family:var(--serif);font-size:1.35rem;padding:.6em .8em;
+    background:#fff;border:1px solid var(--line);border-radius:12px;color:var(--ink)}
+  #word:focus-visible{outline:none;border-color:var(--glow);box-shadow:0 0 0 4px var(--glow-halo)}
+  .go{font:inherit;font-weight:650;color:var(--paper);background:var(--ink);border:none;border-radius:999px;
+    padding:.7em 1.7em;cursor:pointer;transition:background .25s var(--ease),box-shadow .25s var(--ease)}
+  .go:hover,.go:focus-visible{background:#171512;box-shadow:0 0 0 4px var(--glow-halo);outline:none}
+  .chips{margin:1rem 0 0;display:flex;gap:.4rem .5rem;flex-wrap:wrap;align-items:center}
+  .chips .label{color:var(--ink-soft);font-size:.9rem;margin-right:.2rem}
+  .chip{font:inherit;font-size:.95rem;background:#fff;border:1px solid var(--line);border-radius:999px;
+    padding:.3em .8em;cursor:pointer;color:var(--ink);transition:border-color .2s var(--ease),box-shadow .2s var(--ease)}
+  .chip:hover,.chip:focus-visible{border-color:var(--glow);box-shadow:0 0 0 3px var(--glow-halo);outline:none}
+
+  .result{margin-top:2.4rem}
+  .wordline{font-family:var(--serif);font-size:clamp(2.6rem,9vw,4.4rem);line-height:1.1;letter-spacing:.01em;margin:.2rem 0 .3rem}
+  .seg-onset{color:var(--onset)}
+  .seg-rime{color:var(--rime)}
+  .seg-div{color:var(--line);padding:0 .12em;font-weight:300}
+  .note{color:var(--ink-soft);font-size:.95rem;margin:.2rem 0 1.6rem}
+  .note.est{background:var(--vary-soft);color:#5c3705;border-radius:10px;padding:.55rem .8rem;display:inline-block}
+
+  .cells{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+  .cell{background:#fff;border:1px solid var(--line);border-radius:16px;padding:1.1rem 1.2rem}
+  .cell.onset{border-top:4px solid var(--onset)}
+  .cell.rime{border-top:4px solid var(--rime)}
+  .cell .tag{font-size:.78rem;font-weight:750;letter-spacing:.08em;text-transform:uppercase}
+  .cell.onset .tag{color:var(--onset)}
+  .cell.rime .tag{color:var(--rime-ink)}
+  .cell .letters{font-family:var(--serif);font-size:2rem;margin:.35rem 0 .1rem}
+  .cell .arrowto{color:var(--ink-soft);font-size:.9rem;margin:.1rem 0}
+  .cell .sound{font-family:var(--serif);font-size:1.7rem}
+  .cell.onset .sound{color:var(--onset)}
+  .cell.rime .sound{color:var(--rime)}
+  .muted{color:var(--ink-soft)}
+
+  .family{margin-top:2.2rem;background:#fff;border:1px solid var(--line);border-radius:16px;padding:1.3rem 1.4rem}
+  .family h2{font-family:var(--serif);font-weight:400;font-size:1.5rem;margin:0 0 .2rem}
+  .family h2 .r{color:var(--rime)}
+  .verdict{display:inline-flex;align-items:center;gap:.4em;font-size:.85rem;font-weight:700;
+    border-radius:999px;padding:.25em .8em;margin:.2rem 0 1rem}
+  .verdict.ok{background:var(--ok-soft);color:var(--ok)}
+  .verdict.vary{background:var(--vary-soft);color:var(--vary)}
+  .grp{border-top:1px solid var(--line);padding:.85rem 0 0;margin-top:.85rem}
+  .grp:first-of-type{border-top:none;margin-top:0;padding-top:0}
+  .grp .snd{font-family:var(--serif);font-size:1.25rem;color:var(--rime);margin-bottom:.45rem}
+  .grp .snd .cnt{font-family:var(--sans);font-size:.85rem;color:var(--ink-soft);margin-left:.4em}
+  .fam-words{display:flex;gap:.4rem .5rem;flex-wrap:wrap}
+  .fw{font:inherit;font-family:var(--serif);font-size:1.05rem;background:var(--paper);border:1px solid var(--line);
+    border-radius:8px;padding:.2em .6em;cursor:pointer;color:var(--ink);transition:border-color .2s,box-shadow .2s}
+  .fw:hover,.fw:focus-visible{border-color:var(--glow);box-shadow:0 0 0 3px var(--glow-halo);outline:none}
+  .fw.here{border-color:var(--rime);background:var(--rime-soft);color:var(--rime-ink);font-weight:600}
+
+  .science{margin-top:2.4rem;max-width:70ch;color:var(--ink-soft);font-size:.95rem;line-height:1.7;
+    border-top:1px solid var(--line);padding-top:1.2rem}
+  .science strong{color:var(--ink);font-weight:650}
+  a{color:var(--glow-deep)}
+  :focus-visible{outline:2px solid var(--glow-deep);outline-offset:3px}
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+  [hidden]{display:none!important}
+
+  .modes{display:inline-flex;background:#fff;border:1px solid var(--line);border-radius:999px;padding:.25rem;gap:.2rem;margin:0 0 2rem}
+  .modes button{font:inherit;font-weight:650;border:none;background:transparent;color:var(--ink-soft);border-radius:999px;padding:.5em 1.15em;cursor:pointer;transition:background .2s var(--ease),color .2s var(--ease)}
+  .modes button[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+  .modes button:focus-visible{outline:2px solid var(--glow-deep);outline-offset:2px}
+  .subhead{font-family:var(--serif);font-size:1.3rem;margin:.2rem 0 1rem;color:var(--ink)}
+
+  .sound-chips{display:flex;gap:.45rem .55rem;flex-wrap:wrap;margin:.2rem 0 0}
+  .sound-chip{font:inherit;font-family:var(--serif);font-size:1.2rem;color:var(--rime-ink);background:var(--rime-soft);
+    border:1px solid #E4BFCC;border-radius:10px;padding:.25em .75em;cursor:pointer;transition:box-shadow .2s var(--ease)}
+  .sound-chip:hover,.sound-chip:focus-visible{box-shadow:0 0 0 3px var(--glow-halo);outline:none}
+  .sound-chip.here{background:var(--rime);color:#fff;border-color:var(--rime)}
+  .big-sound{font-family:var(--serif);font-size:clamp(2.6rem,9vw,4rem);color:var(--rime);line-height:1.1;margin:.35rem 0 .1rem}
+  .spell-list{display:grid;gap:.7rem;margin-top:1rem}
+  .spell-row{display:flex;align-items:center;gap:1rem;flex-wrap:wrap;background:#fff;border:1px solid var(--line);
+    border-left:4px solid var(--rime);border-radius:0 12px 12px 0;padding:.7rem 1rem}
+  .spell-g{font-family:var(--serif);font-size:1.5rem;color:var(--rime-ink);min-width:3.4ch}
+  .freq{display:flex;align-items:center;gap:.55rem;flex:1 1 150px;min-width:130px}
+  .freq-track{position:relative;flex:1;height:12px;background:var(--rime-soft);border-radius:999px;overflow:hidden}
+  .freq-fill{position:absolute;top:0;bottom:0;left:0;background:var(--rime);border-radius:999px}
+  .freq-pct{font-size:.82rem;color:var(--ink-soft);min-width:3.6ch;text-align:right;font-variant-numeric:tabular-nums}
+  .spell-ex{display:flex;gap:1rem;flex-wrap:wrap;font-family:var(--serif);font-size:1.15rem;color:var(--ink-soft);flex:2 1 200px}
+  .spell-ex .hi{color:var(--rime);font-weight:600}
+  .src-note{margin-top:1.1rem;color:var(--ink-soft);font-size:.85rem;line-height:1.6}
+  .src-note em{font-style:italic}
+  .refs{margin-top:2.2rem;border-top:1px solid var(--line);padding-top:1.2rem}
+  .refs>summary{cursor:pointer;font-weight:700;color:var(--glow-deep);font-size:1rem}
+  .refs>summary:hover,.refs>summary:focus-visible{color:var(--ink)}
+  .ref{margin:.55rem 0 0;padding-left:1.5rem;text-indent:-1.5rem;color:var(--ink-soft);font-size:.9rem;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="kicker">Prosody Trainer</p>
+  <h1>Sound &amp; Spelling</h1>
+  <p class="lede">The letter&ndash;sound map runs both ways. <strong style="color:var(--onset)">Read</strong> a word into its sounds by onset and rime &mdash; or take a <strong style="color:var(--rime)">sound</strong> and see the many ways English spells it.</p>
+
+  <div class="modes" role="group" aria-label="Choose a direction">
+    <button id="mode-read" type="button" aria-pressed="true">Read a word</button>
+    <button id="mode-spell" type="button" aria-pressed="false">Spell a sound</button>
+  </div>
+
+  <div id="read-view">
+    <p class="subhead">Read a word &mdash; onset &amp; rime</p>
+    <div class="ask">
+      <input id="word" type="text" autocomplete="off" spellcheck="false" placeholder="Type a one-syllable word" aria-label="Word to analyze">
+      <button class="go" id="go" type="button">Show</button>
+    </div>
+    <div class="chips" id="chips"><span class="label">Or try:</span></div>
+    <div class="result" id="result" aria-live="polite"></div>
+  </div>
+
+  <div id="spell-view" hidden>
+    <p class="subhead">Spell a sound &mdash; one sound, many spellings</p>
+    <div class="sound-chips" id="sound-chips" role="group" aria-label="Choose a sound"></div>
+    <div class="result" id="spell-result" aria-live="polite"></div>
+  </div>
+
+  <div class="science">
+    <strong>Why the rime?</strong> English letter&ndash;sound mappings are <strong>inconsistent in both directions</strong>. One letter can stand for several sounds &mdash; <em>t</em> is /t/ in <em>top</em>, /&#643;/ in <em>nation</em>, and silent in <em>listen</em> &mdash; and one sound can be spelled several ways &mdash; /k/ appears as <em>c</em> in <em>cat</em>, <em>k</em> in <em>king</em>, <em>ck</em> in <em>back</em>, and <em>ch</em> in <em>school</em>. The rime unit is far steadier, so readers lean on it to pronounce new words by analogy (Treiman et al., 1995; Ziegler &amp; Goswami, 2005). This prototype shows that directly: consistent rimes like <span style="color:var(--rime)">-ake</span> keep one sound across the whole family, while <span style="color:var(--rime)">-ove</span> and <span style="color:var(--rime)">-ead</span> split several ways. Pronunciations are General American (a small demo lexicon); words outside it are estimated by rime analogy and marked as such.
+  </div>
+
+  <details class="refs">
+    <summary>References</summary>
+    <p class="ref">Adams, M. J. (1990). <i>Beginning to read: Thinking and learning about print.</i> MIT Press.</p>
+    <p class="ref">Chomsky, N., &amp; Halle, M. (1968). <i>The sound pattern of English.</i> Harper &amp; Row.</p>
+    <p class="ref">Ehri, L. C. (2005). Learning to read words: Theory, findings, and issues. <i>Scientific Studies of Reading, 9</i>(2), 167&ndash;188.</p>
+    <p class="ref">Fry, E. (2004). Phonics: A large phoneme&ndash;grapheme frequency count revisited. <i>Journal of Literacy Research, 36</i>(1), 85&ndash;98.</p>
+    <p class="ref">Fudge, E. C. (1969). Syllables. <i>Journal of Linguistics, 5</i>(2), 253&ndash;286.</p>
+    <p class="ref">Hanna, P. R., Hanna, J. S., Hodges, R. E., &amp; Rudorf, E. H. (1966). <i>Phoneme&ndash;grapheme correspondences as cues to spelling improvement.</i> U.S. Office of Education.</p>
+    <p class="ref">Hayes, B. (1995). <i>Metrical stress theory: Principles and case studies.</i> University of Chicago Press.</p>
+    <p class="ref">Liberman, M., &amp; Prince, A. (1977). On stress and linguistic rhythm. <i>Linguistic Inquiry, 8</i>(2), 249&ndash;336.</p>
+    <p class="ref">Selkirk, E. O. (1982). The syllable. In H. van der Hulst &amp; N. Smith (Eds.), <i>The structure of phonological representations (Part II)</i> (pp. 337&ndash;383). Foris.</p>
+    <p class="ref">Selkirk, E. O. (1984). <i>Phonology and syntax: The relation between sound and structure.</i> MIT Press.</p>
+    <p class="ref">Share, D. L. (1995). Phonological recoding and self-teaching: <i>Sine qua non</i> of reading acquisition. <i>Cognition, 55</i>(2), 151&ndash;218.</p>
+    <p class="ref">Treiman, R., Mullennix, J., Bijeljac-Babic, R., &amp; Richmond-Welty, E. D. (1995). The special role of rimes in the description, use, and acquisition of English orthography. <i>Journal of Experimental Psychology: General, 124</i>(2), 107&ndash;136.</p>
+    <p class="ref">Venezky, R. L. (1999). <i>The American way of spelling: The structure and origins of American English orthography.</i> Guilford Press.</p>
+    <p class="ref">Ziegler, J. C., &amp; Goswami, U. (2005). Reading acquisition, developmental dyslexia, and skilled reading across languages: A psycholinguistic grain size theory. <i>Psychological Bulletin, 131</i>(1), 3&ndash;29.</p>
+  </details>
+</div>
+
+<script src="../cmudict-subset.js"></script>
+<script>
+/* ---- engine (pure, testable; no DOM) ---- */
+(function(g){
+  "use strict";
+  var LEX = {};
+  // Supplementary monosyllables merged under the CMU subset to enrich rime families.
+  var SUPPLEMENT = {
+    cake:'K EY K',lake:'L EY K',make:'M EY K',snake:'S N EY K',shake:'SH EY K',bake:'B EY K',take:'T EY K',wake:'W EY K',brake:'B R EY K',
+    cat:'K AE T',bat:'B AE T',hat:'HH AE T',mat:'M AE T',rat:'R AE T',sat:'S AE T',flat:'F L AE T',that:'DH AE T',
+    light:'L AY T',night:'N AY T',sight:'S AY T',fight:'F AY T',bright:'B R AY T',right:'R AY T',might:'M AY T',
+    king:'K IH NG',ring:'R IH NG',sing:'S IH NG',wing:'W IH NG',thing:'TH IH NG',bring:'B R IH NG',
+    day:'D EY',play:'P L EY',say:'S EY',way:'W EY',stay:'S T EY',gray:'G R EY',
+    eat:'IY T',meat:'M IY T',heat:'HH IY T',seat:'S IY T',beat:'B IY T',treat:'T R IY T',great:'G R EY T',threat:'TH R EH T',sweat:'S W EH T',
+    head:'HH EH D',bread:'B R EH D',dead:'D EH D',spread:'S P R EH D',bead:'B IY D',plead:'P L IY D',knead:'N IY D',
+    love:'L AH V',dove:'D AH V',glove:'G L AH V',move:'M UW V',prove:'P R UW V',cove:'K OW V',stove:'S T OW V',drove:'D R OW V',wove:'W OW V',
+    cost:'K AO S T',lost:'L AO S T',frost:'F R AO S T',most:'M OW S T',post:'P OW S T',host:'HH OW S T',
+    down:'D AW N',town:'T AW N',brown:'B R AW N',gown:'G AW N',own:'OW N',grown:'G R OW N',shown:'SH OW N',thrown:'TH R OW N',
+    bone:'B OW N',stone:'S T OW N',cone:'K OW N',phone:'F OW N',none:'N AH N',done:'D AH N',
+    could:'K UH D',would:'W UH D',should:'SH UH D'
+  };
+  var VOWELS = {AA:1,AE:1,AH:1,AO:1,AW:1,AY:1,EH:1,ER:1,EY:1,IH:1,IY:1,OW:1,OY:1,UH:1,UW:1};
+  var IPA = {AA:'\u0251\u02D0',AE:'\u00E6',AH:'\u028C',AO:'\u0254\u02D0',AW:'a\u028A',AY:'a\u026A',
+    EH:'\u025B',ER:'\u025C\u02D0r',EY:'e\u026A',IH:'\u026A',IY:'i\u02D0',OW:'o\u028A',OY:'\u0254\u026A',
+    UH:'\u028A',UW:'u\u02D0',B:'b',CH:'t\u0283',D:'d',DH:'\u00F0',F:'f',G:'\u0261',HH:'h',JH:'d\u0292',
+    K:'k',L:'l',M:'m',N:'n',NG:'\u014B',P:'p',R:'r',S:'s',SH:'\u0283',T:'t',TH:'\u03B8',V:'v',W:'w',Y:'j',Z:'z',ZH:'\u0292'};
+  var ONSET_G = [['sch','S K'],['shr','SH R'],['squ','S K W'],['str','S T R'],['scr','S K R'],['spr','S P R'],['spl','S P L'],['thr','TH R'],
+    ['sh','SH'],['ch','CH'],['th','TH'],['wh','W'],['ph','F'],['ck','K'],['qu','K W'],['wr','R'],['kn','N'],['gn','N'],['gh',''],
+    ['b','B'],['c','K'],['d','D'],['f','F'],['g','G'],['h','HH'],['j','JH'],['k','K'],['l','L'],['m','M'],['n','N'],['p','P'],['q','K'],
+    ['r','R'],['s','S'],['t','T'],['v','V'],['w','W'],['x','K S'],['y','Y'],['z','Z']];
+
+  function bare(p){return p.replace(/[0-9]/g,'');}
+  function isVowelPhone(p){return !!VOWELS[bare(p)];}
+  function isVowelLetter(ch,i){return 'aeiou'.indexOf(ch)>=0 || (ch==='y'&&i>0);}
+  function ipaString(phones){return phones.map(function(p){return IPA[bare(p)]||bare(p).toLowerCase();}).join('');}
+
+  function splitLettersOnsetRime(w){
+    var i=0; while(i<w.length && !isVowelLetter(w[i],i)) i++;
+    if(i>=w.length) return {onset:w,rime:''};
+    return {onset:w.slice(0,i),rime:w.slice(i)};
+  }
+  function splitPhonesOnsetRime(phones){
+    var i=0; while(i<phones.length && !isVowelPhone(phones[i])) i++;
+    return {onset:phones.slice(0,i),rime:phones.slice(i)};
+  }
+  function onsetToPhones(on){
+    var i=0,out=[];
+    while(i<on.length){
+      var m=null;
+      for(var k=0;k<ONSET_G.length;k++){ if(on.substr(i,ONSET_G[k][0].length)===ONSET_G[k][0]){m=ONSET_G[k];break;} }
+      if(!m){i++;continue;}
+      if(m[1]) out.push.apply(out,m[1].split(' '));
+      i+=m[0].length;
+    }
+    return out;
+  }
+  function buildFamilies(){
+    var fam={};
+    for(var w in LEX){
+      var rl=splitLettersOnsetRime(w).rime;
+      var rp=splitPhonesOnsetRime(LEX[w].split(' ')).rime;
+      var ipa=ipaString(rp);
+      if(!fam[rl]) fam[rl]={rime:rl,groups:[]};
+      var grp=null; for(var j=0;j<fam[rl].groups.length;j++){ if(fam[rl].groups[j].ipa===ipa){grp=fam[rl].groups[j];break;} }
+      if(!grp){grp={ipa:ipa,arpa:rp.slice(),words:[]};fam[rl].groups.push(grp);}
+      grp.words.push(w);
+    }
+    for(var r in fam) fam[r].groups.sort(function(a,b){return b.words.length-a.words.length;});
+    return fam;
+  }
+  // Reading lexicon = monosyllabic CMU-subset entries (first pronunciation),
+  // supplemented with the curated words above so rime families stay rich.
+  function firstPron(s){ return String(s).split('|')[0].trim(); }
+  function syllCount(ph){ var n=0,a=ph.split(' '); for(var i=0;i<a.length;i++) if(VOWELS[bare(a[i])]) n++; return n; }
+  (function buildLexicon(){
+    var cmu=(typeof window!=='undefined' && window.CMUDICT_SUBSET) || {};
+    for(var w in cmu){
+      if(!/^[a-z]+$/i.test(w)) continue;
+      var ph=firstPron(cmu[w]);
+      if(syllCount(ph)===1) LEX[w.toLowerCase()]=ph;
+    }
+    for(var k in SUPPLEMENT){ if(!(k in LEX)) LEX[k]=SUPPLEMENT[k]; }
+  })();
+
+  var families=buildFamilies();
+
+  function analyze(raw){
+    var word=(raw||'').toLowerCase().replace(/[^a-z]/g,'');
+    if(!word) return null;
+    var sl=splitLettersOnsetRime(word), onsetL=sl.onset, rimeL=sl.rime;
+    var onsetPhones,rimePhones,source,rimeKnown=true;
+    if(LEX[word]){
+      var sp=splitPhonesOnsetRime(LEX[word].split(' '));
+      onsetPhones=sp.onset; rimePhones=sp.rime; source='lexicon';
+    } else {
+      onsetPhones=onsetToPhones(onsetL);
+      var fam=families[rimeL];
+      if(fam){ rimePhones=fam.groups[0].arpa.slice(); source='estimated'; }
+      else { rimePhones=[]; source='unknown'; rimeKnown=false; }
+    }
+    return {word:word,onsetL:onsetL,rimeL:rimeL,onsetPhones:onsetPhones,rimePhones:rimePhones,
+      onsetIPA:ipaString(onsetPhones),rimeIPA:ipaString(rimePhones),source:source,rimeKnown:rimeKnown};
+  }
+
+  var SPELLINGS = [
+    {ipa:'k', spellings:[{g:'c',pct:68,ex:['[c]at','[c]up']},{g:'k',pct:18,ex:['[k]ing','[k]ite']},{g:'ck',pct:9,ex:['ba[ck]','du[ck]']},{g:'ch',pct:3,ex:['s[ch]ool','a[ch]e']},{g:'que',pct:0.3,ex:['anti[que]','pla[que]']}]},
+    {ipa:'f', spellings:[{g:'f',pct:81,ex:['[f]ish','[f]un']},{g:'ph',pct:10,ex:['[ph]one','gra[ph]']},{g:'ff',pct:9,ex:['o[ff]','cli[ff]']},{g:'gh',pct:0.9,ex:['rou[gh]','lau[gh]']}]},
+    {ipa:'s', spellings:[{g:'s',pct:78,ex:['[s]un','bu[s]']},{g:'c',pct:9,ex:['[c]ity','[c]ent']},{g:'ss',pct:7,ex:['gra[ss]','mi[ss]']},{g:'ce',pct:2,ex:['fen[ce]','ra[ce]']},{g:'sc',pct:0.8,ex:['[sc]ene','[sc]ience']}]},
+    {ipa:'\u0283', spellings:[{g:'ti',pct:44,ex:['na[ti]on','sta[ti]on']},{g:'sh',pct:39,ex:['[sh]ip','fi[sh]']},{g:'ci',pct:5,ex:['spe[ci]al','so[ci]al']},{g:'ch',pct:3,ex:['[ch]ef','ma[ch]ine']}]},
+    {ipa:'e\u026A', spellings:[{g:'a',pct:51,ex:['[a]pron','p[a]per']},{g:'a_e',pct:21,ex:['c[a]k[e]','n[a]m[e]']},{g:'ai',pct:13,ex:['r[ai]n','tr[ai]n']},{g:'ay',pct:6,ex:['d[ay]','pl[ay]']},{g:'eigh',pct:0.7,ex:['[eigh]t','w[eigh]']}]},
+    {ipa:'i\u02D0', spellings:[{g:'e',pct:32,ex:['h[e]','m[e]']},{g:'y',pct:30,ex:['happ[y]','cit[y]']},{g:'i',pct:15,ex:['sk[i]','k[i]lo']},{g:'ea',pct:9,ex:['s[ea]','t[ea]']},{g:'ee',pct:8,ex:['tr[ee]','s[ee]']}]},
+    {ipa:'o\u028A', spellings:[{g:'o',pct:71,ex:['g[o]','s[o]']},{g:'o_e',pct:11,ex:['b[o]n[e]','h[o]m[e]']},{g:'oa',pct:6,ex:['b[oa]t','r[oa]d']},{g:'ow',pct:6,ex:['sn[ow]','gr[ow]']}]},
+    {ipa:'u\u02D0', spellings:[{g:'u',pct:36,ex:['tr[u]th','fl[u]']},{g:'oo',pct:28,ex:['m[oo]n','s[oo]n']},{g:'u_e',pct:9,ex:['fl[u]t[e]','t[u]n[e]']},{g:'ew',pct:8,ex:['fl[ew]','n[ew]']},{g:'ue',pct:4,ex:['bl[ue]','tr[ue]']}]}
+  ];
+  function spellingsFor(ipa){ for(var i=0;i<SPELLINGS.length;i++){ if(SPELLINGS[i].ipa===ipa) return SPELLINGS[i]; } return null; }
+  function soundInventory(){ return SPELLINGS.map(function(s){return s.ipa;}); }
+
+  g.ORR = {LEX:LEX,families:families,analyze:analyze,ipaString:ipaString,
+    splitLettersOnsetRime:splitLettersOnsetRime,splitPhonesOnsetRime:splitPhonesOnsetRime,buildFamilies:buildFamilies,
+    SPELLINGS:SPELLINGS,spellingsFor:spellingsFor,soundInventory:soundInventory};
+})(typeof window!=='undefined'?window:globalThis);
+if (typeof module!=='undefined' && module.exports) module.exports = (typeof window!=='undefined'?window:globalThis).ORR;
+</script>
+
+<script>
+/* ---- UI ---- */
+(function(){
+  if (typeof document==='undefined') return;
+  var ORR=window.ORR;
+  var input=document.getElementById('word'), result=document.getElementById('result');
+  var EXAMPLES=['cake','night','that','sing','play','eat','great','bread','move','cost','brown','could','flake'];
+
+  function esc(s){return s.replace(/[&<>]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;'}[c];});}
+
+  function show(raw){
+    var a=ORR.analyze(raw);
+    if(!a){result.innerHTML='';return;}
+    input.value=a.word;
+    var onsetHTML = a.onsetL ? '<span class="seg-onset">'+esc(a.onsetL)+'</span>' : '';
+    var div = a.onsetL ? '<span class="seg-div">|</span>' : '';
+    var wordline = onsetHTML + div + '<span class="seg-rime">'+esc(a.rimeL)+'</span>';
+
+    var estNote='';
+    if(a.source==='estimated') estNote='<p class="note est">&ldquo;'+esc(a.word)+'&rdquo; isn&rsquo;t in the demo lexicon &mdash; the rime sound is estimated by analogy with the &ldquo;-'+esc(a.rimeL)+'&rdquo; family below.</p>';
+    else if(a.source==='unknown') estNote='<p class="note est">&ldquo;'+esc(a.word)+'&rdquo; isn&rsquo;t in the demo lexicon, and its rime &ldquo;-'+esc(a.rimeL)+'&rdquo; has no family here yet. Onset shown; rime sound unknown.</p>';
+
+    var onsetCell='<div class="cell onset"><span class="tag">Onset</span>'+
+      '<div class="letters">'+(a.onsetL?esc(a.onsetL):'<span class="muted">&mdash;</span>')+'</div>'+
+      '<div class="arrowto">is read as</div>'+
+      '<div class="sound">'+(a.onsetL?('/'+esc(a.onsetIPA)+'/'):'<span class="muted">no onset (starts with a vowel)</span>')+'</div></div>';
+    var rimeCell='<div class="cell rime"><span class="tag">Rime</span>'+
+      '<div class="letters">'+esc(a.rimeL)+'</div>'+
+      '<div class="arrowto">is read as</div>'+
+      '<div class="sound">'+(a.rimeKnown?('/'+esc(a.rimeIPA)+'/'):'<span class="muted">&mdash;</span>')+'</div></div>';
+
+    result.innerHTML='<div class="wordline">'+wordline+'</div>'+estNote+
+      '<div class="cells">'+onsetCell+rimeCell+'</div>'+familyHTML(a);
+    wireFamily();
+  }
+
+  function familyHTML(a){
+    var fam=ORR.families[a.rimeL];
+    if(!fam) return '';
+    var groups=fam.groups, varies=groups.length>1;
+    var verdict = varies
+      ? '<span class="verdict vary">Sound varies &mdash; '+groups.length+' pronunciations</span>'
+      : '<span class="verdict ok">Same sound every time</span>';
+    var body='';
+    groups.forEach(function(g){
+      var chips=g.words.map(function(w){
+        var here = w===a.word ? ' here' : '';
+        return '<button class="fw'+here+'" type="button" data-w="'+esc(w)+'">'+esc(w)+'</button>';
+      }).join('');
+      body+='<div class="grp"><div class="snd">/'+esc(g.ipa)+'/<span class="cnt">'+g.words.length+' word'+(g.words.length>1?'s':'')+'</span></div><div class="fam-words">'+chips+'</div></div>';
+    });
+    return '<div class="family"><h2>Words sharing the rime <span class="r">&ldquo;-'+esc(a.rimeL)+'&rdquo;</span></h2>'+verdict+body+'</div>';
+  }
+
+  function wireFamily(){
+    var btns=result.querySelectorAll('.fw');
+    for(var i=0;i<btns.length;i++) btns[i].addEventListener('click',function(){show(this.getAttribute('data-w'));});
+  }
+
+  var chips=document.getElementById('chips');
+  EXAMPLES.forEach(function(w){
+    var b=document.createElement('button'); b.className='chip'; b.type='button'; b.textContent=w;
+    b.addEventListener('click',function(){show(w);}); chips.appendChild(b);
+  });
+  document.getElementById('go').addEventListener('click',function(){show(input.value);});
+  input.addEventListener('keydown',function(e){if(e.key==='Enter')show(input.value);});
+
+  /* ---- spell-a-sound view ---- */
+  var spellResult=document.getElementById('spell-result');
+  var soundChips=document.getElementById('sound-chips');
+  var currentSound=null;
+
+  function hiWord(w){
+    var out='',i=0;
+    while(i<w.length){
+      if(w[i]==='['){ var j=w.indexOf(']',i); out+='<span class="hi">'+esc(w.slice(i+1,j))+'</span>'; i=j+1; }
+      else { out+=esc(w[i]); i++; }
+    }
+    return out;
+  }
+  function pctLabel(p){ return p<1 ? '<1%' : Math.round(p)+'%'; }
+  function showSound(ipa){
+    var e=ORR.spellingsFor(ipa); if(!e) return;
+    currentSound=ipa;
+    var cs=soundChips.querySelectorAll('.sound-chip');
+    for(var k=0;k<cs.length;k++) cs[k].classList.toggle('here',cs[k].getAttribute('data-ipa')===ipa);
+    var top=e.spellings[0];
+    var rows=e.spellings.map(function(sp){
+      var ex=sp.ex.map(function(w){return '<span>'+hiWord(w)+'</span>';}).join('');
+      var w=Math.max(sp.pct,1.5);
+      return '<div class="spell-row"><span class="spell-g">'+esc(sp.g)+'</span>'+
+        '<span class="freq"><span class="freq-track"><span class="freq-fill" style="width:'+w+'%"></span></span>'+
+        '<span class="freq-pct">'+pctLabel(sp.pct)+'</span></span>'+
+        '<span class="spell-ex">'+ex+'</span></div>';
+    }).join('');
+    spellResult.innerHTML='<div class="big-sound">/'+esc(ipa)+'/</div>'+
+      '<span class="verdict vary">'+e.spellings.length+' common spellings &mdash; <strong>'+esc(top.g)+'</strong> covers about '+pctLabel(top.pct)+'</span>'+
+      '<div class="spell-list">'+rows+'</div>'+
+      '<p class="src-note">Shares are the percentage of word <em>types</em> using each spelling in a ~33,000-word corpus (Phonics &amp; Stuff, in the Hanna\u2013Fry tradition). Counting by how often words actually appear in running text would shift these.</p>';
+  }
+  ORR.soundInventory().forEach(function(ipa){
+    var b=document.createElement('button'); b.className='sound-chip'; b.type='button';
+    b.setAttribute('data-ipa',ipa); b.textContent='/'+ipa+'/';
+    b.addEventListener('click',function(){showSound(ipa);}); soundChips.appendChild(b);
+  });
+
+  /* ---- mode toggle ---- */
+  var readView=document.getElementById('read-view'), spellView=document.getElementById('spell-view');
+  var mRead=document.getElementById('mode-read'), mSpell=document.getElementById('mode-spell');
+  function setMode(m){
+    var read=m==='read';
+    readView.hidden=!read; spellView.hidden=read;
+    mRead.setAttribute('aria-pressed',read?'true':'false');
+    mSpell.setAttribute('aria-pressed',read?'false':'true');
+    if(!read && !currentSound) showSound(ORR.soundInventory()[0]);
+  }
+  mRead.addEventListener('click',function(){setMode('read');});
+  mSpell.addEventListener('click',function(){setMode('spell');});
+
+  show('shake');
+})();
+</script>
+</body>
+</html>

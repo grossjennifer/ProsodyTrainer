@@ -1,0 +1,35 @@
+PROSODY TRAINER - SITE PACKAGE
+==============================
+
+This zip preserves the folder structure. Unzip it and merge into your site
+repository root. Everything is ready to deploy EXCEPT a few files that already
+live in your repo and are intentionally NOT included here, so this package
+cannot overwrite your originals:
+
+  style.css     Homepage exhibit styles  -> keep your existing copy at the root
+  sputnik.png   Mascot image             -> keep your existing copy at the root
+  really-statement.mp3 / really-question.mp3 / really-exclamation.mp3
+                Welcome Panel 7 audio (optional) -> keep at the root if present
+  CNAME         Custom-domain file for GitHub Pages -> keep your existing one
+
+LAYOUT (root = your site root)
+------------------------------
+  index.html            Homepage (welcome exhibit + homepage)
+  script.js             Welcome exhibit script
+  style.css             (your file - not in this zip)
+  sputnik.png           (your file - not in this zip)
+  cmudict-subset.js     Shared pronunciation dictionary (loaded by every tool)
+  test_exhibit.js       Homepage regression checks
+  rhythm-reader/        index.html, engine.js, test_rhythm_feet.js, test_nuclear_stress.js
+  rhythm-reader-pro/    index.html, engine.js, test_rhythm_feet.js, test_nuclear_stress.js, README.txt
+  sound-spelling/       index.html, test_onset_rime.js
+
+Each tool page loads ../cmudict-subset.js, so keep the tool folders directly
+under the same root as cmudict-subset.js.
+
+TESTS (run from the folder shown)
+---------------------------------
+  root/               node test_exhibit.js
+  rhythm-reader/      node test_rhythm_feet.js   &&  node test_nuclear_stress.js
+  rhythm-reader-pro/  node test_rhythm_feet.js   &&  node test_nuclear_stress.js
+  sound-spelling/     node test_onset_rime.js
