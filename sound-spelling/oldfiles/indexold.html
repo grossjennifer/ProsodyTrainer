@@ -263,11 +263,13 @@
     <p class="ref">Fudge, E. C. (1969). Syllables. <i>Journal of Linguistics, 5</i>(2), 253&ndash;286.</p>
     <p class="ref">Hanna, P. R., Hanna, J. S., Hodges, R. E., &amp; Rudorf, E. H. (1966). <i>Phoneme&ndash;grapheme correspondences as cues to spelling improvement.</i> U.S. Office of Education.</p>
     <p class="ref">Hayes, B. (1995). <i>Metrical stress theory: Principles and case studies.</i> University of Chicago Press.</p>
-    <p class="ref">Kahn, D. (1976). <i>Syllable-based generalizations in English phonology</i> (Doctoral dissertation). Massachusetts Institute of Technology.</p>
     <p class="ref">Liberman, M., &amp; Prince, A. (1977). On stress and linguistic rhythm. <i>Linguistic Inquiry, 8</i>(2), 249&ndash;336.</p>
     <p class="ref">Selkirk, E. O. (1982). The syllable. In H. van der Hulst &amp; N. Smith (Eds.), <i>The structure of phonological representations (Part II)</i> (pp. 337&ndash;383). Foris.</p>
     <p class="ref">Selkirk, E. O. (1984). <i>Phonology and syntax: The relation between sound and structure.</i> MIT Press.</p>
     <p class="ref">Share, D. L. (1995). Phonological recoding and self-teaching: <i>Sine qua non</i> of reading acquisition. <i>Cognition, 55</i>(2), 151&ndash;218.</p>
+    <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
+    <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
+    <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
     <p class="ref">Treiman, R., Fowler, C. A., Gross, J., Berch, D., &amp; Weatherston, S. (1995). Syllable structure or word structure? Evidence for onset and rime units with disyllabic and trisyllabic stimuli. <i>Journal of Memory and Language, 34</i>(1), 132&ndash;155.</p>
     <p class="ref">Treiman, R., Mullennix, J., Bijeljac-Babic, R., &amp; Richmond-Welty, E. D. (1995). The special role of rimes in the description, use, and acquisition of English orthography. <i>Journal of Experimental Psychology: General, 124</i>(2), 107&ndash;136.</p>
     <p class="ref">Venezky, R. L. (1999). <i>The American way of spelling: The structure and origins of American English orthography.</i> Guilford Press.</p>
@@ -366,37 +368,20 @@
   function syllabify(phones){
     var vi=[],i; for(i=0;i<phones.length;i++) if(isVowelPhone(phones[i])) vi.push(i);
     if(vi.length===0) return null;
-    var codaLens=[], ambi=[];
+    var codaLens=[];
     for(var s=0;s<vi.length;s++){
       var v=vi[s], nextV=(s+1<vi.length)?vi[s+1]:phones.length, between=phones.slice(v+1,nextV);
       if(s+1<vi.length){
         var stressed=stressOf(phones[v])>0, lax=!!LAX[bare(phones[v])];
         var onsetLen=maxLegalOnset(between, stressed&&lax);
         codaLens.push(between.length-onsetLen);
-        // Ambisyllabicity (Kahn 1976): a single intervocalic consonant after a
-        // stressed lax vowel is kept as this syllable's coda AND shared as the
-        // next syllable's onset. This is the phonology behind the "rabbit rule"
-        // (rab.bit) — one sound closing the checked syllable and opening the next.
-        ambi.push(stressed && lax && between.length===1 && onsetLen===0);
-      } else { codaLens.push(between.length); ambi.push(false); }
+      } else codaLens.push(between.length);
     }
     var out=[], idx=0;
     for(s=0;s<vi.length;s++){
       var vv=vi[s], onset=phones.slice(idx,vv), nucleus=phones[vv], coda=phones.slice(vv+1,vv+1+codaLens[s]);
       idx=vv+1+codaLens[s];
       out.push({onset:onset,nucleus:nucleus,coda:coda,rime:[nucleus].concat(coda),stress:stressOf(nucleus)});
-    }
-    // Share the ambisyllabic consonant onto the following syllable's onset for the
-    // SOUND view only — .onset is left untouched so the letter-splitter still
-    // divides conventionally (el.e.phant, not e.le.phant). Guard on legalOnset so
-    // a coda that cannot begin a syllable (e.g. /ŋ/ in sing.er) is not shared.
-    for(s=0;s<out.length-1;s++){
-      if(ambi[s] && out[s].coda.length===1 && !out[s+1].onset.length &&
-         legalOnset(out[s].coda.map(bare))){
-        out[s+1].sharedOnset = out[s].coda.slice();
-        out[s].ambisyllabic = true;
-        out[s+1].ambisyllabic = true;
-      }
     }
     return out;
   }
@@ -1015,11 +1000,9 @@
       var chunks=orthoSyllables(word,sylls) || [word];
       if(chunks.length!==sylls.length) chunks=null;      // spelling split unavailable -> phones only
       out.syllables=sylls.map(function(sy,i){
-        var effOnset = (sy.sharedOnset && sy.sharedOnset.length) ? sy.sharedOnset : sy.onset;
         return { text: chunks?chunks[i]:'',
-                 onsetIPA: ipaString(effOnset), rimeIPA: ipaString(sy.rime),
-                 onsetArpa: effOnset.map(bare), rimeArpa: sy.rime.map(bare), stress: sy.stress,
-                 ambisyllabicOnset: !!(sy.sharedOnset && sy.sharedOnset.length) };
+                 onsetIPA: ipaString(sy.onset), rimeIPA: ipaString(sy.rime),
+                 onsetArpa: sy.onset.map(bare), rimeArpa: sy.rime.map(bare), stress: sy.stress };
       });
       out.spellingSplit=!!chunks;
       // backward-compatible one-syllable fields (whole-word onset + rime of the phonemes)
@@ -1179,8 +1162,7 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
                       : '<span class="mini-sound muted">no onset</span>';
         rm = '<span class="mini-sound rime">'+esc(s.rimeL)+'</span>';
       } else {
-        on = s.onsetIPA ? '<span class="mini-sound onset">/'+esc(s.onsetIPA)+'/</span>'+
-                          (s.ambisyllabicOnset ? ' <span class="muted" title="Ambisyllabic: the same consonant closes the previous syllable and opens this one.">(shared)</span>' : '')
+        on = s.onsetIPA ? '<span class="mini-sound onset">/'+esc(s.onsetIPA)+'/</span>'
                         : '<span class="mini-sound muted">no onset</span>';
         rm = '<span class="mini-sound rime">/'+esc(s.rimeIPA)+'/</span>';
       }
@@ -1200,7 +1182,7 @@ if (typeof module!=='undefined' && module.exports) module.exports = (typeof wind
       lead='<p class="note"><strong>'+n+' syllables.</strong> Each one has its own onset and rime &mdash; '+
         'onset and rime are parts of the <em>syllable</em>, not slots in the whole word '+
         '(Treiman, Fowler, Gross, Berch &amp; Weatherston, 1995).</p>';
-      note='<p class="src-note">Syllable boundaries follow the Maximum Onset Principle, with a stressed short vowel keeping a following consonant in its rime (so <em>rab&middot;bit</em>, not <em>ra&middot;bbit</em>). A single consonant in that position is <em>ambisyllabic</em> &mdash; it closes the first syllable and also opens the second, shown here as <em>shared</em>. Spelling of each syllable is an approximate reading aid; the onset and rime shown in sound are the phonological units.</p>';
+      note='<p class="src-note">Syllable boundaries follow the Maximum Onset Principle, with a stressed short vowel keeping a following consonant in its rime (so <em>rab&middot;bit</em>, not <em>ra&middot;bbit</em>). Spelling of each syllable is an approximate reading aid; the onset and rime shown in sound are the phonological units.</p>';
     }
 
     result.innerHTML='<div class="wordline multi">'+wl+'</div>'+lead+

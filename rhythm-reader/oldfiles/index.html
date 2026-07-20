@@ -173,8 +173,9 @@ function boot(full) {
     note.textContent = '';
   } else {
     E.loadDictionary(window.CMUDICT_SUBSET, 'subset');
-    note.textContent = 'Pronunciations of uncommon words may be estimated, ' +
-      'and can be adjusted by tapping a syllable.';
+    note.textContent = 'Running with a small built-in word list; uncommon ' +
+      'words are estimated by rule. For best results keep cmudict.js next ' +
+      'to this file.';
     note.classList.add('warn');
   }
   analyze();
