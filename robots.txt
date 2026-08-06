@@ -1,0 +1,41 @@
+# prosodytrainer.com
+# Everything here is public, research-based educational material. Crawling is
+# open by default.
+
+User-agent: *
+Allow: /
+
+Sitemap: https://prosodytrainer.com/sitemap.xml
+
+# ---------------------------------------------------------------------------
+# A note on the AI crawlers, since they do two different jobs and you may not
+# want to treat them the same way:
+#
+#   Retrieval / citation crawlers fetch a page to answer a live question and
+#   can cite you. These are the ones that matter for being found:
+#     OAI-SearchBot, ChatGPT-User, Claude-SearchBot, Claude-User,
+#     PerplexityBot, Google-Extended (for AI Overviews)
+#
+#   Training crawlers collect text to train future models. They do not send
+#   readers back to you:
+#     GPTBot, ClaudeBot, CCBot, Applebot-Extended, meta-externalagent
+#
+# The Allow: / above permits both. If you ever want citation without
+# contributing to training corpora, uncomment the block below. Be aware this
+# is a real trade-off and the line between the two categories keeps moving.
+#
+# User-agent: GPTBot
+# Disallow: /
+#
+# User-agent: ClaudeBot
+# Disallow: /
+#
+# User-agent: CCBot
+# Disallow: /
+#
+# User-agent: Applebot-Extended
+# Disallow: /
+#
+# User-agent: meta-externalagent
+# Disallow: /
+# ---------------------------------------------------------------------------
