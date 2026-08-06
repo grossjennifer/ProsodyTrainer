@@ -195,16 +195,29 @@
     showPanel(current);
   }
 
+  // The homepage is never hidden from the document; the exhibit floats above it
+  // while body.exhibit-active is set. Content underneath is made inert so that
+  // keyboard and screen-reader focus cannot wander into it behind the overlay.
+  function raiseExhibit() {
+    document.body.classList.add("exhibit-active");
+    if (siteContent) {
+      siteContent.setAttribute("inert", "");
+      siteContent.setAttribute("aria-hidden", "true");
+    }
+  }
+
   function completeExhibit() {
     if (document.body.classList.contains("exhibit-complete")) return;
     clearTimers();
     cancelAdvance();
 
     const controls = document.querySelector(".exhibit-controls");
+    document.body.classList.remove("exhibit-active");
     if (exhibit) exhibit.hidden = true;
     if (controls) controls.hidden = true;
     if (siteContent) {
-      siteContent.hidden = false;
+      siteContent.removeAttribute("inert");
+      siteContent.removeAttribute("aria-hidden");
       siteContent.removeAttribute("hidden");
       siteContent.setAttribute("tabindex", "-1");
     }
@@ -261,5 +274,6 @@
   );
 
   // Always play the welcome; the reader can skip at any time.
+  raiseExhibit();
   next();
 })();

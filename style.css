@@ -34,6 +34,33 @@ html, body {
   padding: 3rem 1.5rem 9rem;
 }
 
+/* ==========================================================================
+   Exhibit as overlay, not as gate.
+   The homepage is always present and visible in the served document. The
+   opening exhibit is a JavaScript-only layer that floats above it: script.js
+   adds .exhibit-active to <body> to raise it, and completeExhibit() drops it.
+   Without JavaScript — which includes most AI crawlers and text extractors —
+   the exhibit never renders and the homepage is simply the page.
+   The :not() selectors outrank the plain .exhibit-controls rule below, so
+   this block is order-independent.
+   ========================================================================== */
+
+body:not(.exhibit-active) .opening-exhibit,
+body:not(.exhibit-active) .exhibit-controls { display: none; }
+
+body.exhibit-active { overflow: hidden; }
+
+body.exhibit-active .opening-exhibit {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--paper);
+}
+
+body.exhibit-active .exhibit-controls { z-index: 61; }
+
 .exhibit-panel {
   display: none;
   max-width: 42rem;
