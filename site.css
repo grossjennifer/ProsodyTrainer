@@ -457,3 +457,44 @@ a.site-card:focus-visible {
   line-height: 1.6;
   color: var(--ink);
 }
+
+
+/* --------------------------------------------------------------------------
+   Learn: emphasis-swap control (focus page). Revealed by script; the page is
+   complete without it.
+   -------------------------------------------------------------------------- */
+
+.learn-swap-controls {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: .9rem;
+  margin: -.4rem 0 1.6rem;
+}
+
+.learn-swap-controls[hidden] { display: none; }
+
+.learn-swap-controls button {
+  font-family: var(--sans);
+  font-size: .92rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--boundary);
+  border-radius: 999px;
+  padding: .45em 1.1em;
+  cursor: pointer;
+  transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+}
+
+.learn-swap-controls button:hover,
+.learn-swap-controls button:focus-visible {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
+.learn-swap-note {
+  margin: 0;
+  font-size: .92rem;
+  color: var(--ink-soft);
+}

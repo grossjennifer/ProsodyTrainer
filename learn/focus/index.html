@@ -75,7 +75,9 @@
           canoe ride. The river was turbulent. <b>Susan</b> stood up to change
           positions, hoping to steady the canoe. It rocked, and someone fell
           out.</p>
-          <p><span class="learn-stress">SAM</span> fell out of the canoe.</p>
+          <p class="learn-swap"><span class="learn-stress" data-caps="SAM"
+          data-plain="Sam">SAM</span> <span data-caps="FELL"
+          data-plain="fell">fell</span> out of the canoe.</p>
         </div>
 
         <div class="learn-example">
@@ -83,7 +85,14 @@
           canoe ride. The river was turbulent and the canoe rocked. Hoping to
           steady it, <b>Sam</b> stood up to change positions &mdash; and lost his
           balance.</p>
-          <p>Sam <span class="learn-stress">FELL</span> out of the canoe.</p>
+          <p class="learn-swap"><span data-caps="SAM"
+          data-plain="Sam">Sam</span> <span class="learn-stress" data-caps="FELL"
+          data-plain="fell">FELL</span> out of the canoe.</p>
+        </div>
+
+        <div class="learn-swap-controls" hidden id="swap-controls">
+          <button type="button" id="swap-emphasis">Swap the emphasis</button>
+          <p class="learn-swap-note" id="swap-note" role="status" aria-live="polite"></p>
         </div>
 
         <p>In the first story, we already know someone went overboard; what we
@@ -95,7 +104,9 @@
         enough to move the sentence&rsquo;s main emphasis.</p>
 
         <p>Swap the emphases and both sentences go slightly wrong &mdash; not
-        ungrammatical, just off, like an answer to a question nobody asked.</p>
+        ungrammatical, just off, like an answer to a question nobody asked. If
+        your browser runs JavaScript, the button above will do the swapping for
+        you; it is worth feeling rather than taking on trust.</p>
 
         <h2>New information takes the accent</h2>
 
@@ -291,5 +302,40 @@
     </footer>
 
   </div>
+
+  <script>
+  /* Progressive enhancement only. The page is complete without this: both
+     stories, both emphases, and every explanation are in the served HTML.
+     All this does is let the reader flip the emphasis to feel the mismatch
+     the prose describes — the incongruent condition of the 2014 experiment,
+     run on themselves. It reveals the controls and never hides content. */
+  (function () {
+    "use strict";
+    var controls = document.getElementById("swap-controls");
+    var button = document.getElementById("swap-emphasis");
+    var note = document.getElementById("swap-note");
+    var words = document.querySelectorAll(".learn-swap span[data-caps]");
+    if (!controls || !button || !note || !words.length) return;
+
+    controls.hidden = false;
+    button.setAttribute("aria-pressed", "false");
+    var swapped = false;
+
+    button.addEventListener("click", function () {
+      swapped = !swapped;
+      Array.prototype.forEach.call(words, function (word) {
+        var stressed = word.classList.contains("learn-stress");
+        word.classList.toggle("learn-stress");
+        word.textContent = stressed ? word.getAttribute("data-plain")
+                                    : word.getAttribute("data-caps");
+      });
+      button.textContent = swapped ? "Put the emphasis back" : "Swap the emphasis";
+      button.setAttribute("aria-pressed", swapped ? "true" : "false");
+      note.textContent = swapped
+        ? "Now each story answers a question it was not asked."
+        : "Emphasis restored to the word each story leaves unresolved.";
+    });
+  })();
+  </script>
 </body>
 </html>

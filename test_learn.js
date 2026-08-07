@@ -491,9 +491,13 @@ check("focus page reuses shared stylesheets, defines none of its own",
   !focus.includes("<style>"));
 
 // The paired stimuli must keep the final sentence identical across contexts.
-check("canoe pair present in both emphases",
-  flatFocus.includes('<span class="learn-stress">SAM</span> fell out of the canoe') &&
-  flatFocus.includes('Sam <span class="learn-stress">FELL</span> out of the canoe'));
+check("canoe pair present in both emphases", (function () {
+  // Same pair, now swappable: the stress class starts on SAM in the first
+  // sentence and on FELL in the second, and both sentences end identically.
+  const first = /<span class="learn-stress" data-caps="SAM"[^>]*>SAM<\/span> <span data-caps="FELL"[^>]*>fell<\/span> out of the canoe/;
+  const second = /<span data-caps="SAM"[^>]*>Sam<\/span> <span class="learn-stress" data-caps="FELL"[^>]*>FELL<\/span> out of the canoe/;
+  return first.test(flatFocus) && second.test(flatFocus);
+})());
 check("function-word focus shown with both stimuli",
   flatFocus.includes('He <span class="learn-stress">CAN</span>') &&
   flatFocus.includes('<span class="learn-stress">WHERE</span> is my hamster') &&
@@ -591,8 +595,41 @@ check("implicit prosody framed as the claim, not a sixth component",
 check("map styles live in the shared sheet, not inline",
   shared.includes(".learn-map") && shared.includes(".learn-map-frame") &&
   !hub.includes("<style>"));
-check("map is static markup, no JavaScript on any Learn page",
-  [hub, stress, rhythm, focus, phrasing].every(page => !/<script(?![^>]*ld\+json)/.test(page)));
+check("only the focus page carries script; the rest are static", (function () {
+  const bare = page => (page.match(/<script(?![^>]*ld\+json)/g) || []).length;
+  return [hub, stress, rhythm, phrasing].every(p => bare(p) === 0) && bare(focus) === 1;
+})());
+check("focus page script hides nothing and gates nothing", (function () {
+  const js = (focus.match(/<script>([\s\S]*?)<\/script>/) || ["", ""])[1];
+  return js.length > 0 &&
+    !/display\s*[:=]\s*["']?none/.test(js) &&
+    !/\.hidden\s*=\s*true/.test(js) &&
+    !/removeChild|innerHTML/.test(js) &&
+    js.includes("controls.hidden = false");
+})());
+check("no content on the focus page is hidden in the served markup",
+  !/<(?:div|section|main|p)[^>]*\shidden(?![^>]*id="swap-controls")/.test(focus));
+check("both emphases present in static markup, so JS-off readers lose nothing",
+  (focus.match(/data-caps="SAM"/g) || []).length === 2 &&
+  (focus.match(/data-caps="FELL"/g) || []).length === 2 &&
+  (focus.match(/data-plain="Sam"/g) || []).length === 2 &&
+  (focus.match(/data-plain="fell"/g) || []).length === 2);
+check("swap control is a real button, keyboard-operable, with a live region",
+  focus.includes('<button type="button" id="swap-emphasis">') &&
+  focus.includes('role="status" aria-live="polite"'));
+check("toggle reports its state to assistive technology",
+  focus.includes('button.setAttribute("aria-pressed", "false")') &&
+  focus.includes('button.setAttribute("aria-pressed", swapped ? "true" : "false")'));
+check("both directions of the toggle are announced, not just the swap",
+  focus.includes("Now each story answers a question it was not asked.") &&
+  focus.includes("Emphasis restored to the word each story leaves unresolved.") &&
+  !/note\.textContent = swapped[\s\S]{0,120}: "";/.test(focus));
+check("the prose points at the control and does not depend on it",
+  flatFocus.includes("the button above will do the swapping for") &&
+  flatFocus.includes("both sentences go slightly wrong"));
+check("swap styles live in the shared sheet",
+  shared.includes(".learn-swap-controls") && shared.includes(".learn-swap-note") &&
+  !focus.includes("<style>"));
 check("one tagline: homepage kicker matches every footer",
   home.includes("Making the prosody of written language visible") &&
   [hub, stress, rhythm, focus, phrasing].every(
