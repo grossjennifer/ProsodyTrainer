@@ -31,7 +31,16 @@ check("overlay raised by body class, not by hiding content", js.includes("functi
 check("overlay lowered on completion", js.includes('classList.remove("exhibit-active")'));
 check("content inert behind the overlay", js.includes('setAttribute("inert", "")') && js.includes('removeAttribute("inert")'));
 check("Tools, Science, Use, Research, and About navigation", ["tools", "science", "use", "research", "about"].every(id => html.includes('href="#' + id + '"')));
-check("three live tools", (html.match(/<a class="site-card"/g) || []).length === 3);
+check("three live tools", (function () {
+  const tools = html.slice(html.indexOf('id="tools"'), html.indexOf('id="science"'));
+  return (tools.match(/<a class="site-card"/g) || []).length === 3;
+})());
+check("Learn card links to the Learn hub", html.includes('<a class="site-card" href="learn/"'));
+check("Investigate and Teach no longer promise material that does not exist", (function () {
+  const use = html.slice(html.indexOf('id="use"'), html.indexOf('id="research"'));
+  return (use.match(/site-card-upcoming/g) || []).length === 2 &&
+         (use.match(/site-coming/g) || []).length === 2;
+})());
 check("Sound & Spelling tool linked", html.includes('href="sound-spelling/"'));
 check("reading-science references present", html.includes("Treiman") && html.includes("Hanna"));
 check("two tools marked in development", (html.match(/In development/g) || []).length === 2);

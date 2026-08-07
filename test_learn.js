@@ -10,6 +10,7 @@ const phrasing = fs.readFileSync(
   path.join(__dirname, "learn", "phrasing", "index.html"), "utf8");
 const shared = fs.readFileSync(path.join(__dirname, "site.css"), "utf8");
 const home = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
+const hub = fs.readFileSync(path.join(__dirname, "learn", "index.html"), "utf8");
 
 // Hard-wrapped source: collapse whitespace before matching running prose.
 const flat = phrasing.replace(/\s+/g, " ");
@@ -28,6 +29,30 @@ function check(label, condition) {
 }
 
 console.log("Learn page regression checks");
+
+// --- The hub, and the path from the homepage to the phrasing page ---------
+check("Learn hub exists with a canonical URL",
+  hub.includes('rel="canonical" href="https://prosodytrainer.com/learn/"'));
+check("hub links the phrasing page", hub.includes('href="phrasing/"'));
+check("hub declares a CollectionPage tied to the site graph",
+  hub.includes('"@type": "CollectionPage"') &&
+  hub.includes('"@id": "https://prosodytrainer.com/#website"'));
+check("hub JSON-LD parses", (function () {
+  const match = hub.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  try { return !!JSON.parse(match[1]); } catch (error) { return false; }
+})());
+check("hub lists the four unwritten explainers as in development",
+  (hub.match(/In development/g) || []).length === 4 &&
+  ["Stress", "Rhythm", "Intonation", "Implicit prosody"]
+    .every(t => hub.includes("<h3>" + t + "</h3>")));
+check("hub does not link pages that do not exist yet",
+  !/href="(stress|rhythm|intonation|implicit-prosody)\//.test(hub));
+check("homepage reaches the phrasing page in two clicks",
+  home.includes('<a class="site-card" href="learn/"') &&
+  hub.includes('href="phrasing/"'));
+check("hub reuses the shared stylesheets, defines none of its own",
+  hub.includes('href="../style.css"') && hub.includes('href="../site.css"') &&
+  !hub.includes("<style>"));
 
 // --- Shared chrome: one source of truth, no duplicated CSS ---------------
 check("homepage links the shared stylesheet", home.includes('href="site.css"'));
