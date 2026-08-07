@@ -380,3 +380,80 @@ a.site-card:focus-visible {
 }
 
 .learn-refs p.is-own { color: var(--ink); }
+
+
+/* --------------------------------------------------------------------------
+   Learn hub: how the pieces fit
+   -------------------------------------------------------------------------- */
+
+.learn-map {
+  margin: 2rem 0 2.6rem;
+  padding: 1.4rem 1.5rem 1.5rem;
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+}
+
+.learn-map-root {
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 700;
+  margin: 0 0 .2rem;
+}
+
+.learn-map-lede {
+  font-size: .95rem;
+  color: var(--ink-soft);
+  margin: 0 0 1rem;
+}
+
+.learn-map ul {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 0 1.1rem;
+  border-left: 2px solid var(--line);
+}
+
+.learn-map li {
+  padding: .42rem 0 .42rem .9rem;
+  position: relative;
+  line-height: 1.5;
+}
+
+.learn-map li::before {
+  content: "";
+  position: absolute;
+  left: -1.1rem;
+  top: 1.15rem;
+  width: .9rem;
+  height: 2px;
+  background: var(--line);
+}
+
+.learn-map .learn-map-name {
+  font-family: var(--serif);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.learn-map .learn-map-gloss {
+  font-size: .95rem;
+  color: var(--ink-soft);
+}
+
+.learn-map .learn-map-pending {
+  font-size: .8rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin-left: .4rem;
+}
+
+.learn-map-frame {
+  margin: 1.2rem 0 0;
+  padding-top: 1rem;
+  border-top: 1px solid var(--line);
+  font-size: .95rem;
+  line-height: 1.6;
+  color: var(--ink);
+}

@@ -536,7 +536,7 @@ check("tools' inability to see discourse context stated plainly",
 check("focus page cross-links the other explainers",
   ["../stress/", "../rhythm/", "../"].every(h => focus.includes('href="' + h + '"')));
 check("stress page hands sentence-level emphasis to the focus page",
-  stress.includes('<a href="../focus/">emphasis and focus</a>'));
+  stress.includes('<a href="../focus/">Emphasis and focus</a> page'));
 check("every DOI on the focus page is one I verified", (function () {
   const verified = new Set([
     "10.1002/rrq.67", "10.1002/rrq.97", "10.1121/1.392372",
@@ -559,10 +559,45 @@ check("origin section cites the 2018 DOI and its open-access copy, not a bare ye
   hub.includes("10.1002/rrq.198") && hub.includes("oapsf_articles/87") &&
   !hub.replace(/\s+/g, " ").includes("The 2018 study on marking stress in print"));
 check("origin section points at the page carrying the caveats",
-  hub.replace(/\s+/g, " ").includes('The <a href="stress/">stress page</a> sets out what'));
+  hub.replace(/\s+/g, " ").includes('The <a href="stress/">Stress</a> page explains what'));
+check("origin narrative split into separate claims, not one packed sentence",
+  hub.replace(/\s+/g, " ").includes("typographically enhanced text. They posed the question"));
+check("no 'stylistically enhanced' phrasing that reads as decoration",
+  !/stylistically enhanced/.test(hub));
+check("origin claim stated modestly", hub.includes("one\n        answer to that question".replace(/\s+/g, " ")) ||
+  hub.replace(/\s+/g, " ").includes("Prosody Trainer is one answer to that question"));
+check("page-title references capitalised; phenomenon links left lowercase", (function () {
+  const titleRefs = /<a href="[^"]*">(Stress|Rhythm|Phrasing|Emphasis and focus)<\/a> page/;
+  return titleRefs.test(rhythm) && titleRefs.test(stress) && titleRefs.test(hub) &&
+    !/>stress page<|>rhythm page<|>phrasing page</.test(rhythm + stress + focus + phrasing + hub) &&
+    focus.includes('<a href="../stress/">stress</a>');
+})());
 check("hub status note reads 'added', and drops the future tense",
   hub.replace(/\s+/g, " ").includes("being added one at a time") &&
   !/being written one at a time/.test(hub));
+
+// --- the taxonomy map ------------------------------------------------------
+check("hub carries a prosody map with all five components",
+  hub.includes('class="learn-map"') &&
+  ["Stress", "Rhythm", "Phrasing", "Emphasis and\n            focus", "Intonation"]
+    .every(n => hub.includes(n)));
+check("map links the four live components and leaves intonation unlinked",
+  ["stress/", "rhythm/", "phrasing/", "focus/"].every(
+    h => new RegExp('learn-map-name"><a href="' + h.replace("/", "\\/") + '"').test(hub)) &&
+  !/learn-map-name"><a href="intonation/.test(hub));
+check("implicit prosody framed as the claim, not a sixth component",
+  hub.replace(/\s+/g, " ").includes("is not a sixth item on that list") &&
+  hub.replace(/\s+/g, " ").includes("construct all of the above while reading silently"));
+check("map styles live in the shared sheet, not inline",
+  shared.includes(".learn-map") && shared.includes(".learn-map-frame") &&
+  !hub.includes("<style>"));
+check("map is static markup, no JavaScript on any Learn page",
+  [hub, stress, rhythm, focus, phrasing].every(page => !/<script(?![^>]*ld\+json)/.test(page)));
+check("one tagline: homepage kicker matches every footer",
+  home.includes("Making the prosody of written language visible") &&
+  [hub, stress, rhythm, focus, phrasing].every(
+    page => page.includes("making the prosody of written language visible")) &&
+  !home.includes("An interactive laboratory for reading prosody"));
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);
