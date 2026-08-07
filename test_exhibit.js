@@ -36,6 +36,13 @@ check("three live tools", (function () {
   return (tools.match(/<a class="site-card"/g) || []).length === 3;
 })());
 check("Learn card links to the Learn hub", html.includes('<a class="site-card" href="learn/"'));
+check("Learn card promises only topics that exist", (function () {
+  const card = html.slice(html.indexOf('href="learn/"><div>'), html.indexOf('Investigate'));
+  return !/intonation|implicit prosody/i.test(card) &&
+         ["stress", "rhythm", "phrasing", "emphasis"].every(t => card.includes(t));
+})());
+check("Learn card call-to-action matches where it goes",
+  html.includes("See the topics &rarr;") && !html.includes("Start with phrasing"));
 check("Learn in homepage navigation, header and footer",
   (html.match(/<a href="learn\/">Learn<\/a>/g) || []).length === 2);
 check("Investigate and Teach no longer promise material that does not exist", (function () {
