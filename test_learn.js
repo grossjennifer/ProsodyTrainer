@@ -507,11 +507,23 @@ check("function-word focus stated as possible, not automatic",
 
 // Claims about the 2014 study must not outrun it.
 check("no claim that an inner voice was directly observed",
-  flatFocus.includes("It does not prove anyone heard a voice") &&
+  flatFocus.includes("It does not prove that anyone heard a voice") &&
   flatFocus.includes("as though</i> guided by a"));
 check("inconsistent accuracy result disclosed, not buried",
   flatFocus.includes("The accuracy data are inconsistent") &&
-  flatFocus.includes("accuracy was actually higher on the"));
+  flatFocus.includes("accuracy (proportion correct) did not") &&
+  flatFocus.includes("it was actually higher on the"));
+check("jargon glossed on first use", flatFocus.includes("accuracy (proportion correct)"));
+check("explicit bridge from the canoe pair to the principle",
+  flatFocus.includes("The words have not changed. Only the context has"));
+check("nuclear stress described as predicted, and named",
+  flatFocus.includes("predicts the main accent of each phrase using") &&
+  flatFocus.includes("English nuclear stress to fall late"));
+check("function-word examples are italicised, not bare",
+  flatFocus.includes("<i>he</i>, <i>can</i>, <i>that</i>, and <i>a</i>"));
+check("reference DOIs stay full resolvable URLs, consistent across Learn pages",
+  [phrasing, stress, rhythm, focus].every(page =>
+    /<a href="https:\/\/doi\.org\/[^"]+">https:\/\/doi\.org\//.test(page)));
 check("sample limits stated", flatFocus.includes("The readers were undergraduates"));
 check("rating figures taken from the erratum, and said to be",
   flatFocus.includes("3.83 and 3.36 against 2.54 and 2.31") &&
@@ -535,6 +547,22 @@ check("every DOI on the focus page is one I verified", (function () {
 })());
 check("focus page carries the open-access link and the erratum",
   focus.includes("oapsf_articles/29") && focus.includes("10.1002/rrq.97"));
+
+check("Learn appears in the site navigation, not just by direct link",
+  home.includes('<a href="learn/">Learn</a>') &&
+  hub.includes('<a href="./">Learn</a>') &&
+  [stress, rhythm, focus, phrasing].every(page => page.includes('<a href="../">Learn</a>')));
+check("origin section names its source paper in full",
+  hub.includes("Gross, J., &amp; Winegard".replace("&amp; Winegard", "Winegard, B., &amp; Plotkowski")) ||
+  hub.replace(/\s+/g, " ").includes("Gross, J., Winegard, B., &amp; Plotkowski, A. R. (2018)"));
+check("origin section cites the 2018 DOI and its open-access copy, not a bare year",
+  hub.includes("10.1002/rrq.198") && hub.includes("oapsf_articles/87") &&
+  !hub.replace(/\s+/g, " ").includes("The 2018 study on marking stress in print"));
+check("origin section points at the page carrying the caveats",
+  hub.replace(/\s+/g, " ").includes('The <a href="stress/">stress page</a> sets out what'));
+check("hub status note reads 'added', and drops the future tense",
+  hub.replace(/\s+/g, " ").includes("being added one at a time") &&
+  !/being written one at a time/.test(hub));
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

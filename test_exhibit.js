@@ -36,6 +36,8 @@ check("three live tools", (function () {
   return (tools.match(/<a class="site-card"/g) || []).length === 3;
 })());
 check("Learn card links to the Learn hub", html.includes('<a class="site-card" href="learn/"'));
+check("Learn in homepage navigation, header and footer",
+  (html.match(/<a href="learn\/">Learn<\/a>/g) || []).length === 2);
 check("Investigate and Teach no longer promise material that does not exist", (function () {
   const use = html.slice(html.indexOf('id="use"'), html.indexOf('id="research"'));
   return (use.match(/site-card-upcoming/g) || []).length === 2 &&
