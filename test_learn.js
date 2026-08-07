@@ -13,6 +13,8 @@ const home = fs.readFileSync(path.join(__dirname, "index.html"), "utf8");
 const hub = fs.readFileSync(path.join(__dirname, "learn", "index.html"), "utf8");
 const stress = fs.readFileSync(path.join(__dirname, "learn", "stress", "index.html"), "utf8");
 const rhythm = fs.readFileSync(path.join(__dirname, "learn", "rhythm", "index.html"), "utf8");
+const focus = fs.readFileSync(path.join(__dirname, "learn", "focus", "index.html"), "utf8");
+const flatFocus = focus.replace(/\s+/g, " ");
 const flatRhythm = rhythm.replace(/\s+/g, " ");
 const flatStress = stress.replace(/\s+/g, " ");
 
@@ -49,12 +51,12 @@ check("hub lists the two unwritten explainers as in development",
   (hub.match(/In development/g) || []).length === 2 &&
   ["Intonation", "Implicit prosody"]
     .every(t => hub.includes("<h3>" + t + "</h3>")));
-check("hub links all three live explainers",
-  ["stress/", "rhythm/", "phrasing/"].every(h => hub.includes('href="' + h + '"')));
+check("hub links all four live explainers",
+  ["stress/", "rhythm/", "focus/", "phrasing/"].every(h => hub.includes('href="' + h + '"')));
 check("hub does not link pages that do not exist yet",
   !/href="(intonation|implicit-prosody)\//.test(hub));
-check("hub graph lists all three live articles",
-  ["stress", "rhythm", "phrasing"]
+check("hub graph lists all four live articles",
+  ["stress", "rhythm", "focus", "phrasing"]
     .every(n => hub.includes("learn/" + n + "/#article")));
 check("homepage reaches the phrasing page in two clicks",
   home.includes('<a class="site-card" href="learn/"') &&
@@ -109,7 +111,7 @@ check("Speer, Kjelgaard & Dobroth 1996 cited with DOI (verified)",
   phrasing.includes("10.1007/BF01708573"));
 check("every DOI in the reference list is one I verified", (function () {
   const verified = new Set(["10.1016/0010-0285(82)90008-1", "10.1006/jmla.1998.2620",
-                            "10.1007/BF01708573", "10.1002/rrq.67"]);
+                            "10.1007/BF01708573", "10.1002/rrq.67", "10.1002/rrq.97"]);
   // DOIs may legitimately contain parentheses, e.g. 10.1016/0010-0285(82)90008-1
   const found = phrasing.match(/10\.\d{4,}\/[^"<\s]+/g) || [];
   return found.length > 0 && found.every(d => verified.has(d));
@@ -177,11 +179,11 @@ check("links home", phrasing.includes('class="brand-link" href="../../"'));
 check("professional email present", phrasing.includes("mailto:grossj@gvsu.edu"));
 check("no pre-migration faculty profile URLs", !phrasing.includes("gross-jennifer-44"));
 check("no Learn page links an explainer that does not exist",
-  [phrasing, stress, rhythm].every(
+  [phrasing, stress, rhythm, focus].every(
     page => !/href="\.\.\/(intonation|implicit-prosody)\//.test(page)));
 check("status notes on every live page list only unwritten pages", (function () {
   const note = "intonation and implicit prosody &mdash; are in development";
-  return [flat, flatStress, flatRhythm].every(
+  return [flat, flatStress, flatRhythm, flatFocus].every(
     page => page.includes(note) && !/stress|rhythm/.test(
       (page.match(/status-note">More Learn pages[^<]*/) || [""])[0]));
 })());
@@ -212,6 +214,60 @@ check("percentage correct, not raw scores, described as falling",
   flatStress.includes("Mean percentage correct did not go up") &&
   flatStress.includes("Raw scores did rise") &&
   flatStress.includes("not improvement within either one"));
+check("difficulty explains the percentage drop, length the raw rise",
+  flatStress.includes("because the posttest was deliberately more difficult") &&
+  flatStress.includes("twenty items rather than ten, so raw scores are not directly comparable"));
+check("stress and rhythm not conflated as a stress-only effect",
+  flatStress.includes("What happens when stress and rhythm are marked") &&
+  flatStress.includes("combined orthographic stress") &&
+  flatStress.includes("does not isolate stress marking as the") &&
+  flatStress.includes("orthographic support for stress and rhythm a plausible target"));
+check("acoustic cues stated as tendencies, reduction not universal",
+  flatStress.includes("usually longer, often a") &&
+  flatStress.includes("may keep a fuller") &&
+  !/keeps its full quality while the/.test(flatStress));
+check("heteronym pairs: stress central, not sole difference",
+  flatStress.includes("stress pattern is central to distinguishing") &&
+  !/stress is the only thing separating/.test(flatStress));
+check("paper's own term for the posttest markers",
+  flatStress.includes("fewer and less salient markers") &&
+  !/fewer and fainter/.test(flatStress));
+check("expectancy stated as weakened but not eliminated",
+  flatStress.includes("weaken an expectancy explanation without eliminating it") &&
+  !/Less comfortable is not excluded/.test(flatStress));
+check("lesson delivery described completely",
+  flatStress.includes("recorded audio models and immediate feedback") &&
+  flatStress.includes("no live instructor and no one-to-one coaching"));
+check("each limitation opens with a bold lead-in", (function () {
+  const section = stress.slice(stress.indexOf("Seven limits"), stress.indexOf("<h2>Try it"));
+  return (section.match(/<p><strong>/g) || []).length === 7;
+})());
+check("2018 design limitation stated: no plain-text control",
+  flatStress.includes("cannot separate help from hindrance") &&
+  flatStress.includes("no plain-text control") &&
+  flatStress.includes("interference is a live possibility"));
+check("2018 described as a preference study, not a training study",
+  flatStress.includes("it asked about preference, not performance, and no") &&
+  !/The first marked lexical stress explicitly/.test(flatStress) &&
+  flatRhythm.includes("That was a preference judgment, with") &&
+  !/the training studies from this project/.test(flatRhythm));
+check("first-syllable tuning and early-sentence findings reported",
+  flatStress.includes("more sensitive to marking on a word&rsquo;s <i>first</i> syllable") &&
+  flatStress.includes("roughly 85% of English content words") &&
+  flatStress.includes("rated more helpful <i>early</i> in a sentence"));
+check("compound contrast is the paper's three-way version",
+  flatStress.includes("Big Bird after an") &&
+  flatStress.includes("every blue BIRD</i> is any bird"));
+check("rhythm rule shown with both clash examples",
+  flatRhythm.includes("nessee") && flatRhythm.includes("This is the rhythm") &&
+  flatRhythm.includes("teen") && flatRhythm.includes("Kelly &amp; Bock, 1988"));
+check("pseudoword stress-shift example present",
+  flatRhythm.includes("vane pilots") && flatRhythm.includes("balloons"));
+check("absent spondee explained by clash avoidance, not just asserted",
+  flatRhythm.includes("A\n        clash is the thing English rhythm works to avoid".replace(/\s+/g, " ")));
+check("hub records the site's origin in the 2018 paper",
+  hub.includes("Where this came from") &&
+  hub.replace(/\s+/g, " ").includes("hear the rhythm of text"));
 check("no claim about individual participants' accuracy",
   !/Nobody|no participant|nobody/i.test(flatStress));
 check("baseline-adjusted framing of the headline finding",
@@ -222,8 +278,8 @@ check("participant ratings match the questionnaire items",
   flatStress.includes("greater perceived improvement in their prosodic") &&
   flatStress.includes("clearer instructions") &&
   !/rated the lessons as clearer and more useful/.test(flatStress));
-check("six limits stated, including durability and expectancy",
-  flatStress.includes("Six limits are worth stating plainly") &&
+check("seven limits stated, including durability and expectancy",
+  flatStress.includes("Seven limits are worth stating plainly") &&
   flatStress.includes("Durability is unknown") &&
   flatStress.includes("Expectancy cannot be ruled out") &&
   flatStress.includes("no delayed retention test"));
@@ -262,6 +318,7 @@ check("own research cited on the stress page",
 check("every DOI on the stress page is one I verified against the article", (function () {
   const verified = new Set([
     "10.1007/s11145-026-10840-2", "10.1002/rrq.198", "10.1002/rrq.67",
+    "10.1002/rrq.97",
     "10.1016/0885-2308(87)90004-0", "10.1016/j.jneuroling.2008.09.002",
     "10.1016/j.jml.2020.104089", "10.1080/10888438.2021.1995390"
   ]);
@@ -281,7 +338,7 @@ check("typographic apostrophes throughout the Learn prose", (function () {
   const proseOnly = text => text.split("\n")
     .filter(line => !/ld\+json|doi\.org|href=|"@/.test(line))
     .join("\n");
-  return [stress, rhythm, phrasing, hub].every(page => !proseOnly(page).includes("'"));
+  return [stress, rhythm, focus, phrasing, hub].every(page => !proseOnly(page).includes("'"));
 })());
 
 // --- Rhythm page ------------------------------------------------------------
@@ -310,9 +367,39 @@ check("all four feet present with their traditional names",
   ["trochee", "iamb", "anapest", "dactyl"].every(n => flatRhythm.includes("<i>" + n + "</i>")));
 check("foot inventory framed as a modelling choice, not a fact",
   flatRhythm.includes("a modelling decision, not a fact about English"));
-check("engine's exclusions stated: no spondee, no amphibrach template",
-  flatRhythm.includes("no strong&ndash;strong foot") &&
-  flatRhythm.includes("not given a fifth"));
+check("exclusions named in traditional terms: spondee and amphibrach",
+  flatRhythm.includes("traditionally called a <i>spondee</i>") &&
+  flatRhythm.includes("<i>amphibrachic</i> in traditional metrics") &&
+  flatRhythm.includes("is not given a\n        word-sized template".replace(/\s+/g, " ")));
+check("opening does not overstate one-stress-per-word",
+  !/A single word has one strongest syllable/.test(flatRhythm) &&
+  flatRhythm.includes("In most English words of more than one"));
+check("lexical stress described as anchored, phrase prominence as variable",
+  !/The same syllable can be the beat in one phrase/.test(flatRhythm) &&
+  flatRhythm.includes("A word keeps its own lexical stress wherever it appears"));
+check("monosyllable case kept, with the posttest item",
+  flatRhythm.includes("in the forests <span class=\"learn-stress\">OF</span> the night") &&
+  flatRhythm.includes("comes from the 2026 posttest"));
+check("dyslexia claim scoped to specific prosodic skills",
+  flatRhythm.includes("substantial deficits in specific prosodic skills") &&
+  !/most pronounced in dyslexia/.test(flatRhythm));
+check("verse and prose contrast hedged",
+  flatRhythm.includes("Verse permits substitution too") &&
+  !/verse tends to hold one shape/.test(flatRhythm));
+check("2026 design stated precisely with per-sample effects",
+  flatRhythm.includes("<i>d</i> = 0.25 and 0.34 by sample; 0.31 combined") &&
+  flatRhythm.includes("two\n        independent samples".replace(/\s+/g, " ")));
+check("every author cited in the body appears in the reference list", (function () {
+  const body = flatRhythm.split("Further reading")[0];
+  const refs = flatRhythm.split("Further reading")[1] || "";
+  const cited = ["Liberman, 1975", "Liberman &amp; Prince, 1977", "Chomsky &amp; Halle, 1968",
+                 "Kelly &amp; Bock, 1988", "David et al., 2007", "Holliman et al., 2010",
+                 "Mundy &amp; Wood,\n        2025", "Wolters et al., 2022"];
+  const surnames = ["Liberman, M. (1975)", "Liberman, M., &amp; Prince, A. (1977)",
+                    "Chomsky, N., &amp; Halle, M. (1968)", "Kelly, M. H.", "David, D.",
+                    "Holliman, A. J.", "Mundy, I. R.", "Wolters, A. P."];
+  return surnames.every(n => refs.includes(n));
+})());
 check("feet-cross-words point made with the banana case",
   flatRhythm.includes("an anapest followed by an iamb") &&
   flatRhythm.includes("still weak&ndash;strong&ndash;weak"));
@@ -322,6 +409,14 @@ check("feet fitted within phrases, never across a boundary",
 check("rhythm not described as even timing",
   flatRhythm.includes("Not a metronome") &&
   flatRhythm.includes("does not divide into equal intervals"));
+check("no false claim that function words are skipped in the first two examples",
+  !/Trailing function words/.test(flatRhythm) &&
+  !/skips back to\s*the last word carrying content/.test(flatRhythm));
+check("last-content-word rule shown with a genuine trailing case",
+  flatRhythm.includes("She gave the <span class=\"learn-stress\">KEYS</span> to him") &&
+  flatRhythm.includes("comes last and takes nothing"));
+check("nucleus placed on the word's stressed syllable, not its final one",
+  flatRhythm.includes("<i>CHILD</i>ren, not child<i>REN</i>"));
 check("nuclear stress framed as a tendency that context overrides",
   flatRhythm.includes("nuclear stress tendency") &&
   flatRhythm.includes("a tendency, and one"));
@@ -333,8 +428,8 @@ check("Wolters meta-analysis correctly scoped to production-based prosody",
   flatRhythm.includes("production-based prosody") &&
   flatRhythm.includes("<i>r</i> = 0.51"));
 check("2026 effect size carried over, not inflated",
-  flatRhythm.includes("<i>d</i> = 0.31") &&
-  flatRhythm.includes("transfer to fully\n        unmarked text was not demonstrated".replace(/\s+/g, " ")));
+  flatRhythm.includes("0.31 combined") &&
+  flatRhythm.includes("transfer to fully unmarked text was not demonstrated"));
 check("every DOI on the rhythm page is one I verified against the article", (function () {
   const verified = new Set([
     "10.1007/s11145-026-10840-2", "10.1002/rrq.198", "10.1037/h0033467",
@@ -352,6 +447,94 @@ check("the three explainers cross-link each other",
   rhythm.includes('href="../stress/"') && rhythm.includes('href="../phrasing/"') &&
   stress.includes('href="../rhythm/"') && phrasing.includes('href="../rhythm/"'));
 check("rhythm page links back to the hub", rhythm.includes('<a href="../">Learn</a>'));
+
+check("2014 erratum cited wherever the 2014 paper is", (function () {
+  return [phrasing, stress].every(page =>
+    page.includes("10.1002/rrq.97") &&
+    page.includes("mean and standard-deviation columns interleaved"));
+})());
+check("erratum sits next to the open-access link, not orphaned", (function () {
+  return [phrasing, stress].every(page => {
+    const oa = page.indexOf("oapsf_articles/29");
+    const er = page.indexOf("10.1002/rrq.97");
+    return oa > -1 && er > oa && er - oa < 600;
+  });
+})());
+check("open-access links accompany the paywalled DOIs", (function () {
+  const oa2014 = "scholarworks.gvsu.edu/oapsf_articles/29";
+  const oa2018 = "scholarworks.gvsu.edu/oapsf_articles/87";
+  return phrasing.includes(oa2014) && stress.includes(oa2014) &&
+         stress.includes(oa2018) && rhythm.includes(oa2018);
+})());
+check("no unverified open-access claim for the 2026 paper",
+  ![stress, rhythm].some(page => /s11145-026-10840-2[\s\S]{0,200}Open access/.test(page)));
+
+// --- Emphasis and focus page ------------------------------------------------
+check("focus page canonical URL",
+  focus.includes('rel="canonical" href="https://prosodytrainer.com/learn/focus/"'));
+check("focus page brand in title and description",
+  /<title>[^<]*Prosody Trainer/.test(focus) &&
+  /<meta name="description" content="Prosody Trainer/.test(focus));
+check("focus page exactly one h1", (focus.match(/<h1/g) || []).length === 1);
+check("focus page JSON-LD parses and joins the site graph", (function () {
+  const match = focus.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  if (!match) return false;
+  try {
+    const node = JSON.parse(match[1]);
+    return node["@type"] === "Article" &&
+           node.isPartOf["@id"] === "https://prosodytrainer.com/#website" &&
+           node.author["@id"] === "https://prosodytrainer.com/#jennifer-gross";
+  } catch (error) { return false; }
+})());
+check("focus page reuses shared stylesheets, defines none of its own",
+  focus.includes('href="../../style.css"') && focus.includes('href="../../site.css"') &&
+  !focus.includes("<style>"));
+
+// The paired stimuli must keep the final sentence identical across contexts.
+check("canoe pair present in both emphases",
+  flatFocus.includes('<span class="learn-stress">SAM</span> fell out of the canoe') &&
+  flatFocus.includes('Sam <span class="learn-stress">FELL</span> out of the canoe'));
+check("function-word focus shown with both stimuli",
+  flatFocus.includes('He <span class="learn-stress">CAN</span>') &&
+  flatFocus.includes('<span class="learn-stress">WHERE</span> is my hamster') &&
+  flatFocus.includes('Where is <span class="learn-stress">MY</span> hamster'));
+check("cap-emphasis provenance credited",
+  flatFocus.includes("borrowed rather than invented") &&
+  flatFocus.includes("aioli"));
+check("function-word focus stated as possible, not automatic",
+  flatFocus.includes("possible, not automatic") &&
+  flatFocus.includes("only about a third of the time"));
+
+// Claims about the 2014 study must not outrun it.
+check("no claim that an inner voice was directly observed",
+  flatFocus.includes("It does not prove anyone heard a voice") &&
+  flatFocus.includes("as though</i> guided by a"));
+check("inconsistent accuracy result disclosed, not buried",
+  flatFocus.includes("The accuracy data are inconsistent") &&
+  flatFocus.includes("accuracy was actually higher on the"));
+check("sample limits stated", flatFocus.includes("The readers were undergraduates"));
+check("rating figures taken from the erratum, and said to be",
+  flatFocus.includes("3.83 and 3.36 against 2.54 and 2.31") &&
+  flatFocus.includes("is the source of the rating figures quoted above"));
+check("reaction-time figures reported for both stimulus types",
+  flatFocus.includes("3,290 against 4,157") && flatFocus.includes("3,558 against 4,399"));
+check("tools' inability to see discourse context stated plainly",
+  flatFocus.includes("which the\n        tools cannot see".replace(/\s+/g, " ")) &&
+  flatFocus.includes("will sometimes disagree"));
+check("focus page cross-links the other explainers",
+  ["../stress/", "../rhythm/", "../"].every(h => focus.includes('href="' + h + '"')));
+check("stress page hands sentence-level emphasis to the focus page",
+  stress.includes('<a href="../focus/">emphasis and focus</a>'));
+check("every DOI on the focus page is one I verified", (function () {
+  const verified = new Set([
+    "10.1002/rrq.67", "10.1002/rrq.97", "10.1121/1.392372",
+    "10.1016/j.pragma.2005.03.017", "10.1016/j.jml.2010.06.004"
+  ]);
+  const found = focus.match(/10\.\d{4,}\/[^"<\s]+/g) || [];
+  return found.length > 0 && found.every(d => verified.has(d));
+})());
+check("focus page carries the open-access link and the erratum",
+  focus.includes("oapsf_articles/29") && focus.includes("10.1002/rrq.97"));
 
 console.log(`\n${passed} passed, ${failed} failed`);
 process.exit(failed ? 1 : 0);

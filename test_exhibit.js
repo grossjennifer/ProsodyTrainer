@@ -53,6 +53,22 @@ check("university profile linked at post-migration URL", html.includes("https://
 check("no pre-migration faculty profile URLs remain", !html.includes("gross-jennifer-44"));
 check("both profile links repaired", (html.match(/psychology\/gross-jennifer-209/g) || []).length >= 2);
 check("professional email included", html.includes("mailto:grossj@gvsu.edu"));
+check("open-access links beside both open papers",
+  html.includes("scholarworks.gvsu.edu/oapsf_articles/87") &&
+  html.includes("scholarworks.gvsu.edu/oapsf_articles/29"));
+check("open papers flagged as free in structured data", (function () {
+  // The three tools already carry this flag; check the two open articles do too.
+  const match = html.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
+  if (!match) return false;
+  try {
+    const open = JSON.parse(match[1])["@graph"].filter(
+      n => n["@type"] === "ScholarlyArticle" && n.isAccessibleForFree === true);
+    return open.length === 2 &&
+      open.every(n => n.sameAs.some(u => u.includes("scholarworks.gvsu.edu")));
+  } catch (error) { return false; }
+})());
+check("Selkirk dated as her own papers date it",
+  html.includes("Selkirk, E. O. (1986)") && !html.includes("Selkirk, E. O. (1984)"));
 check("public telephone number omitted", !html.includes("616-331-3511"));
 check("Sputnik image expected", html.includes('src="sputnik.png"'));
 check("three audio filenames present", ["really-statement.mp3", "really-question.mp3", "really-exclamation.mp3"].every(name => html.includes(name)));
