@@ -141,7 +141,7 @@
 }
 .site-shell h3 { line-height: 1.25; }
 .site-section-lede {
-  max-width: 800px;
+  max-width: 68ch;
   margin: 0;
   color: var(--ink-soft);
   font-size: 1.08rem;
@@ -191,10 +191,13 @@ a.site-card:focus-visible {
   display: inline-block;
   margin-bottom: .75rem;
   color: var(--glow-deep);
-  font-size: .84rem;
+  font-size: .78rem;
   font-weight: 750;
-  letter-spacing: .01em;
+  letter-spacing: .09em;
+  text-transform: uppercase;
 }
+.site-tag-pending,
+.site-card-upcoming .site-tag { color: var(--ink-soft); }
 .site-coming { color: var(--ink-soft); }
 .site-card-upcoming { background: rgba(255,255,255,.55); }
 .site-pup { background: linear-gradient(135deg, #fff, #F6ECDB); }
@@ -387,11 +390,14 @@ a.site-card:focus-visible {
    -------------------------------------------------------------------------- */
 
 .learn-map {
-  margin: 2rem 0 2.6rem;
-  padding: 1.4rem 1.5rem 1.5rem;
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 14px;
+  max-width: 68ch;
+  margin: 0 0 .4rem;
+  padding: 1.15rem 0 1.25rem;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
 }
 
 .learn-map-root {
@@ -497,4 +503,68 @@ a.site-card:focus-visible {
   margin: 0;
   font-size: .92rem;
   color: var(--ink-soft);
+}
+
+
+/* --------------------------------------------------------------------------
+   Learn hub layout corrections.
+   The hub carries five component cards plus implicit prosody as a separate
+   claim, so the grid must not imply six peers.
+   -------------------------------------------------------------------------- */
+
+/* The hero's own bottom padding is the break above the definition. The
+   section's top padding was stacking on top of it. */
+.site-shell main > section.learn-hub { padding-top: 0; }
+
+/* Hub h2s are signposts between blocks, not chapter openers. */
+.learn-hub h2 {
+  font-size: clamp(1.5rem, 2.6vw, 1.9rem);
+  margin-top: 2.5rem;
+}
+
+/* Five cards in a fixed three-column grid. The ragged 4 + 2 came from
+   auto-fit resolving each .site-cards grid independently. */
+.learn-hub .site-cards {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 1.25rem;
+}
+
+/* Deck copy under the heading, not a bolded footnote under the cards. */
+.learn-hub .site-status-note { font-weight: 400; margin: .85rem 0 0; }
+
+/* Implicit prosody: no card, no grid cell, no border box — the treatment is
+   what says "not a sixth component". Reuses the left-rule device from
+   .learn-example on the article pages. */
+.learn-implicit {
+  max-width: 68ch;
+  margin-top: 1.1rem;
+  padding-left: 1.15rem;
+  border-left: 3px solid var(--glow);
+}
+.learn-implicit p {
+  margin: 0 0 .7rem;
+  color: var(--ink-soft);
+  font-size: 1.03rem;
+  line-height: 1.7;
+}
+.learn-implicit p:last-child { margin-bottom: 0; }
+.learn-implicit strong { color: var(--ink); }
+.learn-implicit .site-tag { margin-bottom: 0; }
+
+/* A reference set like the reference lists on the article pages, rather than
+   sharing the bold status-note treatment. */
+.site-reference {
+  max-width: 68ch;
+  padding-left: 1.6rem;
+  text-indent: -1.6rem;
+  font-weight: 400;
+  line-height: 1.6;
+}
+.site-reference a { color: var(--glow-deep); }
+
+@media (max-width: 860px) {
+  .learn-hub .site-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px) {
+  .learn-hub .site-cards { grid-template-columns: 1fr; }
 }
