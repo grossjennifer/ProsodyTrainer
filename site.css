@@ -568,3 +568,77 @@ a.site-card:focus-visible {
 @media (max-width: 520px) {
   .learn-hub .site-cards { grid-template-columns: 1fr; }
 }
+
+/* The hub has no .site-prose wrapper, so the quoted sentence needs its own
+   measure or it spans the full 1180px shell. */
+.learn-hub .learn-example { max-width: 68ch; }
+
+/* --------------------------------------------------------------------------
+   Learn: pitch contours on the intonation page.
+   The contours ship as static illustration. The audio buttons are present but
+   [hidden]; reveal them once the three /audio/oh-*.mp3 files exist. Reuses
+   .contour-line / .contour-dot from style.css so the tour has already taught
+   the reader how to read these shapes.
+   -------------------------------------------------------------------------- */
+
+.learn-contours {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.3rem 2.4rem;
+  margin: 1.5rem 0 1.2rem;
+  padding: 0;
+}
+
+.learn-contours li {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .4rem;
+}
+
+.learn-contour-cue {
+  font-family: var(--serif);
+  font-size: clamp(1.1rem, 2.8vw, 1.3rem);
+  margin: 0;
+}
+
+.learn-contours .contour { width: 84px; height: 34px; overflow: visible; }
+
+.learn-audio {
+  min-height: 2.6rem;
+  display: inline-flex;
+  align-items: center;
+  gap: .45em;
+  font-family: var(--sans);
+  font-size: .88rem;
+  font-weight: 600;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--boundary);
+  border-radius: 999px;
+  padding: .35em 1.1em;
+  cursor: pointer;
+  transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+}
+
+.learn-audio[hidden] { display: none; }
+
+.learn-audio:hover,
+.learn-audio:focus-visible {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
+.learn-contours li.is-sounding .learn-audio {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
+.learn-contours li.is-sounding .contour-line { stroke: var(--glow-deep); }
+.learn-contours li.is-sounding .contour-dot { fill: var(--glow-deep); }
+.learn-contours li.was-played .contour-line { stroke: var(--glow-deep); }
+
+@media (prefers-reduced-motion: reduce) {
+  .learn-audio { transition: none; }
+}
