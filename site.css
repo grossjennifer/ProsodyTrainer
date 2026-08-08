@@ -562,11 +562,22 @@ a.site-card:focus-visible {
 }
 .site-reference a { color: var(--glow-deep); }
 
+/* The DOI and its open-access copy are one unit, so they travel to the same
+   line rather than breaking apart into "Open / access". Released at the
+   narrowest widths, where the pair no longer fits on one line. */
+.site-reference-links { white-space: nowrap; }
+
+/* The conceptual payoff of the origin section: one notch up from lede prose,
+   using the sans 600 the exhibit already uses for its takeaways. Serif h2s
+   mean this cannot be mistaken for a heading. */
+.learn-hub .learn-payoff { font-weight: 600; color: var(--ink); }
+
 @media (max-width: 860px) {
   .learn-hub .site-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 520px) {
   .learn-hub .site-cards { grid-template-columns: 1fr; }
+  .site-reference-links { white-space: normal; }
 }
 
 /* The hub has no .site-prose wrapper, so the quoted sentence needs its own

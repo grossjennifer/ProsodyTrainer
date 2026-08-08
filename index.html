@@ -1,473 +1,193 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Prosody Trainer | The Inner Voice of Reading</title>
-  <meta name="description" content="Prosody Trainer: research-based interactive tools for exploring stress, rhythm, phrasing, and intonation in reading, from the Applied Cognition Lab at Grand Valley State University.">
-  <link rel="canonical" href="https://prosodytrainer.com/">
+  <title>Learn | Prosody Trainer</title>
+  <meta name="description" content="Prosody Trainer&rsquo;s plain-language introductions to the prosody of written language: stress, rhythm, phrasing, intonation, and implicit prosody.">
+  <link rel="canonical" href="https://prosodytrainer.com/learn/">
+  <link rel="stylesheet" href="../style.css">
+  <link rel="stylesheet" href="../site.css">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
-    "@graph": [
-      {
-        "@type": "WebSite",
-        "@id": "https://prosodytrainer.com/#website",
-        "url": "https://prosodytrainer.com/",
-        "name": "Prosody Trainer",
-        "alternateName": "Prosody Trainer: The Inner Voice of Reading",
-        "description": "Prosody Trainer is a research-based suite of interactive tools that make the stress, rhythm, phrasing, and intonation of written English visible to readers, teachers, clinicians, and researchers.",
-        "inLanguage": "en",
-        "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
-        "creator": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
-        "publisher": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
-        "about": [
-          "reading prosody",
-          "lexical stress",
-          "linguistic rhythm",
-          "prosodic phrasing",
-          "intonation",
-          "implicit prosody in silent reading",
-          "psycholinguistics",
-          "literacy research"
-        ],
-        "hasPart": [
-          { "@id": "https://prosodytrainer.com/rhythm-reader/#tool" },
-          { "@id": "https://prosodytrainer.com/rhythm-reader-pro/#tool" },
-          { "@id": "https://prosodytrainer.com/sound-spelling/#tool" }
-        ],
-        "citation": [
-          { "@id": "https://doi.org/10.1007/s11145-026-10840-2" },
-          { "@id": "https://doi.org/10.1002/rrq.198" },
-          { "@id": "https://doi.org/10.1002/rrq.67" }
-        ]
-      },
-      {
-        "@type": "Person",
-        "@id": "https://prosodytrainer.com/#jennifer-gross",
-        "name": "Jennifer Gross",
-        "givenName": "Jennifer",
-        "familyName": "Gross",
-        "honorificSuffix": "Ph.D.",
-        "jobTitle": "Professor of Psychology",
-        "email": "mailto:grossj@gvsu.edu",
-        "url": "https://prosodytrainer.com/",
-        "knowsAbout": [
-          "reading prosody",
-          "implicit prosody",
-          "lexical stress",
-          "metrical phonology",
-          "onsets and rimes",
-          "grapheme-phoneme correspondence",
-          "cognitive psychology of reading"
-        ],
-        "affiliation": { "@id": "https://www.gvsu.edu/#organization" },
-        "worksFor": { "@id": "https://www.gvsu.edu/#organization" },
-        "sameAs": [
-          "https://www.gvsu.edu/psychology/gross-jennifer-209"
-        ]
-      },
-      {
-        "@type": "CollegeOrUniversity",
-        "@id": "https://www.gvsu.edu/#organization",
-        "name": "Grand Valley State University",
-        "alternateName": "GVSU",
-        "url": "https://www.gvsu.edu/"
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://prosodytrainer.com/rhythm-reader/#tool",
-        "name": "Rhythm Reader",
-        "url": "https://prosodytrainer.com/rhythm-reader/",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Any modern web browser",
-        "description": "Paste any English text and see one possible pattern of stress and rhythm your inner voice may construct, with every syllable tappable.",
-        "isAccessibleForFree": true,
-        "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" }
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://prosodytrainer.com/rhythm-reader-pro/#tool",
-        "name": "Rhythm Reader Pro",
-        "url": "https://prosodytrainer.com/rhythm-reader-pro/",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Any modern web browser",
-        "description": "The full analysis instrument: three-tier editing, phrase structure, meter detection, nuclear stress marking, research logging, and data export.",
-        "isAccessibleForFree": true,
-        "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" }
-      },
-      {
-        "@type": "SoftwareApplication",
-        "@id": "https://prosodytrainer.com/sound-spelling/#tool",
-        "name": "Sound & Spelling",
-        "url": "https://prosodytrainer.com/sound-spelling/",
-        "applicationCategory": "EducationalApplication",
-        "operatingSystem": "Any modern web browser",
-        "description": "See how letters and sounds map: read a word by onset and rime, or take a sound and see the ways English spells it.",
-        "isAccessibleForFree": true,
-        "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" }
-      },
-      {
-        "@type": "ScholarlyArticle",
-        "@id": "https://doi.org/10.1007/s11145-026-10840-2",
-        "name": "Training with orthographic stress and rhythm markers improves adult readers' prosodic sensitivity",
-        "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
-        "datePublished": "2026",
-        "isPartOf": { "@type": "Periodical", "name": "Reading and Writing" },
-        "sameAs": "https://doi.org/10.1007/s11145-026-10840-2"
-      },
-      {
-        "@type": "ScholarlyArticle",
-        "@id": "https://doi.org/10.1002/rrq.198",
-        "name": "Marking stress exPLICitly in written English fosters rhythm in the reader's inner voice",
-        "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
-        "datePublished": "2018",
-        "isPartOf": { "@type": "Periodical", "name": "Reading Research Quarterly" },
-        "sameAs": ["https://doi.org/10.1002/rrq.198", "https://scholarworks.gvsu.edu/oapsf_articles/87"],
-        "isAccessibleForFree": true
-      },
-      {
-        "@type": "ScholarlyArticle",
-        "@id": "https://doi.org/10.1002/rrq.67",
-        "name": "Evidence for prosody in silent reading",
-        "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
-        "datePublished": "2014",
-        "isPartOf": { "@type": "Periodical", "name": "Reading Research Quarterly" },
-        "sameAs": ["https://doi.org/10.1002/rrq.67", "https://scholarworks.gvsu.edu/oapsf_articles/29"],
-        "isAccessibleForFree": true
-      }
+    "@type": "CollectionPage",
+    "@id": "https://prosodytrainer.com/learn/#collection",
+    "url": "https://prosodytrainer.com/learn/",
+    "name": "Learn: accessible explanations of reading prosody",
+    "description": "Plain-language introductions to stress, rhythm, phrasing, intonation, and implicit prosody in written language.",
+    "inLanguage": "en",
+    "isPartOf": { "@id": "https://prosodytrainer.com/#website" },
+    "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
+    "hasPart": [
+      { "@id": "https://prosodytrainer.com/learn/stress/#article" },
+      { "@id": "https://prosodytrainer.com/learn/rhythm/#article" },
+      { "@id": "https://prosodytrainer.com/learn/phrasing/#article" },
+      { "@id": "https://prosodytrainer.com/learn/focus/#article" },
+      { "@id": "https://prosodytrainer.com/learn/intonation/#article" }
     ]
   }
   </script>
-  <link rel="stylesheet" href="style.css">
-  <link rel="stylesheet" href="site.css">
 </head>
 <body>
-
-<main id="opening-exhibit" class="opening-exhibit" aria-label="Opening exhibit">
-  <section class="exhibit-panel" data-panel="1" data-duration="7000">
-    <p class="display-line invitation" data-reveal data-delay="0">Reading may look silent, but the mind often gives it a voice.</p>
-    <p class="takeaway" data-reveal data-delay="2400">Let&rsquo;s listen a little closer.</p>
-  </section>
-
-  <section class="exhibit-panel" data-panel="2" data-duration="11000">
-    <p class="demo-word" data-reveal data-delay="0"><span class="stress">EL</span><span class="dot">&middot;</span>e<span class="dot">&middot;</span>phant</p>
-    <p class="demo-word" data-reveal data-delay="1100">rhi<span class="dot">&middot;</span><span class="stress">NOC</span><span class="dot">&middot;</span>er<span class="dot">&middot;</span>os</p>
-    <p class="demo-word" data-reveal data-delay="2200">hip<span class="dot">&middot;</span>po<span class="dot">&middot;</span><span class="stress">POT</span><span class="dot">&middot;</span>a<span class="dot">&middot;</span>mus</p>
-    <p class="demo-word" data-reveal data-delay="3300">kan<span class="dot">&middot;</span>ga<span class="dot">&middot;</span><span class="stress">ROO</span></p>
-    <p class="takeaway" data-reveal data-delay="5400">In many words, one syllable carries the strongest beat.</p>
-  </section>
-
-  <section class="exhibit-panel" data-panel="3" data-duration="10500">
-    <p class="demo-word" data-reveal data-delay="0"><span class="stress">PHO</span><span class="dot">&middot;</span>to<span class="dot">&middot;</span>graph</p>
-    <p class="demo-word" data-reveal data-delay="1300">pho<span class="dot">&middot;</span><span class="stress">TOG</span><span class="dot">&middot;</span>ra<span class="dot">&middot;</span>phy</p>
-    <p class="demo-word" data-reveal data-delay="2600">pho<span class="dot">&middot;</span>to<span class="dot">&middot;</span><span class="stress">GRAPH</span><span class="dot">&middot;</span>ic</p>
-    <p class="takeaway" data-reveal data-delay="4900">Even related words can carry the beat in different places.</p>
-  </section>
-
-  <section class="exhibit-panel" data-panel="4" data-duration="11000">
-    <p class="demo-sentence" data-swap-out="2400">The hungry hippo splashed in the pool.</p>
-    <p class="demo-sentence" data-reveal data-delay="2100">The <span class="stress beat" data-beat="1">HUN</span><span class="dot">&middot;</span>gry <span class="stress beat" data-beat="2">HIP</span><span class="dot">&middot;</span>po <span class="stress beat" data-beat="3">SPLASHED</span> in the <span class="stress beat" data-beat="4">POOL</span>.</p>
-    <p class="takeaway" data-reveal data-delay="7000">Across a sentence, the beats form a pattern.</p>
-  </section>
-
-  <section class="exhibit-panel" data-panel="5" data-duration="20000">
-    <div class="rhythm-steps">
-      <div class="rhythm-step pattern-a" data-clear="9500">
-        <p class="demo-sentence" data-reveal data-delay="0">the <span class="stress beat" data-beat="1">BAND</span> will <span class="stress beat" data-beat="2">PLAY</span> to<span class="dot">&middot;</span><span class="stress beat" data-beat="3">NIGHT</span> at <span class="stress beat" data-beat="4">SCHOOL</span></p>
-        <p class="beat-cue" data-reveal data-delay="2200">ta-DUM &middot; ta-DUM &middot; ta-DUM &middot; ta-DUM</p>
-        <p class="caption beat-caption" data-reveal data-delay="4000">Some phrases move from a lighter syllable into a stronger beat.</p>
-      </div>
-      <div class="rhythm-step pattern-b">
-        <p class="demo-sentence" data-reveal data-delay="9700"><span class="stress beat" data-beat="1">DRA</span><span class="dot">&middot;</span>ma <span class="stress beat" data-beat="2">STU</span><span class="dot">&middot;</span>dents <span class="stress beat" data-beat="3">PRAC</span><span class="dot">&middot;</span>ticed <span class="stress beat" data-beat="4">LOUD</span><span class="dot">&middot;</span>ly</p>
-        <p class="beat-cue" data-reveal data-delay="11900">DUM-ta &middot; DUM-ta &middot; DUM-ta &middot; DUM-ta</p>
-        <p class="caption beat-caption" data-reveal data-delay="13700">Other phrases begin with a strong beat followed by a lighter syllable.</p>
-      </div>
-    </div>
-    <p class="takeaway" data-reveal data-delay="15800">Sentences can combine different beat patterns.</p>
-  </section>
-
-  <section class="exhibit-panel" data-panel="6" data-duration="12000">
-    <p class="demo-sentence" data-reveal data-delay="0">Let&rsquo;s eat Grandma.</p>
-    <p class="demo-sentence" data-reveal data-delay="2000">Let&rsquo;s eat <span class="phrase-boundary">│</span> Grandma.</p>
-    <p class="demo-sentence" data-reveal data-delay="4000">Let&rsquo;s eat, Grandma.</p>
-    <p class="takeaway" data-reveal data-delay="6400">Grouping can change meaning &mdash; even in silent reading.</p>
-  </section>
-
-  <section class="exhibit-panel" data-panel="7" data-duration="15500">
-    <h2 class="panel-title" data-reveal data-delay="0">One word, three voices.</h2>
-    <p class="caption exhibit-note" data-reveal data-delay="900">Listen to each one.</p>
-    <div class="audio-row" data-reveal data-delay="1600">
-      <button class="audio-button" type="button" data-audio="really-statement.mp3" data-play-at="2800" aria-label="Play Really as a statement, spoken with a settling, falling voice">
-        <svg class="contour" viewBox="0 0 84 40" aria-hidden="true" focusable="false"><path class="contour-line" d="M8,15 C34,17 50,22 76,29"/><circle class="contour-dot" cx="76" cy="29" r="3"/></svg>
-        <span class="audio-label">Really. <span class="play-glyph" aria-hidden="true">&#9654;</span></span>
-      </button>
-      <button class="audio-button" type="button" data-audio="really-question.mp3" data-play-at="5400" aria-label="Play Really as a question, spoken with a rising voice">
-        <svg class="contour" viewBox="0 0 84 40" aria-hidden="true" focusable="false"><path class="contour-line" d="M8,27 C36,28 52,29 76,12"/><circle class="contour-dot" cx="76" cy="12" r="3"/></svg>
-        <span class="audio-label">Really? <span class="play-glyph" aria-hidden="true">&#9654;</span></span>
-      </button>
-      <button class="audio-button" type="button" data-audio="really-exclamation.mp3" data-play-at="8000" aria-label="Play Really with surprise, spoken with a high, jumping voice">
-        <svg class="contour" viewBox="0 0 84 40" aria-hidden="true" focusable="false"><path class="contour-line" d="M8,30 L26,30 L40,9 C54,7 62,11 76,13"/><circle class="contour-dot" cx="76" cy="13" r="3"/></svg>
-        <span class="audio-label">Really! <span class="play-glyph" aria-hidden="true">&#9654;</span></span>
-      </button>
-    </div>
-    <div class="takeaway inline" id="audio-takeaway" data-reveal data-delay="10000">
-      <p>Same word. Different voice.</p>
-      <p>Punctuation gives readers clues about how it might sound.</p>
-    </div>
-    <details class="audio-transcript-details" data-reveal data-delay="2400">
-      <summary>Transcript</summary>
-      <p class="caption">The same word, <i>really</i>, spoken three ways &mdash; settling like a statement, rising like a question, and jumping with surprise.</p>
-    </details>
-  </section>
-
-  <section class="exhibit-panel" data-panel="8" data-duration="15000">
-    <h2 class="panel-title" data-reveal data-delay="0">Layers of the inner voice</h2>
-    <div class="architecture">
-      <p class="arch-level" data-reveal data-delay="4500">Meaning</p>
-      <p class="arch-arrow" data-reveal data-delay="4200" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="3600">Intonation</p>
-      <p class="arch-arrow" data-reveal data-delay="3300" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="2700">Phrasing</p>
-      <p class="arch-arrow" data-reveal data-delay="2400" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="1800">Rhythm</p>
-      <p class="arch-arrow" data-reveal data-delay="1500" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="900">Stress</p>
-      <p class="arch-arrow" data-reveal data-delay="600" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="0">Words</p>
-    </div>
-    <p class="takeaway" data-reveal data-delay="6800">Together, stress, rhythm, phrasing, and intonation help readers turn print into a voice&mdash;and a voice into meaning.</p>
-  </section>
-
-  <section class="exhibit-panel final-panel" data-panel="9" data-duration="0">
-    <div class="final-scene">
-      <div class="final-brand">
-        <h1 class="brand" data-reveal data-delay="0">Prosody Trainer</h1>
-        <p class="brand-subtitle" data-reveal data-delay="1100">An interactive laboratory where people discover how the mind brings written language to life.</p>
-      </div>
-      <div class="sputnik-scene">
-        <img class="sputnik" src="sputnik.png" data-reveal data-delay="2100" alt="Sputnik the Prosody Pup, a Siberian husky with blue eyes, sitting and looking up attentively.">
-        <div class="sputnik-speech" data-reveal data-delay="3100">
-          <div class="sputnik-bubble">
-            <p>I&rsquo;ve been listening all along.</p>
-            <p>Now you can hear it too.</p>
-          </div>
-          <p class="sputnik-name">&mdash; Sputnik, the Prosody Pup</p>
-        </div>
-      </div>
-      <div class="final-cta" data-reveal data-delay="4600">
-        <a class="site-button primary final-cta-button" href="rhythm-reader/">Try Rhythm Reader &rarr;</a>
-      </div>
-    </div>
-  </section>
-</main>
-
-<div class="exhibit-controls">
-  <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 9</p>
-  <div class="transport" role="group" aria-label="Exhibit playback controls">
-    <button id="back-button" class="transport-button" type="button">Back</button>
-    <button id="play-pause-button" class="transport-button" type="button" aria-pressed="false" aria-label="Pause animation">Pause</button>
-    <button id="forward-button" class="transport-button" type="button">Continue</button>
-  </div>
-  <button id="begin-button" class="continue-button" type="button" hidden>Explore the full site</button>
-  <button id="skip-intro" class="skip-link" type="button">Skip intro</button>
-</div>
-
-<div id="site-content">
   <div class="site-shell">
+
     <header>
-      <nav aria-label="Main site navigation">
-        <a class="brand-link" href="./">Prosody Trainer<span class="dot">●</span></a>
+      <nav aria-label="Site navigation">
+        <a class="brand-link" href="../">Prosody Trainer<span class="dot">&#9679;</span></a>
         <div class="site-nav-links">
-          <a href="#tools">Tools</a>
-          <a href="learn/">Learn</a>
-          <a href="#science">Science</a>
-          <a href="#use">Use</a>
-          <a href="#research">Research</a>
-          <a href="#about">About</a>
+          <a href="../#tools">Tools</a>
+          <a href="./">Learn</a>
+          <a href="../#science">Science</a>
+          <a href="../#research">Research</a>
+          <a href="../#about">About and contact</a>
         </div>
       </nav>
-      <div class="site-hero">
-        <div class="site-kicker">Making the prosody of written language visible</div>
-        <h1 id="site-heading" tabindex="-1">Reading may look silent, but the mind often gives it a voice<span class="dot">.</span></h1>
-        <p>Not aloud, but in the mind. Prosody Trainer makes that inner voice visible.</p>
-        <div class="site-reveal" aria-label="Features of the inner voice">
-          <span>That voice has stress.</span>
-          <span>It has rhythm.</span>
-          <span>It has phrasing.</span>
-          <span>It has intonation.</span>
-        </div>
-        <div class="site-cta-row">
-          <a class="site-button primary" href="rhythm-reader/">Try Rhythm Reader</a>
-          <a class="site-button" href="rhythm-reader-pro/">Open Rhythm Reader Pro</a>
-          <button type="button" class="site-button site-replay-cta js-replay-intro" id="replay-intro-hero">Replay the welcome tour</button>
-        </div>
-      </div>
     </header>
 
     <main>
-      <section id="tools">
-        <h2>Explore the tools</h2>
-        <p class="site-section-lede">Prosody Trainer is a growing suite of research-based tools for exploring how written language carries stress, rhythm, phrasing, and intonation.</p>
+      <div class="site-hero">
+        <p class="site-kicker">Learn</p>
+        <h1 id="site-heading" tabindex="-1">Accessible explanations<span class="dot">.</span></h1>
+        <p class="site-section-lede">Plain-language introductions to the parts of
+        prosody &mdash; what each one is, why it matters for reading, and how to
+        see it at work in the tools on this site.</p>
+      </div>
+
+      <section class="learn-hub">
+        <div class="learn-map">
+          <p class="learn-map-root">Prosody</p>
+          <p class="learn-map-lede">The sound structure of language: several
+          distinct things, often discussed as one.</p>
+        </div>
+
+        <h2>The five components</h2>
+
+        <p class="site-status-note">These pages are being added one at a time.
+        Each ends where the reading does &mdash; in a tool where you can try the
+        phenomenon on your own text.</p>
+
         <div class="site-cards">
-          <a class="site-card" href="rhythm-reader/">
-            <div><span class="site-tag">Available now</span><h3>Rhythm Reader</h3><p>A simple interface for visualizing stress and rhythm in English text.</p></div>
-            <span class="site-card-action">Open tool →</span>
+          <a class="site-card" href="stress/">
+            <div>
+              <span class="site-tag">Available now</span>
+              <h3>Stress</h3>
+              <p>Which syllable of a word carries the beat: why one syllable
+              carries the strongest beat, how little ordinary print marks it,
+              and what two experiments found when stress was marked
+              explicitly.</p>
+            </div>
+            <span class="site-card-action">Read &rarr;</span>
           </a>
-          <a class="site-card" href="rhythm-reader-pro/">
-            <div><span class="site-tag">Available now</span><h3>Rhythm Reader Pro</h3><p>Advanced analysis, phrase structure, rhythm detection, editing, and export.</p></div>
-            <span class="site-card-action">Open tool →</span>
+
+          <a class="site-card" href="rhythm/">
+            <div>
+              <span class="site-tag">Available now</span>
+              <h3>Rhythm</h3>
+              <p>How those beats distribute across a phrase, the four shapes
+              English keeps returning to, and why rhythm is relative prominence
+              rather than even timing.</p>
+            </div>
+            <span class="site-card-action">Read &rarr;</span>
           </a>
-          <a class="site-card" href="sound-spelling/">
-            <div><span class="site-tag">Available now</span><h3>Sound &amp; Spelling</h3><p>See how letters and sounds map &mdash; read a word by onset and rime, or take a sound and see the ways it&rsquo;s spelled.</p></div>
-            <span class="site-card-action">Open tool →</span>
+
+          <a class="site-card" href="phrasing/">
+            <div>
+              <span class="site-tag">Available now</span>
+              <h3>Phrasing</h3>
+              <p>Which words group together: why one comma can change a
+              sentence, and how the inner voice marks boundaries that print
+              leaves out.</p>
+            </div>
+            <span class="site-card-action">Read &rarr;</span>
           </a>
-          <article class="site-card site-card-upcoming site-pup">
-            <div><span class="site-tag site-coming">In development</span><h3>Prosody Pup</h3><p>A gentle guide for learning stress, rhythm, and fluent reading — one step at a time.</p></div>
-            <span class="site-status-note">Planned for a future release</span>
-          </article>
-          <article class="site-card site-card-upcoming">
-            <div><span class="site-tag site-coming">In development</span><h3>WALL-E Intonation Game</h3><p>An interactive game for discovering how intonation changes meaning during reading.</p></div>
-            <span class="site-status-note">Planned for a future release</span>
-          </article>
-        </div>
-      </section>
 
-      <div class="site-quote">See what you&rsquo;ve been hearing all along.</div>
+          <a class="site-card" href="focus/">
+            <div>
+              <span class="site-tag">Available now</span>
+              <h3>Emphasis and focus</h3>
+              <p>Which word carries the news: why the same sentence emphasizes
+              different words depending on what the reader already knows, and
+              what silent readers do with capitals.</p>
+            </div>
+            <span class="site-card-action">Read &rarr;</span>
+          </a>
 
-      <section id="science">
-        <h2>The science</h2>
-        <p class="site-section-lede">When people read silently, they often construct an inner voice carrying patterns of stress, rhythm, phrasing, and intonation. These patterns help readers group words, anticipate sentence structure, resolve ambiguity, and retain meaning.</p>
-        <p class="site-section-lede">Prosody Trainer turns this normally hidden structure into something readers can see, explore, and practice.</p>
-        <div class="site-grid-two">
-          <div><h3>Why prosody matters</h3><p>Prosody helps readers organize language into meaningful units, distinguish emphasis, and understand how words and phrases fit together.</p></div>
-          <div><h3>What the project investigates</h3><p>Our research asks how readers represent prosody, how these processes differ across readers, and whether prosodic sensitivity can be strengthened through instruction.</p></div>
+          <a class="site-card" href="intonation/">
+            <div>
+              <span class="site-tag">Available now</span>
+              <h3>Intonation</h3>
+              <p>How pitch rises and falls across the group, why print marks the
+              end of a sentence rather than the shape of the voice, and what the
+              research does and does not establish.</p>
+            </div>
+            <span class="site-card-action">Read &rarr;</span>
+          </a>
         </div>
-        <details class="site-theory-details">
-          <summary>Theoretical foundations</summary>
-          <p class="site-theory-lede">Prosody Trainer&rsquo;s tools draw on the metrical and prosodic-phonology tradition and on reading-science research into orthography, rimes, and grapheme&ndash;phoneme correspondences.</p>
-          <p class="site-theory-ref">Hanna, P. R., Hanna, J. S., Hodges, R. E., &amp; Rudorf, E. H. (1966). <i>Phoneme&ndash;grapheme correspondences as cues to spelling improvement.</i> U.S. Office of Education.</p>
-          <p class="site-theory-ref">Chomsky, N., &amp; Halle, M. (1968). <i>The sound pattern of English.</i> Harper &amp; Row.</p>
-          <p class="site-theory-ref">Fudge, E. C. (1969). Syllables. <i>Journal of Linguistics, 5</i>(2), 253&ndash;286.</p>
-          <p class="site-theory-ref">Martin, J. G. (1972). Rhythmic (hierarchical) versus serial structure in speech and other behavior. <i>Psychological Review, 79</i>(6), 487&ndash;509. <a href="https://doi.org/10.1037/h0033467">https://doi.org/10.1037/h0033467</a></p>
-          <p class="site-theory-ref">Halle, M. (1973). Stress rules in English: A new version. <i>Linguistic Inquiry, 4</i>(4), 451&ndash;464.</p>
-          <p class="site-theory-ref">Liberman, M. (1975). <i>The intonational system of English</i> [Doctoral dissertation, MIT]. (Distributed 1978 by Indiana University Linguistics Club.)</p>
-          <p class="site-theory-ref">Liberman, M., &amp; Prince, A. (1977). On stress and linguistic rhythm. <i>Linguistic Inquiry, 8</i>(2), 249&ndash;336.</p>
-          <p class="site-theory-ref">Ladd, D. R. (1980). <i>The structure of intonational meaning: Evidence from English.</i> Indiana University Press.</p>
-          <p class="site-theory-ref">Hayes, B. (1981). <i>A metrical theory of stress rules</i> [Doctoral dissertation, MIT]. (Distributed by Indiana University Linguistics Club.)</p>
-          <p class="site-theory-ref">Nespor, M., &amp; Vogel, I. (1982). Prosodic domains of external sandhi rules. In H. van der Hulst &amp; N. Smith (Eds.), <i>The structure of phonological representations (Part I)</i> (pp. 225&ndash;255). Foris.</p>
-          <p class="site-theory-ref">Selkirk, E. O. (1982). The syllable. In H. van der Hulst &amp; N. Smith (Eds.), <i>The structure of phonological representations (Part II)</i> (pp. 337&ndash;383). Foris.</p>
-          <p class="site-theory-ref">Selkirk, E. O. (1986). <i>Phonology and syntax: The relation between sound and structure.</i> MIT Press.</p>
-          <p class="site-theory-ref">Beckman, M. E. (1986). <i>Stress and non-stress accent.</i> Foris.</p>
-          <p class="site-theory-ref">Nespor, M., &amp; Vogel, I. (1986). <i>Prosodic phonology.</i> Foris.</p>
-          <p class="site-theory-ref">Hayes, B. (1995). <i>Metrical stress theory: Principles and case studies.</i> University of Chicago Press.</p>
-          <p class="site-theory-ref">Treiman, R., Mullennix, J., Bijeljac-Babic, R., &amp; Richmond-Welty, E. D. (1995). The special role of rimes in the description, use, and acquisition of English orthography. <i>Journal of Experimental Psychology: General, 124</i>(2), 107&ndash;136.</p>
-          <p class="site-theory-ref">Ladd, D. R. (1996). <i>Intonational phonology.</i> Cambridge University Press.</p>
-          <p class="site-theory-ref">Fry, E. (2004). Phonics: A large phoneme&ndash;grapheme frequency count revisited. <i>Journal of Literacy Research, 36</i>(1), 85&ndash;98.</p>
-          <p class="site-theory-ref">Ziegler, J. C., &amp; Goswami, U. (2005). Reading acquisition, developmental dyslexia, and skilled reading across languages: A psycholinguistic grain size theory. <i>Psychological Bulletin, 131</i>(1), 3&ndash;29.</p>
-        </details>
-      </section>
 
-      <section id="use">
-        <h2>Use Prosody Trainer</h2>
-        <p class="site-section-lede">The project supports classroom demonstration, reading intervention, psycholinguistic research, and public understanding of the cognitive science of reading.</p>
-        <div class="site-cards">
-          <a class="site-card" href="learn/"><div><span class="site-tag">Learn</span><h3>Accessible explanations</h3><p>Plain-language introductions to stress, rhythm, phrasing, and emphasis &mdash; what each one is, and why it matters for reading.</p></div><span class="site-card-action">See the topics &rarr;</span></a>
-          <article class="site-card site-card-upcoming"><div><span class="site-tag">Investigate</span><h3>Research tools and measures</h3><p>Digital tools for examining how readers represent and use prosodic information in written language. The tools are available now; guidance on using them as research measures is being written.</p></div><span class="site-coming">Measures and research guidance in development</span></article>
-          <article class="site-card site-card-upcoming"><div><span class="site-tag">Teach</span><h3>Classroom resources</h3><p>Demonstrations, sample activities, and guided lessons for helping learners notice the prosody of written language.</p></div><span class="site-coming">Planned for a future release</span></article>
-        </div>
-      </section>
+        <h2>Implicit prosody</h2>
 
-      <section id="research">
-        <h2>Selected research</h2>
-        <p class="site-section-lede">Prosody Trainer grows from a program of research on the inner voice of reading and on ways to make stress and rhythm more visible in print.</p>
-        <div class="site-publications">
-          <article class="site-publication">
-            <h3>Training with orthographic stress and rhythm markers improves adult readers&rsquo; prosodic sensitivity</h3>
-            <p>Gross, J., Roldan, M., Kiessel, T., Esselink, M., &amp; Dunlap, L. (2026). <i>Reading and Writing.</i></p>
-            <p>Two experiments examining whether visible stress and rhythm cues strengthen readers&rsquo; sensitivity to prosody.</p>
-            <a href="https://doi.org/10.1007/s11145-026-10840-2">View publication →</a>
-          </article>
-          <article class="site-publication">
-            <h3>Marking stress exPLICitly in written English fosters rhythm in the reader&rsquo;s inner voice</h3>
-            <p>Gross, J., Winegard, B., &amp; Plotkowski, A. R. (2018). <i>Reading Research Quarterly.</i></p>
-            <p>An experimental study of how visible lexical stress cues influence the rhythm readers construct during silent reading.</p>
-            <a href="https://doi.org/10.1002/rrq.198">View publication →</a>
-            <a href="https://scholarworks.gvsu.edu/oapsf_articles/87">Open access →</a>
-          </article>
-          <article class="site-publication">
-            <h3>Evidence for prosody in silent reading</h3>
-            <p>Gross, J., Millett, A. L., Bartek, B., Bredell, K. H., &amp; Winegard, B. (2014). <i>Reading Research Quarterly, 49</i>(2), 189–208.</p>
-            <p>Evidence that readers represent prosodic structure while processing written language.</p>
-            <a href="https://doi.org/10.1002/rrq.67">View publication →</a>
-            <a href="https://scholarworks.gvsu.edu/oapsf_articles/29">Open access →</a>
-          </article>
-        </div>
-        <p class="site-inline-links"><a href="https://www.gvsu.edu/psychology/gross-jennifer-209">See additional publications on Jennifer Gross&rsquo;s university profile →</a></p>
-      </section>
+        <div class="learn-implicit">
+          <p><strong>Implicit prosody</strong> is not a sixth item on that list.
+          It is the claim that readers construct all five while reading
+          silently, with none of it printed on the page &mdash; which is what
+          the tools on this site try to make visible.</p>
 
-      <section id="about">
-        <h2>About Prosody Trainer</h2>
-        <div class="site-about-panel">
-          <p>Prosody Trainer was created by <strong>Jennifer Gross, Ph.D.</strong>, Professor of Psychology at Grand Valley State University. Her research examines how readers represent the sound structure of written language and whether stress and rhythm can be made more visible through instruction and digital tools.</p>
-          <p>Developed at the intersection of cognitive psychology, psycholinguistics, literacy research, and educational technology, the project supports classroom demonstration, reading research, and the development of evidence-based interventions.</p>
-          <address class="site-inline-links" aria-label="Professional contact information">
-            <a href="https://www.gvsu.edu/psychology/gross-jennifer-209">University profile</a>
-            <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>
-          </address>
+          <p>The page will cover what it means to say readers project prosody
+          onto text, and how that idea is studied.</p>
+
+          <p><span class="site-tag site-tag-pending">In development</span></p>
         </div>
+
+        <h2>Where this came from</h2>
+
+        <p class="site-section-lede">This site grew directly out of the
+        research. Gross, Winegard, and Plotkowski (2018) concluded their study
+        of stress marking in print by asking whether a free application could
+        transform ordinary text into typographically enhanced text. They posed
+        the question using the same stress-marking convention they had
+        studied:</p>
+
+        <div class="learn-example">
+          <p aria-hidden="true">Can YOU iMAGine an APP that HELPS you HEAR the RHYTHm of TEXT?</p>
+          <p class="learn-gloss">As printed in the 2018 article. In ordinary
+          capitalization: <i>can you imagine an app that helps you hear the
+          rhythm of text?</i> The capitals mark stressed syllables &mdash; the
+          same convention used in the article&rsquo;s title, <i>Marking stress
+          exPLICitly</i>, and the one the tools on this site use.</p>
+        </div>
+
+        <p class="site-section-lede learn-payoff">Prosody Trainer is one answer
+        to that question.</p>
+
+        <p class="site-status-note site-reference">Gross, J., Winegard, B.,
+        &amp; Plotkowski, A. R. (2018). Marking stress exPLICitly in written
+        English fosters rhythm in the reader&rsquo;s inner voice. <i>Reading
+        Research Quarterly, 53</i>(3), 305&ndash;321.
+        <span class="site-reference-links"><a href="https://doi.org/10.1002/rrq.198">https://doi.org/10.1002/rrq.198</a>
+        &middot; <a href="https://scholarworks.gvsu.edu/oapsf_articles/87">Open access</a></span></p>
+
+        <p class="site-status-note">The <a href="stress/">Stress</a> page
+        explains what that study found &mdash; and what it did not.</p>
       </section>
     </main>
 
     <footer>
       <div class="site-footer-top">
-        <p class="site-footer-title"><strong>Prosody Trainer</strong> — making the prosody of written language visible.</p>
+        <p class="site-footer-title"><strong>Prosody Trainer</strong> &mdash;
+        making the prosody of written language visible.</p>
         <div class="site-footer-links" aria-label="Footer navigation">
-          <a href="#tools">Tools</a>
-          <a href="learn/">Learn</a>
-          <a href="#science">Science</a>
-          <a href="#research">Research</a>
-          <a href="#about">About and contact</a>
+          <a href="../">Home</a>
+          <a href="../#tools">Tools</a>
+          <a href="../#science">Science</a>
+          <a href="../#research">Research</a>
+          <a href="../#about">About and contact</a>
         </div>
       </div>
-      <p class="site-footer-note">© 2026 Jennifer Gross. Accessibility feedback is welcome at <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>. <button type="button" class="site-replay js-replay-intro" id="replay-intro" hidden>Replay intro</button></p>
+      <p class="site-footer-note">&copy; 2026 Jennifer Gross. Accessibility
+      feedback is welcome at <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>.</p>
     </footer>
-  </div>
-</div>
 
-<script src="script.js"></script>
-<script>
-  (function () {
-    function fallback() {
-      if (typeof window.completeExhibit === "function") {
-        window.completeExhibit();
-        return;
-      }
-      if (document.body.classList.contains("exhibit-complete")) return;
-      var exhibit = document.getElementById("opening-exhibit");
-      var controls = document.querySelector(".exhibit-controls");
-      var site = document.getElementById("site-content");
-      if (exhibit) exhibit.hidden = true;
-      if (controls) controls.hidden = true;
-      if (site) {
-        site.hidden = false;
-        site.removeAttribute("hidden");
-        site.setAttribute("tabindex", "-1");
-      }
-      document.body.classList.add("exhibit-complete");
-      try { window.scrollTo(0, 0); } catch (e) {}
-      var heading = document.getElementById("site-heading") || site;
-      if (heading && heading.focus) {
-        try { heading.focus(); } catch (e) {}
-      }
-      document.dispatchEvent(new CustomEvent("exhibit:complete"));
-    }
-    var begin = document.getElementById("begin-button");
-    var skip = document.getElementById("skip-intro");
-    if (begin) begin.addEventListener("click", fallback);
-    if (skip) skip.addEventListener("click", fallback);
-    window.showProsodyTrainerMainSite = fallback;
-  })();
-</script>
+  </div>
 </body>
 </html>
