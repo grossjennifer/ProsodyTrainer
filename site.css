@@ -390,7 +390,7 @@ a.site-card:focus-visible {
    -------------------------------------------------------------------------- */
 
 .learn-map {
-  max-width: 68ch;
+  max-width: 760px;
   margin: 0 0 .4rem;
   padding: 1.15rem 0 1.25rem;
   background: transparent;
@@ -642,3 +642,20 @@ a.site-card:focus-visible {
 @media (prefers-reduced-motion: reduce) {
   .learn-audio { transition: none; }
 }
+
+/* --------------------------------------------------------------------------
+   Two classes used in learn/index.html that had no rules in this file. If you
+   already styled them in style.css, delete this block — site.css loads second,
+   so these would win.
+   -------------------------------------------------------------------------- */
+
+/* The closing line of "Where this came from". Needs air above it so the payoff
+   does not sit at citation spacing, and a little more weight than the lede. */
+.learn-payoff {
+  margin-top: 1.6rem;
+  color: var(--ink);
+  font-weight: 600;
+}
+
+/* Keeps the DOI and "Open access" from breaking apart mid-pair. */
+.site-nowrap { white-space: nowrap; }
