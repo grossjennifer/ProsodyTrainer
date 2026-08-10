@@ -191,6 +191,10 @@ body.exhibit-active .exhibit-controls { z-index: 61; }
   letter-spacing: 0.05em;
   color: var(--ink-soft);
   margin: 0.5em 0 0.45em;
+  /* One glyph, one meaning: the interpunct marks a syllable boundary here just
+     as it does in the words on panels 2-4, and the gap alone marks the foot.
+     The interpunct used to do both jobs in this line. */
+  word-spacing: 0.9em;
 }
 
 .beat-caption { margin: 0.6rem 0 0; }
