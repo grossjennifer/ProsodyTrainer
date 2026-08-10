@@ -75,9 +75,11 @@
           canoe ride. The river was turbulent. <b>Susan</b> stood up to change
           positions, hoping to steady the canoe. It rocked, and someone fell
           out.</p>
-          <p class="learn-swap"><span class="learn-stress" data-caps="SAM"
+          <p class="learn-swap" aria-hidden="true"><span class="learn-stress" data-caps="SAM"
           data-plain="Sam">SAM</span> <span data-caps="FELL"
           data-plain="fell">fell</span> out of the canoe.</p>
+          <p class="visually-hidden" data-swap-desc>Sam fell out of the canoe,
+          with the main emphasis on <i>Sam</i>.</p>
         </div>
 
         <div class="learn-example">
@@ -85,9 +87,11 @@
           canoe ride. The river was turbulent and the canoe rocked. Hoping to
           steady it, <b>Sam</b> stood up to change positions &mdash; and lost his
           balance.</p>
-          <p class="learn-swap"><span data-caps="SAM"
+          <p class="learn-swap" aria-hidden="true"><span data-caps="SAM"
           data-plain="Sam">Sam</span> <span class="learn-stress" data-caps="FELL"
           data-plain="fell">FELL</span> out of the canoe.</p>
+          <p class="visually-hidden" data-swap-desc>Sam fell out of the canoe,
+          with the main emphasis on <i>fell</i>.</p>
         </div>
 
         <div class="learn-swap-controls" hidden id="swap-controls">
@@ -123,8 +127,9 @@
 
         <p>Focus can also be contrastive, and then it narrows sharply. Asked why
         you are not having French toast, the fitting reply puts the accent on
-        the contrast: <i>I&rsquo;ve forgotten how to</i>
-        <span class="learn-stress">MAKE</span> <i>French toast</i> (Ladd, 1980).
+        the contrast: <span aria-hidden="true"><i>I&rsquo;ve forgotten how to</i>
+        <span class="learn-stress">MAKE</span> <i>French toast</i></span><span class="visually-hidden"><i>I&rsquo;ve
+        forgotten how to make French toast</i>, accented on <i>make</i></span> (Ladd, 1980).
         <i>French toast</i> is given &mdash; it was in the question &mdash; so it
         steps out of the way.</p>
 
@@ -132,15 +137,33 @@
 
         <p>This site marks prominence with capitals, and that convention is
         borrowed rather than invented. Dictionaries use it in pronunciation
-        guides: <i>aioli</i>, /ahy-<span class="learn-stress">OH</span>-lee/.
+        guides: <span aria-hidden="true"><i>aioli</i>, /ahy-<span class="learn-stress">OH</span>-lee/.</span><span class="visually-hidden"><i>aioli</i>
+        is respelled as ahy-OH-lee, with the second syllable capitalised to mark
+        the stress.</span>
         Comics use it for impact &mdash; POW!, OUCH!. And an email written in
         capitals reads as raised voice, which is why etiquette guides advise
         against it.</p>
 
         <p>Those conventions make capitals useful as a research tool.
-        A reader meeting <span class="learn-stress">SAM</span> in print does not
-        need to be taught what it means; the typographic habit is already
-        there.</p>
+        A reader meeting <span aria-hidden="true"><span class="learn-stress">SAM</span></span><span class="visually-hidden">the
+        name <i>Sam</i> set in capitals</span> in print does not need to be
+        taught what it means; the typographic habit is already there.</p>
+
+        <p>That is not a happy accident. The choice was made against Donald
+        Norman&rsquo;s criteria for intuitive design (1988), and capitals meet
+        four of them at once. They <strong>exploit knowledge the reader already
+        has</strong>, since dictionaries have marked stress this way for
+        generations. They are <strong>perceptually obvious</strong>, separating
+        from surrounding text at a glance and needing no key or legend. They
+        <strong>give a clue to what is being asked</strong>, carrying the
+        impression of a raised voice rather than an abstract instruction. And
+        they <strong>transfer</strong>, letting a reader carry a habit formed in
+        one context into a new one.</p>
+
+        <p>A notation that had to be taught would confound the thing being
+        measured: a reader failing an item might have misread the marking rather
+        than misheard the rhythm. Borrowing a convention readers already know
+        keeps the task about prosody.</p>
 
         <h2>Even function words can carry it</h2>
 
@@ -152,19 +175,24 @@
         <div class="learn-example">
           <p class="learn-gloss" style="margin-top:0">Everyone was in the water
           except Brian. Someone asked whether Brian could swim.</p>
-          <p>He <span class="learn-stress">CAN</span>.</p>
+          <p aria-hidden="true">He <span class="learn-stress">CAN</span>.</p>
+          <p class="visually-hidden">The reply <i>He can</i>, with the main
+          accent on <i>can</i>.</p>
           <p class="learn-gloss">Whether he can is the open question, so the
           auxiliary carries the accent.</p>
         </div>
 
         <div class="learn-example">
-          <p class="learn-gloss" style="margin-top:0">Megan left Charlie alone
-          with her hamster&rsquo;s cage. She came back to find the cage empty.</p>
-          <p><span class="learn-stress">WHERE</span> is my hamster?</p>
-          <p class="learn-gloss">Now change the situation: Megan returns from
-          camp to find a different hamster in the cage. Same words, and the
-          accent moves.</p>
-          <p>Where is <span class="learn-stress">MY</span> hamster?</p>
+          <p class="learn-gloss" style="margin-top:0">Megan knows her hamster is
+          safe &mdash; but not where Charlie put it.</p>
+          <p aria-hidden="true"><span class="learn-stress">WHERE</span> is my hamster?</p>
+          <p class="visually-hidden">The question <i>Where is my hamster?</i>,
+          with the main accent on <i>where</i>.</p>
+          <p class="learn-gloss">Now change the situation: Charlie brings her a
+          different hamster. Same words, and the accent moves.</p>
+          <p aria-hidden="true">Where is <span class="learn-stress">MY</span> hamster?</p>
+          <p class="visually-hidden">The same question, <i>Where is my
+          hamster?</i>, now with the main accent on <i>my</i>.</p>
         </div>
 
         <p>This has limits. Function-word focus is possible, not automatic: when
@@ -241,6 +269,10 @@
           <p>Ladd, D. R. (1980). <i>The structure of intonational meaning:
           Evidence from English.</i> Indiana University Press.</p>
 
+          <p>Norman, D. A. (1988). <i>The psychology of everyday things.</i>
+          Basic Books. (Later editions appear as <i>The design of everyday
+          things.</i>)</p>
+
           <p>Cooper, W. E., Eady, S. J., &amp; Mueller, P. R. (1985). Acoustical
           aspects of contrastive stress in question&ndash;answer contexts.
           <i>Journal of the Acoustical Society of America, 77</i>(6),
@@ -279,8 +311,11 @@
           <a href="https://doi.org/10.1002/rrq.97">https://doi.org/10.1002/rrq.97</a></p>
         </div>
 
-        <p class="site-status-note">More Learn pages &mdash; intonation and
-        implicit prosody &mdash; are in development.</p>
+        <p class="site-status-note">Two more Learn pages take this further:
+        <a href="../intonation/">Intonation</a>, and
+        <a href="../implicit-prosody/">Implicit prosody</a> &mdash; the claim
+        that readers place emphasis silently, with nothing on the page to
+        prompt it.</p>
 
       </section>
     </main>
@@ -329,6 +364,20 @@
         word.textContent = stressed ? word.getAttribute("data-plain")
                                     : word.getAttribute("data-caps");
       });
+      // Keep the screen-reader description in step with the visual marking.
+      // Built with textContent and createElement so nothing is ever parsed
+      // as markup, and so no node is removed from the served document.
+      Array.prototype.forEach.call(
+        document.querySelectorAll(".learn-swap"), function (line) {
+          var desc = line.parentNode.querySelector("[data-swap-desc]");
+          var hit = line.querySelector(".learn-stress");
+          if (!desc || !hit) return;
+          desc.textContent = "Sam fell out of the canoe, with the main emphasis on ";
+          var word = document.createElement("i");
+          word.textContent = hit.getAttribute("data-plain");
+          desc.appendChild(word);
+          desc.appendChild(document.createTextNode("."));
+        });
       button.textContent = swapped ? "Put the emphasis back" : "Swap the emphasis";
       button.setAttribute("aria-pressed", swapped ? "true" : "false");
       note.textContent = swapped

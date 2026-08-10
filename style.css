@@ -283,21 +283,118 @@ body.exhibit-active .exhibit-controls { z-index: 61; }
 #audio-takeaway { margin-top: 1.4rem; }
 #audio-takeaway p { margin: 0.25em 0; }
 
-.architecture {
-  display: flex;
-  flex-direction: column;
+/* Two overlapping fields: what the page supplies, what the reader brings, and
+   the inner voice that exists only where they meet. No arrows and no stacking,
+   because neither side precedes the other.
+
+   The gold lens is not a third element. Both ellipses carry the same
+   translucent gold, so the intersection doubles in density on its own and the
+   tint always matches the true overlap however the box is resized. */
+.venn {
+  position: relative;
+  display: grid;
+  grid-template-columns: 28% 44% 28%;
   align-items: center;
-  gap: 0.15rem;
+  width: min(46rem, 100%);
+  min-height: clamp(15rem, 40vw, 19rem);
+  margin: 0 auto;
+  text-align: center;
+
+  /* Two gold layers stack in the overlap, darkening the background to about
+     rgb(238,220,192). Against that, --glow-deep measures 4.35:1 — below the
+     4.5:1 AA floor for text this size. This darker gold measures 5.34:1 on the
+     lens and 5.02:1 on the mobile card, so it clears AA in both places.
+     Scoped here rather than changed globally: --glow-deep is fine elsewhere. */
+  --venn-gold-text: #7A4E0F;
 }
 
-.arch-level {
+.venn-shape {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 72%;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: rgba(201, 138, 46, 0.13);
+  pointer-events: none;
+}
+
+.venn-shape.is-page { left: 0; }
+.venn-shape.is-reader { right: 0; }
+
+.venn-field {
+  position: relative;
+  z-index: 1;
+  grid-row: 1;
+}
+
+.venn-page { grid-column: 1; }
+.venn-core { grid-column: 2; }
+.venn-reader { grid-column: 3; }
+
+.venn-field h3 {
+  font-family: var(--sans);
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  margin: 0 0 0.4rem;
+}
+
+.venn-core h3 { color: var(--venn-gold-text); }
+
+.venn-field ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
   font-family: var(--serif);
-  font-size: clamp(1.3rem, 3.4vw, 1.8rem);
-  margin: 0.1em 0;
+  font-size: clamp(0.95rem, 2.3vw, 1.1rem);
+  line-height: 1.5;
 }
 
-.arch-level:first-child { font-weight: 700; }
-.arch-arrow { color: var(--ink-soft); font-size: 1rem; margin: 0; }
+.venn-core .venn-forms {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0 0.7rem;
+  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-weight: 700;
+}
+
+/* Focus is one of the five ideas the tour demonstrates, not a caption on the
+   others, so it is sized and weighted to read as part of the diagram. */
+.venn-focus {
+  font-family: var(--sans);
+  font-size: clamp(0.86rem, 2.2vw, 1rem);
+  font-weight: 600;
+  color: var(--venn-gold-text);
+  margin: 0.6rem 0 0;
+}
+
+/* Narrow screens: the overlap cannot hold readable text, so the same three
+   groups become stacked cards in the same order the markup already uses. */
+@media (max-width: 40rem) {
+  .venn {
+    grid-template-columns: 1fr;
+    min-height: 0;
+    gap: 0.6rem;
+  }
+  .venn-shape { display: none; }
+  .venn-field {
+    grid-column: 1;
+    grid-row: auto;
+    border: 1px solid var(--line);
+    border-radius: 0.8rem;
+    padding: 0.8rem 1rem;
+    background: rgba(255, 255, 255, 0.45);
+  }
+  .venn-field ul { display: flex; flex-wrap: wrap; justify-content: center; gap: 0 0.9rem; }
+  .venn-core {
+    border-color: var(--glow);
+    background: var(--glow-halo);
+  }
+  .venn-core .venn-forms { display: flex; }
+}
 
 .final-panel { max-width: 48rem; }
 .final-scene { display: grid; gap: clamp(2rem, 5vw, 3.4rem); }

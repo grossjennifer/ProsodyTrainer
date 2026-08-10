@@ -64,4 +64,25 @@
     <priority>0.8</priority>
   </url>
 
+  <url>
+    <loc>https://prosodytrainer.com/learn/intonation/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://prosodytrainer.com/learn/implicit-prosody/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <url>
+    <loc>https://prosodytrainer.com/learn/how-the-tools-decide/</loc>
+    <lastmod>2026-08-09</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
 </urlset>

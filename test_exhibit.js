@@ -22,7 +22,50 @@ function check(label, condition) {
 }
 
 console.log("Prosody Trainer regression checks");
-check("nine exhibit panels", (html.match(/class="exhibit-panel/g) || []).length === 9);
+check("ten exhibit panels", (html.match(/class="exhibit-panel/g) || []).length === 10);
+check("emphasis demonstrated in the tour", (function () {
+  const panel = html.slice(html.indexOf('data-panel="7"'), html.indexOf('data-panel="8"'));
+  return /WHERE<\/span> is my hamster/.test(panel) &&
+         /Where is <span class="stress">MY<\/span> hamster/.test(panel) &&
+         panel.includes("moves the emphasis");
+})());
+check("panel numbers run 1..n with no gaps", (function () {
+  const nums = (html.match(/data-panel="(\d+)"/g) || [])
+    .map(m => Number(m.match(/\d+/)[0]));
+  return nums.every((n, i) => n === i + 1);
+})());
+check("audio panel keyed on its buttons, not a hardcoded panel number",
+  js.includes('panel.querySelector(".audio-button")') && !/panelNumber === "7"/.test(js));
+check("inner voice shown as page-meets-reader, not a one-way ladder", (function () {
+  const panel = html.slice(html.indexOf('data-panel="9"'), html.indexOf('data-panel="10"'));
+  return panel.includes('class="venn"') &&
+         ["The page", "The reader", "The inner voice"].every(t => panel.includes(t)) &&
+         !/arch-level|arch-arrow/.test(html);
+})());
+check("no directional arrows survive in the inner-voice panel", (function () {
+  const panel = html.slice(html.indexOf('data-panel="9"'), html.indexOf('data-panel="10"'));
+  return !/&uarr;|&darr;|&rarr;/.test(panel);
+})());
+check("Venn reading order is page, then reader, then the overlap", (function () {
+  const panel = html.slice(html.indexOf('data-panel="9"'), html.indexOf('data-panel="10"'));
+  return panel.indexOf("venn-page") < panel.indexOf("venn-reader") &&
+         panel.indexOf("venn-reader") < panel.indexOf("venn-core");
+})());
+check("Venn collapses to stacked cards on narrow screens",
+  css.includes(".venn-shape { display: none; }"));
+check("diagram announced as one figure with a spoken-order description", (function () {
+  const panel = html.slice(html.indexOf('data-panel="9"'), html.indexOf('data-panel="10"'));
+  const label = (panel.match(/aria-label="([^"]+)"/) || ["", ""])[1];
+  return /class="venn" role="img"/.test(panel) &&
+         label.indexOf("The page") < label.indexOf("The reader") &&
+         label.indexOf("The reader") < label.indexOf("inner voice") &&
+         label.includes("Focus describes where prominence falls");
+})());
+check("gold text on the overlap uses the AA-safe scoped value",
+  css.includes("--venn-gold-text: #7A4E0F") &&
+  !/\.venn-(core h3|focus)[^}]*color: var\(--glow-deep\)/.test(css));
+check("focus described as which word, not which prosodic form",
+  !/guides which of them takes prominence/.test(html));
 check("homepage content NOT gated by the hidden attribute", !/id="site-content"[^>]*\shidden/.test(html));
 check("homepage reachable without JavaScript (exhibit is CSS-gated)", css.includes("body:not(.exhibit-active) .opening-exhibit"));
 check("exhibit renders as a fixed overlay when active", /body\.exhibit-active \.opening-exhibit \{[^}]*position: fixed/.test(css));
@@ -38,8 +81,12 @@ check("three live tools", (function () {
 check("Learn card links to the Learn hub", html.includes('<a class="site-card" href="learn/"'));
 check("Learn card promises only topics that exist", (function () {
   const card = html.slice(html.indexOf('href="learn/"><div>'), html.indexOf('Investigate'));
-  return !/intonation|implicit prosody/i.test(card) &&
-         ["stress", "rhythm", "phrasing", "emphasis"].every(t => card.includes(t));
+  // All five components are now written, so the card may name intonation too.
+  // Implicit prosody is deliberately left off the card: it is framed as the
+  // claim beneath the five, not a sixth topic.
+  return !/implicit prosody/i.test(card) &&
+         ["stress", "rhythm", "phrasing", "emphasis", "intonation"]
+           .every(t => card.includes(t));
 })());
 check("Learn card call-to-action matches where it goes",
   html.includes("See the topics &rarr;") && !html.includes("Start with phrasing"));

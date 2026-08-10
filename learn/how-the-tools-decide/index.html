@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>How the tools decide | Prosody Trainer</title>
+  <meta name="description" content="How Prosody Trainer works out where the beats go: the three tiers of analysis, which steps rest on established findings, which are engineering heuristics, and what the tools do not model at all.">
+  <link rel="canonical" href="https://prosodytrainer.com/learn/how-the-tools-decide/">
+  <link rel="stylesheet" href="../../style.css">
+  <link rel="stylesheet" href="../../site.css">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "Article",
+    "@id": "https://prosodytrainer.com/learn/how-the-tools-decide/#article",
+    "url": "https://prosodytrainer.com/learn/how-the-tools-decide/",
+    "headline": "How the tools decide where the beats go",
+    "description": "The three tiers of analysis behind Rhythm Reader, which steps rest on established findings, which are documented heuristics, and what the tools deliberately do not model.",
+    "inLanguage": "en",
+    "isPartOf": { "@id": "https://prosodytrainer.com/#website" },
+    "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
+    "publisher": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
+    "about": [
+      "lexical stress assignment",
+      "metrical phonology",
+      "prosodic phrasing",
+      "text analysis method",
+      "research instrument transparency"
+    ],
+    "learningResourceType": "Explainer",
+    "citation": [
+      "Liberman, M., & Prince, A. (1977). On stress and linguistic rhythm. Linguistic Inquiry, 8(2), 249-336.",
+      "Selkirk, E. O. (1996). The prosodic structure of function words. In J. L. Morgan & K. Demuth (Eds.), Signal to syntax: Bootstrapping from speech to grammar in early acquisition (pp. 187-213). Lawrence Erlbaum.",
+      "Carnegie Mellon University Speech Group. The CMU Pronouncing Dictionary. http://www.speech.cs.cmu.edu/cgi-bin/cmudict"
+    ]
+  }
+  </script>
+</head>
+<body>
+  <div class="site-shell">
+
+    <header>
+      <nav aria-label="Site navigation">
+        <a class="brand-link" href="../../">Prosody Trainer<span class="dot">&#9679;</span></a>
+        <div class="site-nav-links">
+          <a href="../../#tools">Tools</a>
+          <a href="../">Learn</a>
+          <a href="../../#science">Science</a>
+          <a href="../../#research">Research</a>
+          <a href="../../#about">About and contact</a>
+        </div>
+      </nav>
+    </header>
+
+    <main>
+      <div class="site-hero">
+        <p class="site-kicker">Learn</p>
+        <h1 id="site-heading" tabindex="-1">How the tools decide<span class="dot">.</span></h1>
+        <p class="site-section-lede">Every beat the tools display is a proposal.
+        This page explains where each proposal comes from, and how much weight
+        it will bear.</p>
+      </div>
+
+      <section class="site-prose">
+
+        <p class="site-status-note">This page describes the analysis used by
+        <a href="../../rhythm-reader/">Rhythm Reader</a> and
+        <a href="../../rhythm-reader-pro/">Rhythm Reader Pro</a>. Other tools on
+        this site use different methods.</p>
+
+        <h2>Why this page exists</h2>
+
+        <p>Paste a sentence into Rhythm Reader and it marks the beats. The marks
+        look authoritative. Some rest on a named reference source. Others are
+        engineering decisions that could reasonably have gone another way.</p>
+
+        <p>A reader deciding whether to trust a mark, and a researcher deciding
+        whether to use the output as research data, both need to know which is
+        which. The analysis keeps that distinction internally, tagging each step
+        by how well founded it is, and this page carries the distinction out to
+        you.</p>
+
+        <div class="learn-example">
+          <p class="learn-gloss" style="margin-top:0"><strong>Reference-backed</strong>
+          &mdash; taken from a named dictionary, a published source, or a
+          standard linguistic convention.<br>
+          <strong>Heuristic</strong> &mdash; a documented engineering rule that
+          works as an approximation but could reasonably have been designed
+          differently.<br>
+          <strong>Exploratory</strong> &mdash; a modelling choice kept so it can
+          be inspected and tested, not because it is settled. The source code
+          tags these as <i>speculative</i>.</p>
+        </div>
+
+        <p>These labels describe the <i>evidential status</i> of a decision. The
+        three tiers below describe <i>when</i> a decision is made. They are
+        separate classifications: a single tier can contain decisions of
+        differing evidential status.</p>
+
+        <h2>Three tiers, in order</h2>
+
+        <p>The analysis runs in three passes, each taking the previous one as
+        input. Keeping them separate matters: a later pass can modify how
+        information from an earlier pass is realized in context, and you can
+        edit any tier without discarding the others.</p>
+
+        <h3>Tier 1 &mdash; what the word brings</h3>
+
+        <p>Text is first split into words, then each word is looked up in a
+        pronouncing dictionary supplied to the engine when it loads. That
+        dictionary is derived from the CMU Pronouncing Dictionary, a record of
+        General American pronunciations maintained by Carnegie Mellon
+        University. The entry gives the word&rsquo;s phonemes, with a stress
+        digit on each vowel <i>phoneme</i> &mdash; not each vowel letter &mdash;
+        so the number of vowel phonemes supplies the syllable count. That much
+        is <strong>reference-backed</strong>, in the sense that it faithfully
+        reports what the dictionary says. The dictionary itself records
+        pronunciations on which speakers sometimes disagree, so it is a
+        reference, not a ground truth.</p>
+
+        <p>Two practical limits follow. The tools ship with a small common-word
+        subset, so an uncommon word may fall through to the fallback analysis
+        rather than being looked up; when that happens the tool says so beneath
+        the text. And the exact dictionary release in use is not currently
+        recorded anywhere in the code or in the exports, which is a
+        reproducibility gap rather than an accuracy one &mdash; see the note for
+        researchers below.</p>
+
+        <p>The dictionary does not supply syllable <i>boundaries</i>. The tool
+        estimates those with the Maximal Onset Principle, constrained by an
+        explicit table of legal English onsets, plus an exception table where
+        dictionary convention differs. Maximal onset is influential and widely
+        used, but English syllabification has competing analyses and genuine
+        exceptions, so the resulting division is a documented
+        <strong>heuristic</strong>, not a uniquely correct analysis.</p>
+
+        <p>Two further steps are heuristic. Phonemic syllables must be mapped
+        back onto spelling so a mark can sit on the page, and spelling does not
+        divide the way sound does; the alignment rule is an approximation. Words
+        absent from the dictionary get a fallback analysis driven by
+        stress-relevant suffixes.</p>
+
+        <p>Each result also carries an internal <strong>ranking score</strong>.
+        It records how directly the tool reached the result &mdash; a single
+        dictionary entry, competing entries that agree, competing entries that
+        disagree, or a fallback analysis &mdash; not the probability that the
+        displayed mark is correct. A word with one entry is not thereby more
+        likely to be right; it is only less ambiguously derived.</p>
+
+        <h3>Tier 2 &mdash; the metrical template</h3>
+
+        <p>Each word&rsquo;s strong/weak pattern is then matched against the
+        four recurring metrical patterns used on this site, described on the
+        <a href="../rhythm/">Rhythm</a> page. Where a word carries secondary
+        stress, both readings are kept &mdash; secondary treated as full, and
+        secondary reduced &mdash; rather than one being chosen silently.</p>
+
+        <p>This tier is <strong>exploratory</strong>, tagged <i>speculative</i>
+        in the code, and the reason is worth stating. Representing a word as a
+        metrical template, and limiting the inventory to four feet, is a
+        modelling decision made partly for teaching. A string such as
+        weak&ndash;strong&ndash;weak is parsed across a foot boundary rather
+        than given a fifth, word-sized foot of its own. That is defensible and
+        it is not the only defensible choice.</p>
+
+        <h3>Tier 3 &mdash; rhythm in context</h3>
+
+        <p>Only now does the sentence matter. Words are grouped into phrases,
+        and within each phrase the syllable stream is fitted to the four feet.
+        Lexical stress supplies weighted preferences at this stage; it does not
+        force every word to behave like a complete foot. Feet never cross a
+        phrase boundary, and a phrase may open or close on an incomplete foot,
+        because ordinary prose does not arrive in tidy metrical parcels. These
+        foot-fitting rules are modelling constraints used by the analyser, not
+        established properties of prose rhythm.</p>
+
+        <p>Phrase boundaries themselves come from punctuation plus a
+        <strong>heuristic</strong>: a new phrase opens at a function word that
+        follows at least one content word, with a cap on how long a phrase may
+        run. This produces an editable candidate boundary. It is intended as a
+        useful starting point, not as a validated predictor of where a
+        particular reader would place a boundary. The
+        <a href="../phrasing/">Phrasing</a> page describes what those boundaries
+        do to meaning.</p>
+
+        <p>Function words are demoted at this tier, which is why <i>the</i> and
+        <i>will</i> come out weak in <i>the <span class="learn-stress">BAND</span>
+        will <span class="learn-stress">PLAY</span></i>. In a context-neutral
+        reading, function words are often prosodically weak, though contrast can
+        make them prominent &mdash; as the <a href="../focus/">Emphasis and
+        focus</a> page shows with <i>He <span class="learn-stress">CAN</span></i>.
+        That broad tendency is well supported (Selkirk, 1996); the particular
+        word list and demotion rule used here are heuristics.</p>
+
+        <h2>What it will not tell you</h2>
+
+        <p>Three limits are worth stating outright, because they bound what the
+        tools can be used for.</p>
+
+        <p><strong>Emphasis is not modelled.</strong> This is the important one,
+        and the code says so outright: contrastive stress is not modelled. The
+        analysis has no representation of what the reader already knows, so it
+        cannot know that <i>Where is <span class="learn-stress">MY</span>
+        hamster?</i> differs from <i><span class="learn-stress">WHERE</span> is
+        my hamster?</i>. It assigns one context-free default analysis &mdash;
+        which is not the same as a neutral one, since the default itself encodes
+        choices. Everything on the <a href="../focus/">Emphasis and focus</a>
+        page describes work the tools do not do, which is precisely why the
+        marks are editable by hand.</p>
+
+        <p><strong>Orthographic syllabification has no single right
+        answer.</strong> Where to place a hyphen in spelling is a matter of
+        convention, and dictionaries disagree with each other. The tools follow
+        one convention. Disagreement with it is not necessarily an error in
+        either direction.</p>
+
+        <p><strong>A proposal is not a ground truth.</strong> Where more than
+        one metrical parse fits nearly as well, the analysis keeps the
+        alternatives rather than hiding them. A displayed pattern is the best
+        available parse under these rules, not the reading. Every beat can be
+        overridden, and the disagreement is often the interesting part.</p>
+
+        <h2>For researchers</h2>
+
+        <p>Three properties matter if you are considering using the output in a
+        study. Every analysis records its source and a ranking score, so
+        dictionary-backed marks can be separated from fallback ones. The three
+        tiers can be edited independently &mdash; lexical stress, template
+        choice, and phrase boundaries each have their own edit operations, and
+        the analysis reflows afterwards rather than being discarded. And
+        analyses export as CSV and as annotated plain text, so the marks can be
+        checked against your own coding.</p>
+
+        <p>What is not yet published is a versioned technical specification: the
+        exact dictionary release, the tokenisation rules, the suffix and
+        exception tables, the ranking formula, the metrical fitting weights and
+        tie-breaking, the phrase-length cap, the full function-word list, and the
+        export schema. The prose above is deliberately readable; it is not
+        sufficient to reproduce an output.</p>
+
+        <p>The dictionary is the sharpest instance. The subset shipped with the
+        tools is built from the CMU Pronouncing Dictionary, but the build recipe
+        points at an unpinned branch, so two builds made on different days may
+        not contain the same entries, and no release identifier is written into
+        the shipped file or into any export. Until an analyser version and a
+        dictionary release are recorded in the exports themselves, treat any
+        figure taken from these tools as tied to the copy that produced it,
+        and archive that copy alongside your data.</p>
+
+        <p>What does not yet exist is a validation study of the tools
+        themselves. The published work behind this site tested the effects of
+        typographically marked stress and rhythm on readers&rsquo; prosodic
+        judgments and sensitivity (Gross, Winegard, &amp; Plotkowski, 2018;
+        Gross, Roldan, Kiessel, Esselink, &amp; Dunlap, 2026). Whether
+        <i>this</i> analyser&rsquo;s output agrees with trained human coders is
+        a separate question, and an open one. Treat the output as a
+        well-documented proposal to be checked, not as a validated instrument.</p>
+
+        <h2>Try it</h2>
+
+        <p><a href="../../rhythm-reader/">Rhythm Reader</a> shows the result of
+        all three tiers with every syllable tappable.
+        <a href="../../rhythm-reader-pro/">Rhythm Reader Pro</a> exposes the
+        tiers separately, shows phrase structure directly, and lets you move
+        boundaries to watch Tier 3 recompute.</p>
+
+        <p>The most informative thing you can do is disagree with it. Where your
+        inner voice and the analysis part company, one of you is responding to
+        something the other is not &mdash; and on this site that gap is the
+        subject, not a defect.</p>
+
+        <h2>References and further reading</h2>
+
+        <div class="learn-refs">
+          <p>Liberman, M., &amp; Prince, A. (1977). On stress and linguistic
+          rhythm. <i>Linguistic Inquiry, 8</i>(2), 249&ndash;336.</p>
+
+          <p>Selkirk, E. O. (1996). The prosodic structure of function words.
+          In J. L. Morgan &amp; K. Demuth (Eds.), <i>Signal to syntax:
+          Bootstrapping from speech to grammar in early acquisition</i>
+          (pp. 187&ndash;213). Lawrence Erlbaum.</p>
+
+          <p>Carnegie Mellon University Speech Group. <i>The CMU Pronouncing
+          Dictionary.</i>
+          <a href="http://www.speech.cs.cmu.edu/cgi-bin/cmudict">http://www.speech.cs.cmu.edu/cgi-bin/cmudict</a>
+          (The particular release used by these tools is not currently recorded;
+          see the note for researchers above.)</p>
+
+          <h3>Research from this project</h3>
+
+          <p class="is-own">Gross, J., Winegard, B., &amp; Plotkowski, A. R.
+          (2018). Marking stress exPLICitly in written English fosters rhythm in
+          the reader&rsquo;s inner voice. <i>Reading Research Quarterly,
+          53</i>(3), 305&ndash;321.
+          <a href="https://doi.org/10.1002/rrq.198">https://doi.org/10.1002/rrq.198</a> <a href="https://scholarworks.gvsu.edu/oapsf_articles/87">Open access
+          (ScholarWorks@GVSU)</a></p>
+
+          <p class="is-own">Gross, J., Roldan, M., Kiessel, T., Esselink, M.,
+          &amp; Dunlap, L. (2026). Training with orthographic stress and rhythm
+          markers improves adult readers&rsquo; prosodic sensitivity.
+          <i>Reading and Writing.</i>
+          <a href="https://doi.org/10.1007/s11145-026-10840-2">https://doi.org/10.1007/s11145-026-10840-2</a></p>
+        </div>
+
+        <p class="site-status-note">The five components are covered in
+        <a href="../">Learn</a>; the claim beneath them is
+        <a href="../implicit-prosody/">Implicit prosody</a>.</p>
+
+      </section>
+    </main>
+
+    <footer>
+      <div class="site-footer-top">
+        <p class="site-footer-title"><strong>Prosody Trainer</strong> &mdash;
+        making the prosody of written language visible.</p>
+        <div class="site-footer-links" aria-label="Footer navigation">
+          <a href="../../">Home</a>
+          <a href="../">Learn</a>
+          <a href="../../#tools">Tools</a>
+          <a href="../../#science">Science</a>
+          <a href="../../#research">Research</a>
+          <a href="../../#about">About and contact</a>
+        </div>
+      </div>
+      <p class="site-footer-note">&copy; 2026 Jennifer Gross. Accessibility
+      feedback is welcome at <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>.</p>
+    </footer>
+
+  </div>
+</body>
+</html>

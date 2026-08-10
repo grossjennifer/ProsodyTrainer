@@ -16,7 +16,7 @@
         "url": "https://prosodytrainer.com/",
         "name": "Prosody Trainer",
         "alternateName": "Prosody Trainer: The Inner Voice of Reading",
-        "description": "Prosody Trainer is a research-based suite of interactive tools that make the stress, rhythm, phrasing, and intonation of written English visible to readers, teachers, clinicians, and researchers.",
+        "description": "Prosody Trainer is a research-based suite of interactive tools that make the stress, rhythm, phrasing, emphasis, and intonation of written English visible to readers, teachers, clinicians, and researchers.",
         "inLanguage": "en",
         "author": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
         "creator": { "@id": "https://prosodytrainer.com/#jennifer-gross" },
@@ -194,7 +194,18 @@
     <p class="takeaway" data-reveal data-delay="6400">Grouping can change meaning &mdash; even in silent reading.</p>
   </section>
 
-  <section class="exhibit-panel" data-panel="7" data-duration="15500">
+  <section class="exhibit-panel" data-panel="7" data-duration="14500">
+    <h2 class="panel-title" data-reveal data-delay="0">Emphasis and focus</h2>
+    <p class="caption exhibit-note" data-reveal data-delay="900">Megan knows her hamster is safe &mdash; but not where Charlie put it.</p>
+    <p class="demo-sentence" data-reveal data-delay="2400" aria-hidden="true"><span class="stress">WHERE</span> is my hamster?</p>
+    <p class="visually-hidden" data-reveal data-delay="2400">Where is my hamster? &mdash; with the emphasis on <i>where</i>.</p>
+    <p class="caption exhibit-note" data-reveal data-delay="5200">Now Charlie brings her a different hamster.</p>
+    <p class="demo-sentence" data-reveal data-delay="6800" aria-hidden="true">Where is <span class="stress">MY</span> hamster?</p>
+    <p class="visually-hidden" data-reveal data-delay="6800">Where is my hamster? &mdash; with the emphasis on <i>my</i>.</p>
+    <p class="takeaway" data-reveal data-delay="9600">Same words. Context changes the focus &mdash; and moves the emphasis.</p>
+  </section>
+
+  <section class="exhibit-panel" data-panel="8" data-duration="15500">
     <h2 class="panel-title" data-reveal data-delay="0">One word, three voices.</h2>
     <p class="caption exhibit-note" data-reveal data-delay="900">Listen to each one.</p>
     <div class="audio-row" data-reveal data-delay="1600">
@@ -221,25 +232,38 @@
     </details>
   </section>
 
-  <section class="exhibit-panel" data-panel="8" data-duration="15000">
-    <h2 class="panel-title" data-reveal data-delay="0">Layers of the inner voice</h2>
-    <div class="architecture">
-      <p class="arch-level" data-reveal data-delay="4500">Meaning</p>
-      <p class="arch-arrow" data-reveal data-delay="4200" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="3600">Intonation</p>
-      <p class="arch-arrow" data-reveal data-delay="3300" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="2700">Phrasing</p>
-      <p class="arch-arrow" data-reveal data-delay="2400" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="1800">Rhythm</p>
-      <p class="arch-arrow" data-reveal data-delay="1500" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="900">Stress</p>
-      <p class="arch-arrow" data-reveal data-delay="600" aria-hidden="true">&uarr;</p>
-      <p class="arch-level" data-reveal data-delay="0">Words</p>
+  <section class="exhibit-panel" data-panel="9" data-duration="13000">
+    <h2 class="panel-title" data-reveal data-delay="0">The inner voice takes shape between page and reader</h2>
+    <!-- Announced as a single figure, the way the pitch contours on the
+         intonation page are. The label carries the diagram as a sentence, in
+         the order the parts make sense spoken; the closing line is left to the
+         takeaway below so it is not heard twice. DOM order is page, reader,
+         core, with the overlap placed between them by grid-column. -->
+    <div class="venn" role="img"
+         aria-label="The page contributes words, syntax, and punctuation. The reader contributes context, prior knowledge, and purpose. Between them, the inner voice takes shape through stress, rhythm, phrasing, and intonation. Focus describes where prominence falls.">
+      <div class="venn-shape is-page" aria-hidden="true"></div>
+      <div class="venn-shape is-reader" aria-hidden="true"></div>
+
+      <div class="venn-field venn-page" data-reveal data-delay="800">
+        <h3>The page</h3>
+        <ul><li>Words</li><li>Syntax</li><li>Punctuation</li></ul>
+      </div>
+
+      <div class="venn-field venn-reader" data-reveal data-delay="1700">
+        <h3>The reader</h3>
+        <ul><li>Context</li><li>Prior knowledge</li><li>Purpose</li></ul>
+      </div>
+
+      <div class="venn-field venn-core" data-reveal data-delay="2800">
+        <h3>The inner voice</h3>
+        <ul class="venn-forms"><li>Stress</li><li>Rhythm</li><li>Phrasing</li><li>Intonation</li></ul>
+        <p class="venn-focus">Focus: where prominence falls</p>
+      </div>
     </div>
-    <p class="takeaway" data-reveal data-delay="6800">Together, stress, rhythm, phrasing, and intonation help readers turn print into a voice&mdash;and a voice into meaning.</p>
+    <p class="takeaway" data-reveal data-delay="4600">Together, they shape how the sentence sounds &mdash; and what it means.</p>
   </section>
 
-  <section class="exhibit-panel final-panel" data-panel="9" data-duration="0">
+  <section class="exhibit-panel final-panel" data-panel="10" data-duration="0">
     <div class="final-scene">
       <div class="final-brand">
         <h1 class="brand" data-reveal data-delay="0">Prosody Trainer</h1>
@@ -263,7 +287,7 @@
 </main>
 
 <div class="exhibit-controls">
-  <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 9</p>
+  <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 10</p>
   <div class="transport" role="group" aria-label="Exhibit playback controls">
     <button id="back-button" class="transport-button" type="button">Back</button>
     <button id="play-pause-button" class="transport-button" type="button" aria-pressed="false" aria-label="Pause animation">Pause</button>
@@ -308,7 +332,7 @@
     <main>
       <section id="tools">
         <h2>Explore the tools</h2>
-        <p class="site-section-lede">Prosody Trainer is a growing suite of research-based tools for exploring how written language carries stress, rhythm, phrasing, and intonation.</p>
+        <p class="site-section-lede">Prosody Trainer is a growing suite of research-based tools for exploring how written language carries stress, rhythm, phrasing, emphasis, and intonation.</p>
         <div class="site-cards">
           <a class="site-card" href="rhythm-reader/">
             <div><span class="site-tag">Available now</span><h3>Rhythm Reader</h3><p>A simple interface for visualizing stress and rhythm in English text.</p></div>
@@ -337,7 +361,7 @@
 
       <section id="science">
         <h2>The science</h2>
-        <p class="site-section-lede">When people read silently, they often construct an inner voice carrying patterns of stress, rhythm, phrasing, and intonation. These patterns help readers group words, anticipate sentence structure, resolve ambiguity, and retain meaning.</p>
+        <p class="site-section-lede">When people read silently, they often construct an inner voice carrying patterns of stress, rhythm, phrasing, emphasis, and intonation. These patterns help readers group words, anticipate sentence structure, resolve ambiguity, and retain meaning.</p>
         <p class="site-section-lede">Prosody Trainer turns this normally hidden structure into something readers can see, explore, and practice.</p>
         <div class="site-grid-two">
           <div><h3>Why prosody matters</h3><p>Prosody helps readers organize language into meaningful units, distinguish emphasis, and understand how words and phrases fit together.</p></div>
@@ -372,7 +396,7 @@
         <h2>Use Prosody Trainer</h2>
         <p class="site-section-lede">The project supports classroom demonstration, reading intervention, psycholinguistic research, and public understanding of the cognitive science of reading.</p>
         <div class="site-cards">
-          <a class="site-card" href="learn/"><div><span class="site-tag">Learn</span><h3>Accessible explanations</h3><p>Plain-language introductions to stress, rhythm, phrasing, and emphasis &mdash; what each one is, and why it matters for reading.</p></div><span class="site-card-action">See the topics &rarr;</span></a>
+          <a class="site-card" href="learn/"><div><span class="site-tag">Learn</span><h3>Accessible explanations</h3><p>Plain-language introductions to stress, rhythm, phrasing, emphasis, and intonation &mdash; what each one is, and why it matters for reading.</p></div><span class="site-card-action">See the topics &rarr;</span></a>
           <article class="site-card site-card-upcoming"><div><span class="site-tag">Investigate</span><h3>Research tools and measures</h3><p>Digital tools for examining how readers represent and use prosodic information in written language. The tools are available now; guidance on using them as research measures is being written.</p></div><span class="site-coming">Measures and research guidance in development</span></article>
           <article class="site-card site-card-upcoming"><div><span class="site-tag">Teach</span><h3>Classroom resources</h3><p>Demonstrations, sample activities, and guided lessons for helping learners notice the prosody of written language.</p></div><span class="site-coming">Planned for a future release</span></article>
         </div>

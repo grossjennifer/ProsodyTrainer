@@ -47,16 +47,20 @@ check("hub JSON-LD parses", (function () {
   const match = hub.match(/<script type="application\/ld\+json">([\s\S]*?)<\/script>/);
   try { return !!JSON.parse(match[1]); } catch (error) { return false; }
 })());
-check("hub lists the two unwritten explainers as in development",
-  (hub.match(/In development/g) || []).length === 2 &&
-  ["Intonation", "Implicit prosody"]
-    .every(t => hub.includes("<h3>" + t + "</h3>")));
-check("hub links all four live explainers",
-  ["stress/", "rhythm/", "focus/", "phrasing/"].every(h => hub.includes('href="' + h + '"')));
-check("hub does not link pages that do not exist yet",
-  !/href="(intonation|implicit-prosody)\//.test(hub));
-check("hub graph lists all four live articles",
-  ["stress", "rhythm", "focus", "phrasing"]
+check("nothing on the hub is still marked in development",
+  !/In development/.test(hub));
+check("hub links all six explainers",
+  ["stress/", "rhythm/", "focus/", "phrasing/", "intonation/", "implicit-prosody/"]
+    .every(h => hub.includes('href="' + h + '"')));
+check("hub links only pages that exist", (function () {
+  const written = ["stress", "rhythm", "focus", "phrasing",
+                   "intonation", "implicit-prosody", "how-the-tools-decide"];
+  return (hub.match(/href="([a-z-]+)\/"/g) || [])
+    .map(h => h.slice(6, -2))
+    .every(slug => written.includes(slug));
+})());
+check("hub graph lists all six articles",
+  ["stress", "rhythm", "focus", "phrasing", "intonation", "implicit-prosody"]
     .every(n => hub.includes("learn/" + n + "/#article")));
 check("homepage reaches the phrasing page in two clicks",
   home.includes('<a class="site-card" href="learn/"') &&
@@ -178,14 +182,12 @@ check("links into Rhythm Reader Pro", phrasing.includes('href="../../rhythm-read
 check("links home", phrasing.includes('class="brand-link" href="../../"'));
 check("professional email present", phrasing.includes("mailto:grossj@gvsu.edu"));
 check("no pre-migration faculty profile URLs", !phrasing.includes("gross-jennifer-44"));
-check("no Learn page links an explainer that does not exist",
+check("every component page now cross-links implicit prosody",
   [phrasing, stress, rhythm, focus].every(
-    page => !/href="\.\.\/(intonation|implicit-prosody)\//.test(page)));
-check("status notes on every live page list only unwritten pages", (function () {
-  const note = "intonation and implicit prosody &mdash; are in development";
+    page => /href="\.\.\/implicit-prosody\//.test(page)));
+check("no page still describes a written explainer as in development", (function () {
   return [flat, flatStress, flatRhythm, flatFocus].every(
-    page => page.includes(note) && !/stress|rhythm/.test(
-      (page.match(/status-note">More Learn pages[^<]*/) || [""])[0]));
+    page => !/(intonation|implicit prosody)[^<]*(is|are) in development/i.test(page));
 })());
 
 // --- Stress page ------------------------------------------------------------

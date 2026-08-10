@@ -102,9 +102,12 @@
       thawTimers();
       if (advance.remaining > 0 && advance.id === null) armAdvance();
     }
-    playPauseButton.textContent = paused ? "Resume" : "Pause";
+    // "Play" rather than "Resume": this button controls automatic playback,
+    // while "Continue" advances the tour. Two forward-sounding labels side by
+    // side left it unclear which one moved you onward.
+    playPauseButton.textContent = paused ? "Play" : "Pause";
     playPauseButton.setAttribute("aria-pressed", paused ? "true" : "false");
-    playPauseButton.setAttribute("aria-label", paused ? "Resume animation" : "Pause animation");
+    playPauseButton.setAttribute("aria-label", paused ? "Play animation" : "Pause animation");
   }
 
   function pulseBeats(container, startDelay, step) {
@@ -167,7 +170,9 @@
       pulseBeats(panel.querySelector(".pattern-a"), 800, 700);
       pulseBeats(panel.querySelector(".pattern-b"), 10500, 700);
     }
-    if (panelNumber === "7" && !reducedMotion) {
+    // Keyed on the buttons themselves rather than a panel number, so the
+    // audio panel keeps working if panels are added or reordered.
+    if (panel.querySelector(".audio-button") && !reducedMotion) {
       panel.querySelectorAll(".audio-button").forEach(function (button) {
         const at = Number(button.getAttribute("data-play-at") || 0);
         later(function () { playClip(button); }, at);
