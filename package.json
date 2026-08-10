@@ -1,0 +1,9 @@
+{
+  "name": "prosody-trainer",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Local dev server for the ProsodyTrainer static site",
+  "scripts": {
+    "start": "node server.js"
+  }
+}
