@@ -141,6 +141,94 @@ goal, since the review's complaint was that prose was being damaged, not that
 verse was wrong. All thirteen acceptance checks pass, including the four new
 ones derived from the review.
 
+### The biggest single bug: polysyllabic prepositions were content words
+
+Reported from the interface as `the girls conVERSED aBOUT school` — a
+preposition took a beat while the phrase's own nucleus, the syllable the teal
+triangle was pointing at, did not. The output contradicted the marker printed
+beside it.
+
+`FUNCTION_WORDS` contains only monosyllables. Every polysyllabic preposition
+and subordinator — `about`, `into`, `upon`, `before`, `behind`, `between`,
+`without`, `until`, `because` — was therefore treated as a **content word**.
+`about` got a template of `W S`, meaning its second syllable was strong by
+default: free to take a beat, and costing 6.0 to give one up. The engine was
+correctly preferring the cheap beat.
+
+Two changes: those words now behave as function words, and polysyllabic
+function words default to weak throughout, paying the ordinary function-word
+promotion rate on their stressed syllable. Their lexical stress records which
+syllable would be prominent *if* the word were accented; it was being read as
+a claim that it *is*.
+
+This was worth more than everything else this round:
+
+| | before | after |
+|---|---:|---:|
+| Held-out exact | 14/16 | **15/16** |
+| Held-out per-syllable | 98.7% | **99.4%** |
+| Metre label correct | 40/46 | **40/46** (held-out 15/16 → **16/16**) |
+| Clashes | 1 | **0** |
+
+It also fixed `twas the NIGHT before CHRISTmas` (previously `beFORE`), and made
+`the girls conVERSED about SCHOOL` classify as **prose**, which it is. The
+review's `converse` item is now fully correct — both the lexical variant and
+the beat: `TANner and MADison conVERSE about SCHOOL`.
+
+One item moved the other way: `AND dePARTing LEAVE beHIND us` now reads
+`behind us`, where the gold beats `beHIND`. Dev 25→24, held-out 14→15. I kept
+the change: held-out is the more meaningful split, and clashes and metre labels
+both improved.
+
+### Three bugs reported from the interface — all fixed
+
+These came in as screenshots, so unlike the reconstructed items below they are
+directly observable and are now ordinary regression tests.
+
+**1. `IMAGine` — an intra-word clash.** CMU gives `imagine` as `IH2 M AE1 JH
+AH0 N`: secondary and primary stress on *adjacent* syllables. Secondary stress
+carried a weight of 2.2, exactly equal to the clash penalty it created, so the
+tie broke arbitrarily and both syllables took a beat. English has no such
+reading. Secondary stress is weak evidence for a beat and now weighs 1.1, so
+it yields: **`imAGine`**.
+
+**2. `CONverse` — the Rhythm Rule filling a lapse.** The lexical variant was
+already correct (verb, primary on `-verse`); the *beat* was being relocated
+leftward. `TANner and MADison conVERSE` has three weak syllables in a row, and
+retracting the beat to `CON` removed them. But English stress retraction is
+clash-motivated — `thirTEEN` → `THIRteen men` happens because the primary
+would collide with a following beat, not because retraction tidies the rhythm.
+The rule now requires beat-crowding within two syllables of the unshifted
+position: **`TANner and MADison conVERSE`**.
+
+My first attempt required a strict adjacent clash. That was too narrow — it
+also blocked `the FIFteenth of MAY`, which is genuine retraction, and cost a
+held-out item. Two syllables is the width that admits both.
+
+**3. Choosing a foot did not produce that foot.** `forceScansion('dactyl')` on
+`half a league half a league` returned `HALF a LEAGUE half a LEAGUE`, which is
+not dactylic. The offset search was weighting a skipped opening at the ordinary
+residue rate, so skipping two syllables was cheaper than destressing `league`.
+Under a forced scansion the grid is the whole point, so a skipped opening is
+now heavily penalised. All four buttons now begin on the foot named:
+
+```
+dactyl    HALF a league HALF a league      ← and this is the gold reading
+trochee   HALF a LEAGUE half A league
+iamb      half A league HALF a LEAGUE
+anapest   half a LEAGUE half a LEAGUE
+```
+
+Worth noting: this bug meant the manual override could not be used to work
+around the automatic analysis, which made every other failure worse than it
+had to be.
+
+One loose end: `Tanner and Madison converse about school` still shows
+`CONverse`, because in that longer sentence the following beat falls two
+syllables away and legitimately licenses retraction. The lexical variant is
+correct in both. Whether retraction is right there is a judgment call I would
+rather you made than have me tune to.
+
 ### Review-named cases: 2/5
 
 `eval/review_cases.js`, reconstructed from the review's prose descriptions.

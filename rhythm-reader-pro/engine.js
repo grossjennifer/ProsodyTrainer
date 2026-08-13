@@ -953,7 +953,26 @@
   const EXTRA_FUNCTION_WORDS = new Set([
     "'twas", 'twas', "'tis", 'tis', "'twere", "'twill",
     'thou', 'thee', 'thy', 'thine', 'ye',
-    'hath', 'hast', 'doth', 'art', 'wert', 'shalt', 'wilt'
+    'hath', 'hast', 'doth', 'art', 'wert', 'shalt', 'wilt',
+
+    /* Polysyllabic prepositions, subordinators and conjunctions. FUNCTION_WORDS
+     * contains only monosyllables, so every one of these was being treated as
+     * a CONTENT word: `about` got a template of `W S`, meaning its second
+     * syllable was strong by default, free to beat, and cost 6.0 to demote.
+     * The engine would therefore beat a preposition in preference to the
+     * phrase's own nucleus — `the GIRLS conVERSED aBOUT school`.
+     *
+     * These are listed explicitly rather than taken from CLOSED_CLASS,
+     * because CLOSED_CLASS also contains words like `all`, `no` and `some`
+     * that the corpus repeatedly wants stressed. Prepositions and
+     * subordinators are unambiguous. */
+    'about', 'above', 'across', 'after', 'against', 'along', 'among',
+    'around', 'before', 'behind', 'below', 'beneath', 'beside', 'between',
+    'beyond', 'despite', 'during', 'except', 'inside', 'into', 'onto',
+    'outside', 'over', 'through', 'throughout', 'toward', 'towards',
+    'under', 'underneath', 'unto', 'upon', 'within', 'without',
+    'although', 'because', 'before', 'however', 'unless', 'until',
+    'whether', 'whenever', 'wherever', 'whereas'
   ]);
 
   function behavesAsFunctionWord(wd) {
@@ -1239,6 +1258,28 @@
                source: wd.given ? 'rule:given-content-monosyllable'
                                 : 'rule:content-monosyllable' };
     }
+    /* Polysyllabic function words default to WEAK throughout, exactly as
+     * monosyllabic ones do. Their lexical stress records which syllable would
+     * be prominent IF the word were accented; it is not a claim that the word
+     * is accented. Function words reduce in connected speech.
+     *
+     * Previously the template supplied `W S` for `about`, so its second
+     * syllable was already S by preference and taking a beat there cost
+     * NOTHING. The engine would then happily print `the GIRLS conVERSED
+     * aBOUT school` — beating a preposition while demoting the phrase's own
+     * nucleus, because the beat on `about` was free and the beat on `school`
+     * had to be paid for. Charging promotion at the function-word rate makes
+     * the two comparable, and `about SCHOOL` wins on its merits. */
+    if (behavesAsFunctionWord(wd)) {
+      const isPrimary = sy.lexicalStress === '1';
+      return { value: 'W',
+               weight: isPrimary
+                 ? ((tag && FN_PROMOTE[tag]) || DEFAULT_PROMOTE)
+                 : 3.2,                       // never beat an unstressed syllable
+               confidence: CONF.FUNCTION_WORD,
+               source: 'rule:function-word-demotion' };
+    }
+
     const templ = wd.template.pattern[i] ||
       (sy.lexicalStress === '0' ? 'W' : 'S');
     // Primary lexical stress inside a polysyllable is the strongest anchor in
