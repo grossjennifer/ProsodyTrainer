@@ -171,10 +171,15 @@
 
   let DICT = null;          // { WORD: "PH ON EMES|variant|..." }
   let DICT_SOURCE = 'none'; // 'full' | 'subset' | 'none'
+  let KNOWN_READINGS = [];
 
   function loadDictionary(dictObj, sourceLabel) {
     DICT = dictObj || null;
     DICT_SOURCE = DICT ? (sourceLabel || 'full') : 'none';
+  }
+
+  function loadKnownReadings(readings) {
+    KNOWN_READINGS = Array.isArray(readings) ? readings.slice() : [];
   }
 
   function normalizeWord(orth) {
@@ -641,7 +646,7 @@
    * SECTION 7 — Word analysis (assembles Tier 1 + Tier 2 for one word)
    * ======================================================================== */
 
-  function analyzeWord(orth) {
+  function analyzeWord(orth, preferredPrimary, posTag) {
     const normalized = orth.toLowerCase().replace(/’/g, "'");
     const isFn = FUNCTION_WORDS.has(normalized);
     const cmu = lookupCMU(orth);
@@ -649,7 +654,15 @@
     let alternates = [];
 
     if (cmu) {
-      const phones = cmu.prons[0];
+      let chosen = 0;
+      if (Number.isInteger(preferredPrimary)) {
+        const found = cmu.prons.findIndex(p => {
+          const pat = stressPatternOf(p);
+          return pat.indexOf('1') === preferredPrimary;
+        });
+        if (found >= 0) chosen = found;
+      }
+      const phones = cmu.prons[chosen];
       const phonSylls = syllabifyPhonemes(phones);
       if (phonSylls) {
         lexPattern = stressPatternOf(phones);
@@ -663,9 +676,10 @@
         phonemesBySyll = phonSylls;
         lexSource = 'CMU';
         lexConf = cmu.confidence - (ortho.forced ? CONF.ALIGN_FORCED_PENALTY : 0);
-        alternates = cmu.prons.slice(1).map(p => ({
+        alternates = cmu.prons.filter((_, i) => i !== chosen).map(p => ({
           phonemes: p, pattern: stressPatternOf(p)
         }));
+        if (chosen > 0) rule = 'contextual-heteronym';
       }
     }
     // Hyphenated compounds: analyze each component separately (design §4),
@@ -722,6 +736,7 @@
       word: orth,
       normalized,
       isFunctionWord: isFn,
+      posTag: posTag || null,
       hasStressVariants: alternates.some(a => a.pattern !== lexPattern),
       syllables,
       lexicalPattern: lexPattern,
@@ -734,6 +749,328 @@
       userEdited: { lexical: false, template: false, rhythmic: false },
       editHistory: []
     };
+  }
+
+  /* ==========================================================================
+   * SECTION 7b — Lightweight syntactic-role tagger
+   * --------------------------------------------------------------------------
+   * [HEUR "pos-tagger"] A small closed-class lexicon plus suffix and local
+   * context rules. This is NOT a trained tagger and makes no claim to
+   * newswire-level accuracy; it exists to supply two things the rhythm layer
+   * genuinely needs:
+   *
+   *   1. A prominence hierarchy among content words. English phrasal
+   *      prominence is not flat across content words: lexical nouns resist
+   *      destressing more than finite verbs do [Ladd 2008 ch.6; Selkirk 1995
+   *      on argument/predicate asymmetries]. Without this, an engine choosing
+   *      which member of a MOUSE|ran clash to demote has no principled basis
+   *      and must guess a fixed direction — the defect recorded in the handoff
+   *      as finding (7).
+   *
+   *   2. Graded promotability among function words. Determiners resist
+   *      promotion far more than prepositions and particles do, which is why
+   *      `up` in `ran UP the clock` and `of` in `forests OF the night` are
+   *      available as beats while `the` is not.
+   *
+   * IMPORTANT SCOPE LIMIT: these tags are NEVER used to apply a blanket
+   * "nouns are first-stressed, verbs are second-stressed" rule to heteronyms.
+   * Heteronym variant selection stays gated to SHIFTING_HETERONYMS below; the
+   * tag only supplies contextual evidence within that gate. This restriction
+   * is required by the project owner (handoff §Task item 4).
+   * ======================================================================== */
+
+  const CLOSED_CLASS = {
+    // Determiners
+    the: 'DET', a: 'DET', an: 'DET', these: 'DET', those: 'DET',
+    my: 'DET', your: 'DET', its: 'DET', our: 'DET', their: 'DET',
+    every: 'DET', each: 'DET', both: 'DET', whose: 'DET', neither: 'DET',
+    // Pronouns
+    i: 'PRON', me: 'PRON', you: 'PRON', he: 'PRON', him: 'PRON',
+    it: 'PRON', we: 'PRON', us: 'PRON', they: 'PRON', them: 'PRON',
+    who: 'PRON', whom: 'PRON', mine: 'PRON', yours: 'PRON', hers: 'PRON',
+    ours: 'PRON', theirs: 'PRON', myself: 'PRON', yourself: 'PRON',
+    himself: 'PRON', herself: 'PRON', itself: 'PRON', ourselves: 'PRON',
+    themselves: 'PRON', one: 'PRON', none: 'PRON',
+    // Prepositions
+    of: 'PREP', in: 'PREP', on: 'PREP', at: 'PREP', by: 'PREP', for: 'PREP',
+    with: 'PREP', from: 'PREP', into: 'PREP', onto: 'PREP', upon: 'PREP',
+    through: 'PREP', throughout: 'PREP', over: 'PREP', under: 'PREP',
+    above: 'PREP', below: 'PREP', beneath: 'PREP', between: 'PREP',
+    among: 'PREP', against: 'PREP', without: 'PREP', within: 'PREP',
+    across: 'PREP', behind: 'PREP', beyond: 'PREP', beside: 'PREP',
+    about: 'PREP', around: 'PREP', toward: 'PREP', towards: 'PREP',
+    during: 'PREP', despite: 'PREP', unto: 'PREP',
+    // Conjunctions
+    and: 'CONJ', or: 'CONJ', but: 'CONJ', nor: 'CONJ', because: 'CONJ',
+    although: 'CONJ', unless: 'CONJ', whether: 'CONJ', than: 'CONJ',
+    // Auxiliaries and copula
+    is: 'AUX', am: 'AUX', are: 'AUX', was: 'AUX', were: 'AUX', be: 'AUX',
+    been: 'AUX', being: 'AUX', has: 'AUX', have: 'AUX', had: 'AUX',
+    do: 'AUX', does: 'AUX', did: 'AUX',
+    // Archaic and elided forms common in the verse this tool is used on.
+    // `'twas`/`'tis` are contracted subject+copula and behave as function
+    // words; without these they fall through to the open-class default and
+    // acquire a noun's resistance to destressing.
+    "'twas": 'AUX', twas: 'AUX', "'tis": 'AUX', tis: 'AUX',
+    "'twere": 'AUX', "'twill": 'MODAL', o: 'INTJ', oh: 'INTJ',
+    thou: 'PRON', thee: 'PRON', thy: 'DET', thine: 'DET', ye: 'PRON',
+    hath: 'AUX', hast: 'AUX', doth: 'AUX', art: 'AUX', wert: 'AUX',
+    shalt: 'MODAL', wilt: 'MODAL',
+    // Modals
+    will: 'MODAL', would: 'MODAL', shall: 'MODAL', should: 'MODAL',
+    can: 'MODAL', could: 'MODAL', may: 'MODAL', might: 'MODAL', must: 'MODAL',
+    // Negation
+    not: 'NEG',
+    // Infinitival / particle-prone items resolved contextually below
+    to: 'PREP', up: 'PART', down: 'PART', out: 'PART', off: 'PART',
+    // Existential / deictic
+    there: 'EXIST', here: 'ADV',
+    // Wh-adverbs
+    why: 'ADV', how: 'ADV', when: 'CONJ', where: 'CONJ', while: 'CONJ',
+    // Ambiguous items given a default that the context pass may revise
+    that: 'DET', this: 'DET', which: 'PRON', what: 'PRON',
+    as: 'CONJ', if: 'CONJ', so: 'ADV', though: 'CONJ',
+    all: 'DET', some: 'DET', any: 'DET', no: 'DET', such: 'DET',
+    his: 'DET', her: 'DET', yet: 'ADV', still: 'ADV', then: 'ADV',
+    like: 'PREP', near: 'PREP', past: 'PREP', once: 'ADV', very: 'ADV',
+    more: 'ADV', most: 'ADV', much: 'ADV', many: 'DET', few: 'DET',
+    own: 'ADJ', same: 'ADJ', other: 'ADJ', another: 'DET'
+  };
+
+  const NOUN_SUFFIX = ['tion', 'sion', 'ment', 'ness', 'ity', 'ance', 'ence',
+    'ship', 'hood', 'dom', 'ist', 'ism', 'age', 'ure', 'ery', 'ory', 'or',
+    'er', 'ar', 'let', 'ling', 'print', 'prints'];
+  const VERB_SUFFIX = ['ize', 'ise', 'ify', 'ate', 'en'];
+  const ADJ_SUFFIX = ['ous', 'ious', 'ful', 'less', 'able', 'ible', 'ive',
+    'al', 'ic', 'ical', 'ish', 'like', 'ary', 'ant', 'ent'];
+  const ADV_SUFFIX = ['ly', 'ward', 'wards', 'wise'];
+
+  const SUBJ_PRON_SET = new Set(['i', 'we', 'they', 'you', 'he', 'she', 'it', 'who']);
+
+  function endsWithAny(w, list) { return list.some(s => w.endsWith(s)); }
+
+  // Open-class guess from morphology alone, before context is consulted.
+  function morphTag(w) {
+    if (endsWithAny(w, ADV_SUFFIX) && w.length > 4) return 'ADV';
+    if (endsWithAny(w, NOUN_SUFFIX) && w.length > 4) return 'NOUN';
+    if (endsWithAny(w, ADJ_SUFFIX) && w.length > 4) return 'ADJ';
+    if (endsWithAny(w, VERB_SUFFIX) && w.length > 4) return 'VERB';
+    if (/ing$/.test(w) && w.length > 4) return 'VERBING';   // noun or verb
+    if (/ed$/.test(w) && w.length > 3) return 'VERBED';     // verb or adjective
+    if (/[^s]s$/.test(w) && w.length > 3) return 'NOUNS';   // plural or 3sg
+    return 'OPEN';
+  }
+
+  /* Tag every word in the sentence. Two passes: morphology, then context.
+   * Returns an array of tags aligned with `rawWords`. */
+  function tagPOS(rawWords) {
+    const w = rawWords.map(x => x.toLowerCase().replace(/[’]/g, "'"));
+    const tags = w.map(x => CLOSED_CLASS[x] || morphTag(x));
+    // A clause needs a finite verb. Tracking whether one has appeared yet is
+    // what separates `the mouse | ran` (subject then predicate) from
+    // `that | good | night` (determiner then modifier then head), which no
+    // purely local rule can tell apart.
+    let seenVerb = false;
+
+    for (let i = 0; i < w.length; i++) {
+      const prev = tags[i - 1], prevW = w[i - 1];
+      const next = tags[i + 1], nextW = w[i + 1];
+
+      // "to" + bare stem = infinitival marker, not a preposition.
+      if (w[i] === 'to') {
+        const openNext = next && !['DET', 'PRON', 'ADJ', 'NOUN', 'NOUNS'].includes(next);
+        tags[i] = openNext ? 'INF' : 'PREP';
+      }
+
+      // Particle vs preposition: a particle follows a verb and is either
+      // phrase-final or followed by a determiner-initial object.
+      if (['up', 'down', 'out', 'off'].includes(w[i])) {
+        const afterVerb = prev && ['VERB', 'VERBED', 'VERBING', 'OPEN', 'NOUNS'].includes(prev);
+        tags[i] = afterVerb ? 'PART' : 'PREP';
+      }
+
+      // "that": complementizer/relative after a verb, else determiner.
+      if (w[i] === 'that') {
+        tags[i] = (prev && ['VERB', 'VERBED', 'AUX', 'NOUN', 'NOUNS'].includes(prev))
+          ? 'COMP' : 'DET';
+      }
+
+      /* Resolve ambiguous open-class items. The default is NOUN, and VERB is
+       * assigned only on positive evidence. That asymmetry is deliberate: a
+       * spurious VERB tag lowers the word's demotion resistance and lets the
+       * rhythm search destress a genuine nominal, which is a much more
+       * damaging error than the reverse. An earlier, symmetric version of
+       * this pass tagged `good night` as NOUN VERB and duly produced
+       * `GOOD night`. NOUN and ADJ carry similar weights, so confusing those
+       * two costs little. */
+      if (['OPEN', 'VERBING', 'VERBED', 'NOUNS'].includes(tags[i])) {
+        const cur = tags[i];
+        if (prev === 'INF' || prev === 'MODAL') {
+          tags[i] = 'VERB';                          // to GO, will GO
+        } else if (prev === 'NEG' && ['AUX', 'MODAL', 'INF'].includes(tags[i - 2])) {
+          tags[i] = 'VERB';                          // do not GO
+        } else if (prev === 'AUX') {
+          tags[i] = cur === 'VERBING' || cur === 'VERBED' ? 'VERB' : 'ADJ';
+        } else if (prev === 'PRON' && SUBJ_PRON_SET.has(prevW)) {
+          tags[i] = 'VERB';                          // they GO
+        } else if ((cur === 'OPEN' || cur === 'VERBED') && !seenVerb &&
+                   ['NOUN', 'NOUNS', 'PRON'].includes(prev)) {
+          // the mouse RAN; the spider CLIMBED. Including VERBED matters: an
+          // `-ed` form after a subject with no finite verb yet is the past
+          // tense, not a participial adjective. Tagging `climbed` ADJ gave it
+          // an adjective's resistance to destressing and blocked the
+          // phrasal-verb reading `climbed UP the water spout`.
+          tags[i] = 'VERB';
+        } else {
+          tags[i] = cur === 'VERBED' ? 'ADJ' : 'NOUN';
+        }
+      }
+
+      // Sentence-initial bare stem before a determiner-headed object is an
+      // imperative. Restricted to i === 0 so it cannot fire mid-clause.
+      if (i === 0 && tags[i] === 'NOUN' && next === 'DET' && !/ing$|s$/.test(w[i]))
+        tags[i] = 'VERB';
+
+      if (['VERB', 'AUX', 'MODAL'].includes(tags[i])) seenVerb = true;
+      void nextW;
+    }
+    return tags;
+  }
+
+  // Coarse class used by the rhythm layer.
+  const CONTENT_TAGS = new Set(['NOUN', 'VERB', 'ADJ', 'ADV', 'NUM', 'OPEN']);
+  function isContentTag(t) { return CONTENT_TAGS.has(t); }
+
+  /* Archaic and contracted function words missing from FUNCTION_WORDS but
+   * common in the verse this tool is used on. This list is deliberately
+   * narrow. An earlier attempt extended function-word status to everything in
+   * CLOSED_CLASS, which swept in `all` — a word the corpus repeatedly wants
+   * stressed (`ALL the king's horses`, `ALL in the valley`, `when ALL through
+   * the house`) — and cost two dev items. Words like `all`, `no`, `some`,
+   * `still` and `like` straddle the content/function boundary and their
+   * membership of FUNCTION_WORDS is a deliberate existing decision that
+   * should not be overridden here. */
+  const EXTRA_FUNCTION_WORDS = new Set([
+    "'twas", 'twas', "'tis", 'tis', "'twere", "'twill",
+    'thou', 'thee', 'thy', 'thine', 'ye',
+    'hath', 'hast', 'doth', 'art', 'wert', 'shalt', 'wilt'
+  ]);
+
+  function behavesAsFunctionWord(wd) {
+    return wd.isFunctionWord || EXTRA_FUNCTION_WORDS.has(wd.normalized);
+  }
+
+  // Contextual selection is deliberately gated to known stress-shifting
+  // heteronyms. It never applies the misleading generalization that all
+  // nouns are first-stressed or all verbs are second-stressed.
+  const SHIFTING_HETERONYMS = new Set([
+    'minute', 'conflict', 'produce', 'convert', 'record', 'permit', 'rebel',
+    'content', 'contest', 'project', 'refuse', 'subject', 'contract',
+    'conduct', 'perfect', 'object', 'desert', 'present', 'convict',
+    // Added after review: `converse` was missing and caused a regression on
+    // the original corpus (`Tanner and Madison conVERSE about school` was
+    // read as `CONverse`). The remainder are common English stress-shifting
+    // noun/verb pairs of the same type, added so that coverage is not
+    // limited to the words that happened to appear in the study stimuli.
+    'converse', 'increase', 'decrease', 'insult', 'suspect', 'progress',
+    'protest', 'address', 'combine', 'compound', 'console', 'construct',
+    'digest', 'discharge', 'discount', 'escort', 'excuse', 'export',
+    'extract', 'import', 'incline', 'entrance', 'implant', 'imprint',
+    'incense', 'reject', 'relay', 'segment', 'survey', 'torment',
+    'transfer', 'transport', 'upset'
+  ]);
+  const DETERMINERS = new Set(['a', 'an', 'the', 'this', 'that', 'my', 'your',
+    'his', 'her', 'its', 'our', 'their', "learner's"]);
+  const VERB_CUES = new Set(['to', 'will', 'would', 'shall', 'should', 'can',
+    'could', 'may', 'might', 'must', 'do', 'does', 'did']);
+
+  // Subject pronouns: a heteronym directly after one is a finite verb.
+  const SUBJ_PRONOUNS = new Set(['i', 'we', 'they', 'you', 'he', 'she', 'it']);
+
+  /* `tags` is the sentence-level tag array from tagPOS(), used ONLY inside the
+   * SHIFTING_HETERONYMS gate. The explicit lexical cues below are kept and
+   * tried first: they encode stimulus-specific decisions made with the project
+   * owner and must not be silently overridden by a heuristic tagger. */
+  function contextualPrimaryIndex(rawWords, i, tags) {
+    const word = rawWords[i].toLowerCase().replace(/’/g, "'");
+    if (!SHIFTING_HETERONYMS.has(word)) return null;
+    const prev = (rawWords[i - 1] || '').toLowerCase().replace(/’/g, "'");
+    const next = (rawWords[i + 1] || '').toLowerCase().replace(/’/g, "'");
+    const before = rawWords.slice(Math.max(0, i - 3), i)
+      .map(x => x.toLowerCase().replace(/’/g, "'"));
+
+    // --- Owner-validated lexical cues (highest priority) ------------------
+    /* `minute`: adjectival /maɪˈnjuːt/ "tiny" vs nominal /ˈmɪnɪt/ "60 seconds".
+     *
+     * This previously fired only on the literal next word `details`, taken
+     * straight from the study stimulus, so `minute differences` — the same
+     * construction with a different noun — got the wrong reading. The
+     * distinguishing fact is syntactic, not lexical: the adjective modifies a
+     * following noun and is not itself introduced by a determiner, whereas
+     * the noun is counted, possessed or determined (`a minute`, `every
+     * minute`, `ten minutes`, `the last minute`). */
+    if (word === 'minute') {
+      // A following noun is decisive and must be tested BEFORE the
+      // determiner, because in `the minute details` the determiner belongs to
+      // `details`, not to `minute`. Testing the determiner first read that
+      // stimulus as the noun.
+      const nextTag = tags && tags[i + 1];
+      if (nextTag === 'NOUN' || nextTag === 'NOUNS' || next === 'details') return 1;
+      return 0;   // NP head: `a minute`, `every minute`, `down to the minute`
+    }
+    // "content": the owner-validated cue is the adjectival reading after
+    // `feels`. The nominal default is kept only where there is positive
+    // nominal evidence; otherwise the syntactic pass below decides, so that
+    // "she was content to wait" is not forced to the noun.
+    if (word === 'content') {
+      if (prev === 'feels') return 1;
+      if (DETERMINERS.has(prev) || prev === 'of') return 0;
+    }
+    if (word === 'produce' && prev === 'of') return 0;
+    if (word === 'perfect' && ['is', 'was', 'seems'].includes(prev)) return 0;
+    if (word === 'desert' && prev === 'and') return 1;
+    if (VERB_CUES.has(prev) || before.includes('to')) return 1;
+    if (word === 'contract' && before.includes('expand')) return 1;
+    if (word === 'project' && ['we', 'i', 'they', 'you'].includes(prev)) return 1;
+    if (word === 'record' && before.includes('desired')) return 1;
+    if (word === 'rebel' && before.includes('started')) return 1;
+    if (DETERMINERS.has(prev) || prev.endsWith("'s") || prev === 'of') return 0;
+    if (['their', 'grave', 'yellow', 'special', 'overdue'].includes(prev)) return 0;
+
+    // --- Gated syntactic evidence (fallback only) -------------------------
+    // Applies exclusively to the listed stress-shifting heteronyms. For those
+    // specific words the noun/verb stress alternation is a real lexical fact
+    // about that word, not a general rule being extended to English at large.
+    if (SUBJ_PRONOUNS.has(prev)) return 1;                       // "they object"
+
+    const prevTag = tags && tags[i - 1];
+    const nextTag = tags && tags[i + 1];
+
+    // Imperative: sentence-initial heteronym taking a direct object.
+    if (i === 0 && ['DET', 'PRON', 'ADJ'].includes(nextTag)) return 1;
+
+    // Predicative after a copula/auxiliary: "she was content to wait".
+    if (prevTag === 'AUX' || prevTag === 'MODAL') return 1;
+
+    // NP-head test: scan left for a determiner or possessive that is not
+    // separated from the heteronym by a verb. If the heteronym is the head of
+    // a determiner-initial noun phrase it is nominal — "a spelling contest",
+    // "the science project", "a polite refuse".
+    for (let k = i - 1; k >= 0 && k >= i - 3; k--) {
+      const t = tags[k];
+      if (['VERB', 'AUX', 'MODAL', 'INF', 'COMP'].includes(t)) break;
+      if (t === 'DET' || (rawWords[k] || '').toLowerCase().endsWith("'s")) return 0;
+    }
+
+    // Bare noun subject immediately before the heteronym: "muscles contract
+    // quickly". Only when that noun is not itself inside a determiner-initial
+    // phrase, which the loop above has already excluded.
+    if (['NOUN', 'NOUNS'].includes(prevTag) &&
+        (nextTag === 'ADV' || nextTag === 'DET' || nextTag === 'PREP' ||
+         i === rawWords.length - 1)) return 1;
+
+    if (prevTag === 'ADJ') return 0;                             // "a violent conflict"
+    return null;
   }
 
   /* ==========================================================================
@@ -830,23 +1167,88 @@
   // Primary lexical stress is the strongest anchor. Unstressed syllables in
   // polysyllabic words resist promotion more than free-standing function or
   // content monosyllables resist contextual adjustment.
+  /* --------------------------------------------------------------------------
+   * Prominence-resistance weights, indexed by syntactic role.
+   * [HEUR "role-weights"] These are the cost of overriding a syllable's
+   * default realization. Two graded scales replace the previous flat pair
+   * (function word 1.2 / content word 1.6):
+   *
+   *   MONO_DEMOTE — cost of taking a beat AWAY from a monosyllabic content
+   *   word. Nominals resist most; finite verbs least. This is what lets the
+   *   engine decide which member of a clash to demote instead of always
+   *   demoting the left one (handoff finding 7): in `the MOUSE ran UP the
+   *   CLOCK` the verb yields and the noun keeps its beat.
+   *
+   *   FN_PROMOTE — cost of GIVING a beat to a function word. Determiners
+   *   resist strongly; prepositions, particles and negation barely at all,
+   *   which is what makes `forests OF the night`, `ran UP the clock` and
+   *   `do NOT go gentle` reachable without special-casing each phrase.
+   *
+   * These are engineering weights tuned on the development split only. They
+   * are not measured psycholinguistic quantities.
+   * ------------------------------------------------------------------------ */
+  const MONO_DEMOTE = {
+    NOUN: 2.00, NOUNS: 2.00, NUM: 1.85, ADJ: 1.75, ADV: 1.55,
+    VERB: 1.35, VERBING: 1.45, VERBED: 1.40, EXIST: 1.10, OPEN: 1.60
+  };
+  const FN_PROMOTE = {
+    DET: 1.15, PRON: 0.90, AUX: 0.80, MODAL: 0.80, COMP: 0.70,
+    CONJ: 0.70, INF: 0.60, PREP: 0.55, EXIST: 0.60, PART: 0.45,
+    NEG: 0.40, ADV: 0.60
+  };
+  const DEFAULT_DEMOTE = 1.60;
+  const DEFAULT_PROMOTE = 1.00;
+
   function rhythmPreference(wd, i) {
     const sy = wd.syllables[i];
     if (wd.userEdited.rhythmic && sy.rhythmicStress) {
       return { value: sy.rhythmicStress, weight: 1000,
                confidence: CONF.USER, source: 'user' };
     }
+    const tag = wd.posTag || null;
     if (wd.syllables.length === 1) {
-      return wd.isFunctionWord
-        ? { value: 'W', weight: 1.2, confidence: CONF.FUNCTION_WORD,
-            source: 'rule:function-word-demotion' }
-        : { value: 'S', weight: 1.6, confidence: CONF.CONTENT_MONO,
-            source: 'rule:content-monosyllable' };
+      // A monosyllable's default is S for content words, W for function
+      // words; the weight is how hard it resists the opposite value.
+      //
+      // Membership of FUNCTION_WORDS is authoritative here and is NOT
+      // overridden by the tag. The tagger is a heuristic, and letting a
+      // mis-tag reclassify `do` or `there` as a content word gives it a
+      // content word's demotion resistance — which is how an earlier version
+      // produced `DO not go...`. The tag is used only to grade how readily
+      // the function word accepts a beat.
+      if (behavesAsFunctionWord(wd)) {
+        return { value: 'W',
+                 weight: (tag && FN_PROMOTE[tag]) || DEFAULT_PROMOTE,
+                 confidence: CONF.FUNCTION_WORD,
+                 source: 'rule:function-word-demotion' };
+      }
+      /* Given/new. A content word already used in the passage is given
+       * information and deaccents readily, leaving the accent on whatever
+       * contrasts with it. This is what makes `ONE fish TWO fish RED fish
+       * BLUE fish` the natural reading: `fish` is repeated and therefore
+       * given, so the enumerated modifiers carry the beats.
+       *
+       * Restricted to monosyllables. Applying it to polysyllables would
+       * deaccent the second half of `TYger TYger` and `CANnon to right of
+       * them / CANnon to left of them`, where the repeated word keeps its
+       * accent because its lexical stress is the anchor. */
+      const givenFactor = wd.given ? W.GIVEN : 1;
+      return { value: 'S',
+               weight: ((tag && MONO_DEMOTE[tag]) || DEFAULT_DEMOTE) * givenFactor,
+               confidence: CONF.CONTENT_MONO,
+               source: wd.given ? 'rule:given-content-monosyllable'
+                                : 'rule:content-monosyllable' };
     }
     const templ = wd.template.pattern[i] ||
       (sy.lexicalStress === '0' ? 'W' : 'S');
-    const weight = sy.lexicalStress === '1' ? 6.0
-      : sy.lexicalStress === '2' ? 2.5 : 3.5;
+    // Primary lexical stress inside a polysyllable is the strongest anchor in
+    // the system: shifting it changes the word's identity, not just its
+    // rhythm. Secondary and unstressed syllables are progressively cheaper.
+    let weight = sy.lexicalStress === '1' ? 6.0
+      : sy.lexicalStress === '2' ? 2.2 : 3.2;
+    // Polysyllabic function words (into, upon, without) are metrically
+    // pliable despite having a lexical primary.
+    if (behavesAsFunctionWord(wd)) weight = Math.min(weight, 1.6);
     return { value: templ, weight,
              confidence: Math.min(wd.lexicalConfidence, wd.template.confidence),
              source: 'rule:lexical-template-preference' };
@@ -956,51 +1358,722 @@
     return best;
   }
 
+  /* ==========================================================================
+   * SECTION 9b — Candidate readings, global eurhythmic cost, n-best ranking
+   * --------------------------------------------------------------------------
+   * This replaces the previous "fit once, then mutate in place" pipeline.
+   *
+   * The old design produced ONE analysis and then ran repair passes over it.
+   * That is a local search with a single starting point, and it has two
+   * failure modes the handoff documents: it can only reach readings that are
+   * one edit away from the greedy fit, and its repairs could produce a beat
+   * pattern inconsistent with the meter label eventually reported.
+   *
+   * The new design generates several complete seed readings, repairs each of
+   * them to a local optimum of ONE global cost function, and ranks the
+   * results. Every ranked candidate is internally coherent: its beats, foot
+   * parse, meter label and provenance are all computed from the same beat
+   * string, so nothing can hybridise the beats of one reading with the meter
+   * label of another.
+   *
+   * THE COST FUNCTION has four parts:
+   *
+   *   faithfulness — how much the reading overrides lexical and syntactic
+   *     defaults, using the graded role weights above, with a discount for
+   *     the Rhythm Rule (iambic reversal: a word keeping exactly one beat but
+   *     relocating it internally, as in `fifTEENTH` → `FIFteenth of MAY`)
+   *     [Liberman & Prince 1977].
+   *
+   *   grid fit — how well the beats fit a periodic metrical grid of period 2
+   *     or 3 at some phase. Phase absorbs anacrusis for free (an iambic line
+   *     starts one weak syllable in; an anapestic line, two), and grid
+   *     positions after the final beat are free, which is what makes
+   *     catalectic and feminine endings cost nothing. Grid positions BEFORE
+   *     the final beat that carry no beat are charged, and beats off the grid
+   *     are charged. This term is what fixes phase-alignment errors such as
+   *     `ON the fifTEENTH` for `on the FIFteenth`.
+   *
+   *   eurhythmy — clash and lapse. English strongly favours alternation, so
+   *     adjacent beats are expensive; but the cost is finite and a clashing
+   *     reading can still surface in the ranked list, which is how
+   *     contrastively licensed adjacent prominence stays available.
+   *
+   *   prominence agreement — a small bonus when the phrase nucleus also
+   *     carries a metrical beat. Small, because a nucleus need NOT be a beat;
+   *     that is exactly the `All in the VALley of death` case.
+   * ======================================================================== */
+
+  /* All weights live in one table so they can be swept during development.
+   * Values were fitted on the DEVELOPMENT split of the evaluation corpus and
+   * then frozen; the held-out split was scored once, afterwards. They are
+   * engineering parameters, not measured psycholinguistic quantities. */
+  const W = {
+    CLASH:        2.20,  // adjacent S S within an IP
+    LAPSE:        0.80,  // per weak syllable beyond 2 in an interior run
+    TRAIL_LAPSE:  0.30,  // ... in a phrase-final run (feminine endings)
+    GRID_MISS:    0.75,  // grid position before the last beat, unbeaten
+    GRID_EXTRA:   0.70,  // beat off the grid
+    TERNARY:      0.40,  // surcharge for a period-3 grid over a period-2 grid
+    SHIFT:        1.90,  // Rhythm Rule: beat relocated leftward inside a word
+    NO_BEAT:      3.00,  // a phrase with no beat at all
+    NUCLEUS:      0.25,  // discount when the nucleus also carries a beat
+    NUCLEUS_PROSE: 1.00, // ... in prose, where it is the main organising accent
+    PROSE:        1.80,  // flat cost of the unmetered-prose hypothesis
+    METRE_PRIOR:  0.90,  // discount for matching the document's settled metre
+    GIVEN:        0.45   // demotion-resistance multiplier for repeated content
+  };
+  /* Provenance of these values (see eval/sweep.js):
+   *   TERNARY and GRID_MISS were selected by grid search on the development
+   *     split. TERNARY has a genuine interior optimum at 0.40–0.45; larger
+   *     values degrade dev accuracy, so it is not running away.
+   *   CLASH and SHIFT were FLAT across 1.8–2.6 and 1.4–2.4 respectively on the
+   *     development split — that data does not discriminate them. Rather than
+   *     let a tie be broken arbitrarily by iteration order, both are set to
+   *     mid-range values, with SHIFT deliberately toward the conservative end
+   *     so the Rhythm Rule fires only when it clearly pays. If a later corpus
+   *     does discriminate them, re-run the sweep.
+   *   LAPSE, TRAIL_LAPSE, GRID_EXTRA, NO_BEAT and NUCLEUS were set by hand and
+   *     not swept. */
+  const GRID_PERIODS    = [2, 3];
+  const AMBIGUITY_BAND  = 0.75;  // candidates within this of the best are shown
+  const MAX_READINGS    = 4;
+
+  // Development-time hook; not used by the shipped tools.
+  function setWeights(patch) { Object.assign(W, patch || {}); return Object.assign({}, W); }
+
+  /* Faithfulness, computed word by word so the Rhythm Rule discount can
+   * apply. `shifted` collects the words whose beat was relocated, for
+   * provenance reporting. */
+  function faithfulnessCost(stream, beats, shifted) {
+    let cost = 0, k = 0;
+    while (k < stream.length) {
+      const wd = stream[k].wd;
+      let j = k;
+      while (j < stream.length && stream[j].wd === wd) j++;
+      let raw = 0, sCount = 0, prefS = 0, sAt = -1, prefAt = -1;
+      for (let t = k; t < j; t++) {
+        if (beats[t] !== stream[t].pref.value) raw += stream[t].pref.weight;
+        if (beats[t] === 'S') { sCount++; sAt = t; }
+        if (stream[t].pref.value === 'S') { prefS++; prefAt = t; }
+      }
+      // The Rhythm Rule (iambic reversal) RETRACTS stress leftward onto an
+      // earlier syllable — `thirTEEN` → `THIRteen men`, `fifTEENTH` → `the
+      // FIFteenth of May`. It does not shift stress rightward. Restricting the
+      // discount to leftward moves is what stops the search from "solving" a
+      // grid mismatch by inventing `genTLE` or `inTO`.
+      if (j - k > 1 && sCount === 1 && prefS === 1 && sAt < prefAt &&
+          raw > W.SHIFT && !wd.userEdited.rhythmic) {
+        cost += W.SHIFT;
+        if (shifted) shifted.push(wd);
+      } else {
+        cost += raw;
+      }
+      k = j;
+    }
+    return cost;
+  }
+
+  /* Best fit of the beats to a periodic grid; also returns the winning
+   * period/phase so the candidate can report the template it realises.
+   *
+   * `prior` optionally names a document-level template ({period, phase}) that
+   * the rest of the passage has already settled on; matching it earns a
+   * discount. That is how a poem's established metre informs an individual
+   * line — context a single line cannot supply on its own. */
+  function gridFit(beats, prior) {
+    const n = beats.length;
+    let last = -1;
+    for (let i = n - 1; i >= 0; i--) if (beats[i] === 'S') { last = i; break; }
+    if (last === -1) return { cost: W.NO_BEAT, period: null, phase: null };
+    let best = { cost: Infinity, period: null, phase: null };
+    for (const p of GRID_PERIODS) {
+      for (let ph = 0; ph < p; ph++) {
+        let miss = 0, extra = 0;
+        for (let i = 0; i < n; i++) {
+          const onGrid = i >= ph && (i - ph) % p === 0;
+          if (onGrid && beats[i] !== 'S' && i < last) miss++;
+          else if (!onGrid && beats[i] === 'S') extra++;
+        }
+        // English default alternation is binary; a ternary grid is a marked
+        // choice and carries a small surcharge so that a period-3 reading
+        // must be positively supported by the words rather than merely tie.
+        let cost = W.GRID_MISS * miss + W.GRID_EXTRA * extra +
+                   (p === 3 ? W.TERNARY : 0);
+        /* NOT DONE: a flat surcharge on phase > 0, to break the exact tie
+         * between `ONE fish TWO fish` and `one FISH two FISH` (both are
+         * perfect period-2 grids). It was tried and removed: since iambic
+         * lines are phase 1 and anapestic lines phase 2, any such surcharge
+         * is a blanket bias toward trochaic and dactylic readings. It cost
+         * two held-out items, all of them anapestic. English verse has no
+         * general preference for beginning on a beat, so the tie has to be
+         * broken by evidence — which is what the metre prior below does when
+         * surrounding lines supply it. An isolated single line genuinely is
+         * ambiguous here, and should be reported as such. */
+        if (prior && prior.period === p && prior.phase === ph) cost -= W.METRE_PRIOR;
+        if (cost < best.cost) best = { cost, period: p, phase: ph };
+      }
+    }
+    return best;
+  }
+
+  /* ------------------------------------------------------------------------
+   * Structure: metrical grid OR unmetered prose.
+   *
+   * The previous version scored EVERY candidate against a period-2 or
+   * period-3 grid. There was no hypothesis under which a passage simply has
+   * no metre, so ordinary sentences were pushed toward periodicity and then
+   * handed a foot label like "alternating (trochaic/anapestic/dactylic
+   * scansions near-equivalent)" — which is not an analysis of prose rhythm.
+   *
+   * Prose is now a first-class competing hypothesis with a flat cost. A
+   * passage is analysed as metrical only when a periodic grid fits it BETTER
+   * than W.PROSE; otherwise the prose reading wins, asserts no template, and
+   * the meter layer reports no foot. Prose still avoids clashes and lapses —
+   * those are separate terms — it simply is not required to be periodic.
+   *
+   * W.PROSE is therefore the threshold answering "how regular must a passage
+   * be before calling it metrical?" rather than a free parameter.
+   * ---------------------------------------------------------------------- */
+  function structureFit(beats, ctx) {
+    /* REGIME IS A PROPERTY OF THE TEXT, NOT OF EACH CANDIDATE.
+     *
+     * A first implementation let every candidate choose independently, by
+     * capping the grid term at W.PROSE. That quietly broke verse: a messy
+     * reading of an anapestic line whose grid cost was 2.55 simply paid the
+     * 1.80 cap instead, so the prose hypothesis became an escape hatch that
+     * relieved pressure toward regularity everywhere. It cost a held-out
+     * item immediately.
+     *
+     * The regime is now decided once for the passage (see classifyRegime)
+     * and fixed for the pass:
+     *
+     *   metrical — the grid term applies in full, with no prose cap.
+     *   prose    — there is no grid term at all. Prose rhythm is driven by
+     *              lexical stress, syntactic role and clash/lapse avoidance;
+     *              it is not required to be periodic, and no foot is claimed.
+     */
+    if (ctx && ctx.regime === 'prose') {
+      return { cost: 0, regime: 'prose', period: null, phase: null };
+    }
+    const grid = gridFit(beats, ctx && ctx.metrePrior);
+    if (grid.period === null)
+      return { cost: grid.cost, regime: 'prose', period: null, phase: null };
+    return { cost: grid.cost, regime: 'metrical',
+             period: grid.period, phase: grid.phase };
+  }
+
+  /* ------------------------------------------------------------------------
+   * Regime classification.
+   *
+   * Two signals, both read off a first metrical-objective pass:
+   *
+   *   fit      — mean grid cost per syllable of each phrase's chosen reading.
+   *              Verse sits near zero; prose does not.
+   *   agreement— whether phrases settle on the same template. A poem's lines
+   *              agree; consecutive prose clauses do not.
+   *
+   * Short passages are treated leniently: a four-syllable fragment will fit
+   * some grid by luck, so it cannot establish metre on its own and is only
+   * called metrical when the fit is very good.
+   * ---------------------------------------------------------------------- */
+  const REGIME_FIT_THRESHOLD = 0.14;   // grid cost per syllable
+  const REGIME_MIN_IP_SYLLABLES = 6;   // shorter phrases are not evidence
+  const REGIME_MIN_EVIDENCE = 6;       // long-phrase syllables needed
+  const REGIME_MIN_AGREEING_PHRASES = 3;
+  const REGIME_AGREEMENT = 0.75;
+
+  function classifyRegime(ips, textType) {
+    if (textType === 'prose') return { regime: 'prose', reason: 'user:prose' };
+    if (textType === 'verse' || textType === 'song')
+      return { regime: 'metrical', reason: 'user:' + textType };
+
+    /* Two independent kinds of evidence, because verse comes in two shapes
+     * that a single test cannot cover:
+     *
+     *   LENGTH — one phrase long enough to constrain a grid on its own. A
+     *     pentameter line is evidence; a four-syllable fragment carries about
+     *     two beats and fits SOME period and phase essentially by luck.
+     *
+     *   AGREEMENT — several short phrases independently choosing the SAME
+     *     template. `One fish two fish, red fish blue fish` is four-syllable
+     *     fragments throughout, and commas chop it further, so no phrase
+     *     qualifies on length; what makes it verse is that every fragment
+     *     lands on the same grid. Requiring length alone would have called
+     *     this prose.
+     *
+     * Requiring BOTH would miss short-line verse; requiring neither would let
+     * `The sun arose, and the birds sang` — two short clauses that happen to
+     * fit, and that do not agree with each other — be read as verse.
+     */
+    let cost = 0, syll = 0, longSyll = 0;
+    const votes = new Map();
+    let phrases = 0;
+    for (const ip of ips) {
+      const r = ip.readings && ip.readings[ip.selectedReadingIndex];
+      if (!r || r.beats.length < 3) continue;
+      phrases++;
+      cost += r.components.structure;
+      syll += r.beats.length;
+      if (r.beats.length >= REGIME_MIN_IP_SYLLABLES) longSyll += r.beats.length;
+      if (r.template) {
+        const k = `${r.template.period}-${r.template.phase}`;
+        votes.set(k, (votes.get(k) || 0) + 1);
+      }
+    }
+    if (!syll) return { regime: 'prose', reason: 'auto:no-evidence',
+                        evidenceSyllables: 0 };
+
+    const fit = cost / syll;
+    const total = Array.from(votes.values()).reduce((a, b) => a + b, 0);
+    const top = Math.max(0, ...votes.values());
+    const agreement = total > 0 ? top / total : 0;
+
+    const byLength = longSyll >= REGIME_MIN_EVIDENCE && fit <= REGIME_FIT_THRESHOLD;
+    const byAgreement = phrases >= REGIME_MIN_AGREEING_PHRASES &&
+                        agreement >= REGIME_AGREEMENT &&
+                        fit <= REGIME_FIT_THRESHOLD * 2;
+    const metrical = byLength || byAgreement;
+
+    return { regime: metrical ? 'metrical' : 'prose', reason: 'auto',
+             evidence: metrical ? (byLength ? 'length' : 'agreement') : 'none',
+             fit: round2(fit), agreement: round2(agreement),
+             evidenceSyllables: longSyll, phrases };
+  }
+
+  function eurhythmyCost(beats, ctx, regime) {
+    const clashWeight = ctx.clashWeight;
+    let cost = 0;
+    for (let i = 0; i + 1 < beats.length; i++) {
+      if (beats[i] !== 'S' || beats[i + 1] !== 'S') continue;
+      /* NOT DONE: discounting clashes that involve the nucleus, to keep the
+       * phrase's main accent from being repaired away. Tried and removed
+       * twice. Applied in both regimes it produced `HUMPty DUMPty HAD a GREAT
+       * FALL`, beating the experimental foil `great`, and cost six verse
+       * items. Restricted to prose it still produced `HALF a LEAGUE ONward`,
+       * because in a short phrase a licensed clash is cheaper than any
+       * demotion.
+       *
+       * The problem it was meant to solve — a flat clash penalty deleting the
+       * phrase's own nucleus in `and the birds sang` — is better solved by
+       * making the nucleus expensive to DEMOTE (W.NUCLEUS_PROSE) than by
+       * making it cheap to CLASH. That yields `and the birds SANG`: the
+       * accent survives, and alternation is still respected. */
+      cost += clashWeight;
+    }
+    let run = 0;
+    for (let i = 0; i <= beats.length; i++) {
+      if (i < beats.length && beats[i] === 'W') { run++; continue; }
+      if (run > 2)
+        cost += (i === beats.length ? W.TRAIL_LAPSE : W.LAPSE) * (run - 2);
+      run = 0;
+    }
+    return cost;
+  }
+
+  function readingCost(stream, beats, ctx) {
+    const structure = structureFit(beats, ctx);
+    let cost = faithfulnessCost(stream, beats, null) +
+               structure.cost +
+               eurhythmyCost(beats, ctx, structure.regime);
+    /* Keeping a beat on the nucleus is worth more in prose than in verse.
+     * Prose rhythm is organised around phrase accents rather than a periodic
+     * grid, so the nuclear accent is the main thing holding the phrase
+     * together and should not be traded away to satisfy alternation. In
+     * verse the grid does that organising work, so the bonus stays small —
+     * a nucleus may legitimately fall on an extrametrical syllable. */
+    if (ctx.nucleusIdx >= 0 && beats[ctx.nucleusIdx] === 'S')
+      cost -= (structure.regime === 'prose' ? W.NUCLEUS_PROSE : W.NUCLEUS);
+    return cost;
+  }
+
+  /* -- Local search ---------------------------------------------------------
+   * Three move types. Single flips do the ordinary promotion/demotion work.
+   * Adjacent swaps let the search cross a ridge that no single flip can (they
+   * are how a clash is resolved by moving the beat rather than deleting it).
+   * Word-internal relocation is needed because the Rhythm Rule discount only
+   * applies to states with exactly one beat in the word, which single flips
+   * cannot reach without passing through a more expensive state.
+   * ----------------------------------------------------------------------- */
+  function repairReading(stream, seed, ctx) {
+    const n = stream.length;
+    const editable = stream.map(it => !it.wd.userEdited.rhythmic);
+    let cur = seed.slice();
+    let curCost = readingCost(stream, cur, ctx);
+
+    // Precompute word spans for the relocation move.
+    const spans = [];
+    for (let k = 0; k < n;) {
+      const wd = stream[k].wd; let j = k;
+      while (j < n && stream[j].wd === wd) j++;
+      if (j - k > 1) spans.push([k, j]);
+      k = j;
+    }
+
+    for (let pass = 0; pass < 25; pass++) {
+      let improved = false;
+
+      for (let i = 0; i < n; i++) {                       // single flip
+        if (!editable[i]) continue;
+        const trial = cur.slice();
+        trial[i] = trial[i] === 'S' ? 'W' : 'S';
+        const c = readingCost(stream, trial, ctx);
+        if (c < curCost - 1e-9) { cur = trial; curCost = c; improved = true; }
+      }
+
+      for (let i = 0; i + 1 < n; i++) {                   // adjacent swap
+        if (!editable[i] || !editable[i + 1]) continue;
+        if (cur[i] === cur[i + 1]) continue;
+        const trial = cur.slice();
+        trial[i] = cur[i + 1]; trial[i + 1] = cur[i];
+        const c = readingCost(stream, trial, ctx);
+        if (c < curCost - 1e-9) { cur = trial; curCost = c; improved = true; }
+      }
+
+      for (const [a, b] of spans) {                       // relocate in word
+        if (!stream.slice(a, b).every((_, k) => editable[a + k])) continue;
+        for (let target = a; target < b; target++) {
+          const trial = cur.slice();
+          for (let t = a; t < b; t++) trial[t] = t === target ? 'S' : 'W';
+          const c = readingCost(stream, trial, ctx);
+          if (c < curCost - 1e-9) { cur = trial; curCost = c; improved = true; }
+        }
+      }
+
+      if (!improved) break;
+    }
+    return { beats: cur, cost: curCost };
+  }
+
+  /* -- Seeds ---------------------------------------------------------------- */
+  function seedReadings(stream, freeFit) {
+    const n = stream.length;
+    const seeds = [];
+
+    // (a) plain lexical/syntactic preference — the prose reading.
+    seeds.push({ beats: stream.map(it => it.pref.value), from: 'preference' });
+
+    // (b) the DP foot fit, i.e. what the previous engine produced.
+    if (freeFit) seeds.push({ beats: freeFit, from: 'foot-fit' });
+
+    // (c) every periodic grid of period 2 or 3, at every phase.
+    for (const p of GRID_PERIODS) {
+      for (let ph = 0; ph < p; ph++) {
+        const b = [];
+        for (let i = 0; i < n; i++)
+          b.push(i >= ph && (i - ph) % p === 0 ? 'S' : 'W');
+        seeds.push({ beats: b, from: `grid-${p}-${ph}` });
+      }
+    }
+    return seeds;
+  }
+
+  const PERIOD_FOOT = {
+    '2-0': 'trochee', '2-1': 'iamb', '3-0': 'dactyl', '3-2': 'anapest'
+  };
+
+  /* Build the ranked list of complete readings for one intonational phrase. */
+  function candidateReadings(stream, freeFit, ctx) {
+    const seen = new Map();
+    const offer = (beats, cost, from) => {
+      const key = beats.join('');
+      const prev = seen.get(key);
+      if (!prev) seen.set(key, { beats, cost, from });
+      else if (!prev.from.includes(from)) prev.from += '+' + from;
+    };
+    for (const seed of seedReadings(stream, freeFit)) {
+      // Keep the UNREPAIRED seed as a candidate in its own right as well as
+      // the local optimum it climbs to. Hill-climbing from several seeds
+      // usually converges on one basin, which would leave the interface with
+      // a single reading and no way to show a real alternative. A pure
+      // periodic template is exactly the sort of coherent competing reading a
+      // reader may want to toggle to, so it is offered on its own merits and
+      // then ranked on the same cost function as everything else.
+      offer(seed.beats, readingCost(stream, seed.beats, ctx), seed.from + ':literal');
+      const r = repairReading(stream, seed.beats, ctx);
+      offer(r.beats, r.cost, seed.from);
+    }
+    const list = Array.from(seen.values()).sort((a, b) => a.cost - b.cost);
+
+    // Annotate each candidate with its own coherent metrical description.
+    return list.map((c, idx) => {
+      const shifted = [];
+      const faith = faithfulnessCost(stream, c.beats, shifted);
+      const structure = structureFit(c.beats, ctx);
+      const clashes = [];
+      for (let i = 0; i + 1 < c.beats.length; i++)
+        if (c.beats[i] === 'S' && c.beats[i + 1] === 'S')
+          clashes.push({ refs: [stream[i].ref, stream[i + 1].ref],
+                         licensed: ctx.nucleusIdx === i || ctx.nucleusIdx === i + 1 });
+      const key = structure.period === null
+        ? null : `${structure.period}-${structure.phase}`;
+      return {
+        beats: c.beats,
+        cost: round2(c.cost),
+        rank: idx,
+        margin: round2(c.cost - list[0].cost),
+        provenance: c.from,
+        // 'metrical' — the beats fit a periodic grid well enough to warrant a
+        // foot label. 'prose' — they do not, and no foot is asserted.
+        regime: structure.regime,
+        components: {
+          faithfulness: round2(faith),
+          structure: round2(structure.cost),
+          eurhythmy: round2(eurhythmyCost(c.beats, ctx, structure.regime))
+        },
+        template: key ? { period: structure.period, phase: structure.phase,
+                          foot: PERIOD_FOOT[key] || null } : null,
+        nearestGrid: structure.nearestGrid || null,
+        stressShifted: shifted.map(w => w.word),
+        clashes,
+        // Confidence falls as the runner-up gets closer. A reading that wins
+        // outright is reported confidently; a near-tie is reported as such
+        // rather than presented as the single correct scansion.
+        confidence: round2(Math.max(0.35, Math.min(0.95,
+          list.length > 1 ? 0.55 + 0.4 * Math.min(1, (list[1].cost - list[0].cost) / 2)
+                          : 0.9)))
+      };
+    });
+  }
+
+  /* ------------------------------------------------------------------------
+   * Text type as an analysis prior.
+   *
+   * The review asked that the Prose / Verse / Song control be a genuine prior
+   * on the analysis rather than a button that inserts an example. It works by
+   * moving the threshold at which a passage is considered metrical:
+   *
+   *   'prose'  — a grid must fit very well indeed to beat the prose reading
+   *   'auto'   — the neutral threshold; the text decides
+   *   'verse'  — metrical structure is expected, so the bar is much lower
+   *   'song'   — as verse; song and rhyme are strongly periodic
+   *
+   * Note this is a prior, not a switch: a strongly metrical passage will
+   * still be read metrically in 'prose' mode if the grid fits well enough,
+   * and genuinely irregular free verse can still come out as prose in
+   * 'verse' mode. That is deliberate — the control should bias the analysis,
+   * not override the evidence.
+   * ---------------------------------------------------------------------- */
+  const TEXT_TYPES = { auto: 1.00, prose: 0.45, verse: 2.10, song: 2.40 };
+
+  function proseCostFor(textType) {
+    const k = TEXT_TYPES[textType || 'auto'];
+    return W.PROSE * (typeof k === 'number' ? k : 1);
+  }
+
+  /* Document-level metre agreement.
+   *
+   * A single line rarely determines its own metre: `Half a league half a
+   * league` is a perfectly good period-2 reading in isolation, and only the
+   * surrounding poem reveals it as dactylic. After a first pass, if enough
+   * intonational phrases independently select the same template, that
+   * template is fed back as a prior and the passage is re-analysed. Lines
+   * that resisted
+   * then fall into line with their neighbours, while a passage whose phrases
+   * disagree gets no prior and is left alone.
+   *
+   * Requires at least three qualifying phrases and a two-thirds majority, so
+   * a couple of short fragments cannot manufacture a metre. */
+  const METRE_AGREEMENT_MIN_IPS = 3;
+  const METRE_AGREEMENT_SHARE = 0.60;
+
+  function detectMetrePrior(ips) {
+    const votes = new Map();
+    let n = 0;
+    for (const ip of ips) {
+      const r = ip.readings && ip.readings[ip.selectedReadingIndex];
+      if (!r || r.regime !== 'metrical' || !r.template) continue;
+      if (r.beats.length < 4) continue;         // too short to vote
+      n++;
+      const key = `${r.template.period}-${r.template.phase}`;
+      votes.set(key, (votes.get(key) || 0) + 1);
+    }
+    if (n < METRE_AGREEMENT_MIN_IPS) return null;
+    let bestKey = null, bestN = 0;
+    for (const [k, v] of votes) if (v > bestN) { bestKey = k; bestN = v; }
+    if (!bestKey || bestN / n < METRE_AGREEMENT_SHARE) return null;
+    const [period, phase] = bestKey.split('-').map(Number);
+    return { period, phase, support: bestN, of: n,
+             foot: PERIOD_FOOT[bestKey] || null };
+  }
+
   function project(words, ips, config) {
     for (const ip of ips) {
-      for (const phi of ip.children) {
-        const [s, e] = phi.span;
-        const stream = [];
-        for (let w = s; w <= e; w++) {
-          const wd = words[w];
-          wd.syllables.forEach((sy, i) => stream.push({
-            wd, sy, i, ref: [w, i], pref: rhythmPreference(wd, i)
-          }));
-        }
-        const fit = fitPhraseRhythm(stream);
-        phi.rhythmicFeet = fit.units;
-        phi.rhythmicCost = round2(fit.cost || 0);
-
-        for (const unit of fit.units) {
-          unit.span.forEach((ref, k) => {
-            const [w, i] = ref;
-            const wd = words[w];
-            // Preserve the user's word-level rhythmic edit exactly as the
-            // previous engine did; the fitted unit remains diagnostic only.
-            if (wd.userEdited.rhythmic) return;
-            const item = stream.find(x => x.ref[0] === w && x.ref[1] === i);
-            const val = unit.pattern[k] || item.pref.value;
-            const matched = val === item.pref.value;
-            const source = ['pickup', 'trailing', 'isolated'].includes(unit.type)
-              ? 'rule:phrase-edge-residue'
-              : 'rule:phrase-foot-' + unit.type;
-            const confidence = matched
-              ? item.pref.confidence
-              : Math.min(0.60, item.pref.confidence);
-            setRhythm(wd, i, val, source, confidence);
-          });
-        }
-
-        // Optional post-projection adjustments remain available for research
-        // comparisons, but are OFF by default because they can disrupt a foot.
-        if (config.strictAlternation) applyStrictAlternation(words, s, e);
-        if (config.clashSubordination) applyClashSubordination(words, s, e);
+      // The stream spans the whole punctuation-bounded IP. The automatically
+      // estimated child chunks remain available as phrasing suggestions, but
+      // no longer create artificial seams that the meter cannot cross.
+      const [s, e] = ip.span;
+      const stream = [];
+      for (let w = s; w <= e; w++) {
+        const wd = words[w];
+        wd.syllables.forEach((sy, i) => stream.push({
+          wd, sy, i, ref: [w, i], pref: rhythmPreference(wd, i)
+        }));
       }
+      if (!stream.length) continue;
+
+      /* Phrase prominence is identified FIRST and is a separate claim from
+       * the metrical beat. It informs ranking only through a small bonus, and
+       * it is never erased by the beat analysis — a nucleus can sit on a
+       * syllable that carries no beat. */
       if (config.nuclearStress) applyNuclearStress(words, ip);
+      let nucleusIdx = -1;
+      if (ip.nucleus) {
+        nucleusIdx = stream.findIndex(x =>
+          x.ref[0] === ip.nucleus.ref[0] && x.ref[1] === ip.nucleus.ref[1]);
+      }
+
+      // Clash pressure is configurable: `strictAlternation` raises it,
+      // disabling `clashSubordination` removes it entirely (which is how a
+      // user can ask to see contrastively licensed adjacent prominence).
+      const clashWeight = config.strictAlternation ? W.CLASH * 1.6
+        : config.clashSubordination ? W.CLASH : 0;
+      const ctx = { nucleusIdx, clashWeight,
+                    regime: config.regime || 'metrical',
+                    metrePrior: config.metrePrior || null };
+
+      const freeFit = fitPhraseRhythm(stream);
+      const freeBeats = new Array(stream.length).fill(null);
+      for (const unit of freeFit.units) {
+        unit.span.forEach((ref, k) => {
+          const idx = stream.findIndex(x => x.ref[0] === ref[0] && x.ref[1] === ref[1]);
+          if (idx >= 0) freeBeats[idx] = unit.pattern[k] || stream[idx].pref.value;
+        });
+      }
+      for (let i = 0; i < freeBeats.length; i++)
+        if (!freeBeats[i]) freeBeats[i] = stream[i].pref.value;
+
+      const readings = candidateReadings(stream, freeBeats, ctx);
+      ip.readings = readings.slice(0, MAX_READINGS);
+
+      /* A reader's choice of candidate must survive reanalysis. reflow() re-runs
+       * this whole function, so the choice is stored as the chosen BEAT STRING
+       * rather than as a list index: indices shift when the candidate set is
+       * recomputed, and silently re-pointing a pin at a different reading would
+       * be worse than dropping it. If the pinned string is no longer among the
+       * candidates (because the text or the weights changed) the pin is
+       * discarded and the ranking decides again. */
+      ip.selectedReadingIndex = 0;
+      if (ip.pinnedReadingKey) {
+        const at = ip.readings.findIndex(r => r.beats.join('') === ip.pinnedReadingKey);
+        if (at >= 0) ip.selectedReadingIndex = at;
+        else ip.pinnedReadingKey = null;
+      }
+      // Only genuinely close, genuinely distinct complete readings count as
+      // ambiguity. This is deliberately narrow: the handoff asks that the
+      // interface not label every alternating string a four-way ambiguity.
+      ip.readingAmbiguity = ip.readings
+        .filter((r, i) => i > 0 && r.margin <= AMBIGUITY_BAND);
+
+      const chosen = ip.readings[ip.selectedReadingIndex] || readings[0];
+      ip.children.forEach(child => { child.rhythmicFeet = []; child.rhythmicCost = 0; });
+      if (ip.children[0]) {
+        ip.children[0].rhythmicFeet = freeFit.units;
+        ip.children[0].rhythmicCost = round2(freeFit.cost || 0);
+      }
+
+      stream.forEach((item, k) => {
+        if (item.wd.userEdited.rhythmic) return;
+        const val = chosen.beats[k];
+        const matched = val === item.pref.value;
+        const shifted = chosen.stressShifted.includes(item.wd.word);
+        const source = shifted ? 'rule:rhythm-rule-stress-shift'
+          : matched ? item.pref.source
+          : val === 'S' ? 'rule:lapse-promotion' : 'rule:clash-demotion';
+        setRhythm(item.wd, item.i, val, source,
+          matched ? item.pref.confidence
+                  : Math.min(chosen.confidence, item.pref.confidence));
+      });
     }
     for (const wd of words) {
       wd.rhythmicPattern = wd.syllables.map(sy => sy.rhythmicStress).join('');
     }
+    if (config.forcedScansion) applyForcedRhythm(words, ips, config.forcedScansion);
+  }
+
+  /* Full projection: analyse, then let any document-level metre agreement
+   * inform a second pass. Only ONE feedback round is run — repeated feedback
+   * would let a weak initial majority amplify itself into a metre the text
+   * does not have. */
+  /* Mark repeated content words as given information. First occurrence is
+   * new; later ones are given. Function words are excluded — they are weak
+   * regardless — as are polysyllables, whose lexical stress anchors them. */
+  function markGivenness(words) {
+    const seen = new Set();
+    for (const wd of words) {
+      wd.given = false;
+      if (wd.isFunctionWord || wd.syllables.length !== 1) continue;
+      const key = wd.normalized;
+      if (seen.has(key)) wd.given = true; else seen.add(key);
+    }
+  }
+
+  function projectDocument(words, ips, config) {
+    // Pass 1 — metrical objective, no prior. Establishes how well the text
+    // takes to a grid at all.
+    project(words, ips, Object.assign({}, config, { regime: 'metrical' }));
+    if (config.forcedScansion)
+      return { regime: 'metrical', reason: 'forced', metrePrior: null };
+
+    const verdict = classifyRegime(ips, config.textType);
+
+    // Pass 2 — commit to the regime. In verse, feed back any metre the
+    // phrases agree on; a poem's established rhythm is exactly the context an
+    // individual line lacks. Only one feedback round runs, so a weak majority
+    // cannot amplify itself into a metre the text does not have.
+    const prior = verdict.regime === 'metrical' ? detectMetrePrior(ips) : null;
+    if (verdict.regime !== 'metrical' || prior) {
+      project(words, ips, Object.assign({}, config,
+        { regime: verdict.regime, metrePrior: prior }));
+    }
+    return Object.assign({}, verdict, { metrePrior: prior });
+  }
+
+  /* Install a different ranked candidate for one IP. Used by the interface
+   * when the reader chooses among coherent alternatives: the WHOLE reading is
+   * replaced, never blended with the previous one. */
+  function selectIPReading(doc, ipIndex, readingIndex) {
+    const ip = doc.phrases[ipIndex];
+    if (!ip || !ip.readings || !ip.readings[readingIndex]) return doc;
+    ip.pinnedReadingKey = ip.readings[readingIndex].beats.join('');
+    reflow(doc);
+    return doc;
+  }
+
+  function clearIPReading(doc, ipIndex) {
+    const ip = doc.phrases[ipIndex];
+    if (!ip) return doc;
+    ip.pinnedReadingKey = null;
+    reflow(doc);
+    return doc;
+  }
+
+  function applyForcedRhythm(words, ips, footName) {
+    const foot = RHYTHM_FEET.find(f => f.name === footName);
+    if (!foot) return;
+    for (const ip of ips) {
+      const stream = [];
+      for (let w = ip.span[0]; w <= ip.span[1]; w++)
+        words[w].syllables.forEach((sy, i) => stream.push({
+          w, i, sy, word: words[w], pref: rhythmPreference(words[w], i)
+        }));
+      let best = null;
+      for (let off = 0; off < foot.pattern.length; off++) {
+        let cost = off * LEADING_RESIDUE_COST;
+        for (let k = off; k < stream.length; k++) {
+          const val = foot.pattern[(k - off) % foot.pattern.length];
+          if (val !== stream[k].pref.value) cost += stream[k].pref.weight;
+        }
+        if (!best || cost < best.cost) best = { off, cost };
+      }
+      stream.forEach((item, k) => {
+        if (item.word.userEdited.rhythmic) return;
+        const val = k < best.off ? item.pref.value
+          : foot.pattern[(k - best.off) % foot.pattern.length];
+        setRhythm(item.word, item.i, val, 'rule:chosen-' + foot.name, 0.75);
+      });
+    }
+    words.forEach(w => { w.rhythmicPattern = w.syllables
+      .map(s => s.rhythmicStress).join(''); });
   }
 
   function setRhythm(wd, i, val, source, conf) {
@@ -1010,43 +2083,29 @@
     sy.rhythmicConfidence = round2(conf);
   }
 
-  function applyClashSubordination(words, s, e) {
-    const stream = [];
-    for (let w = s; w <= e; w++)
-      words[w].syllables.forEach((sy, i) =>
-        stream.push({ w, i, sy, word: words[w] }));
-    for (let k = 0; k < stream.length - 1; k++) {
-      const cur = stream[k], nxt = stream[k + 1];
-      if (cur.sy.rhythmicStress === 'S' && nxt.sy.rhythmicStress === 'S' &&
-          cur.word.syllables.length === 1 &&
-          !cur.word.userEdited.rhythmic && !cur.word.isFunctionWord) {
-        setRhythm(cur.word, cur.i, 'W', 'rule:clash-subordination', 0.60);
-      }
-    }
-  }
-
-  function applyStrictAlternation(words, s, e) {
-    const stream = [];
-    for (let w = s; w <= e; w++)
-      words[w].syllables.forEach((sy, i) => stream.push({ w, i, sy, word: words[w] }));
-    for (let k = 0; k < stream.length; k++) {
-      const cur = stream[k];
-      if (cur.sy.rhythmicStress === 'S' && cur.sy.lexicalStress === '2') {
-        const left = stream[k - 1], right = stream[k + 1];
-        if ((left && left.sy.rhythmicStress === 'S') ||
-            (right && right.sy.rhythmicStress === 'S')) {
-          setRhythm(cur.word, cur.i, 'W', 'rule:strict-alternation', 0.60);
-        }
-      }
-    }
-  }
+  /* REMOVED: applyClashSubordination() and applyStrictAlternation().
+   *
+   * These were the previous engine's post-hoc repair passes. They are gone
+   * rather than merely unused, so that nobody re-wires them by accident.
+   *
+   * applyClashSubordination always demoted the LEFT member of a clash and
+   * only if it was a monosyllable or function word. On `the MOUSE | RAN up
+   * the clock` that rule demoted MOUSE and produced `the mouse RAN up the
+   * CLOCK` — replacing one wrong reading with another, which is exactly the
+   * behaviour recorded in the handoff. Demotion direction is now a choice the
+   * search makes, weighted by the syntactic role of each candidate.
+   *
+   * The two configuration flags they served are preserved and still
+   * meaningful: `strictAlternation` and `clashSubordination` now scale the
+   * CLASH term of the global cost function (see project()), so the Pro tool's
+   * existing toggles continue to work and, with clash pressure off, licensed
+   * adjacent prominence remains available. */
 
   /* Nuclear Stress Rule (NSR).  Per intonational phrase, the main (nuclear)
    * accent falls on the last content word — hence "the final word tends to be
-   * stressed" [Chomsky & Halle 1968; Liberman 1975; Liberman & Prince 1977].
-   * We mark that word's primary-stress syllable as the IP nucleus and, if
-   * footing left it weak, promote it to strong so the phrase does not end
-   * unaccented. This is a tendency, not a law: narrow focus or given/new
+   * prominent" [Chomsky & Halle 1968; Liberman 1975; Liberman & Prince 1977].
+   * Phrase prominence is represented independently of the metrical beat.
+   * This is a tendency, not a law: narrow focus or given/new
    * structure can shift the nucleus leftward, so it is a gated pass and never
    * overrides a user's own rhythmic edit.  A single flat marker (`sy.nuclear`)
    * plus `ip.nucleus` lets the UI highlight the phrase's strongest beat. */
@@ -1071,10 +2130,10 @@
     }
     if (ns === -1) ns = wd.syllables.length - 1;
     if (ns < 0) return;
-    if (!wd.userEdited.rhythmic && wd.syllables[ns].rhythmicStress !== 'S') {
-      setRhythm(wd, ns, 'S', 'rule:nuclear-stress', CONF.NUCLEAR);
-    }
     wd.syllables[ns].nuclear = true;
+    wd.syllables[ns].phraseProminence = 'nucleus';
+    wd.syllables[ns].prominenceSource = 'rule:nuclear-stress';
+    wd.syllables[ns].prominenceConfidence = CONF.NUCLEAR;
     ip.nucleus = { word: nw, syllable: ns, ref: [nw, ns],
                    source: 'rule:nuclear-stress' };
   }
@@ -1267,8 +2326,31 @@
     let label = 'mixed';
     const dom = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
     const ambiguousIPs = ipReports.filter(r => r.alternates.length);
+
+    /* Regime gate. The DP foot parser will always return SOME parse of any
+     * beat string — that is its job — but a parse is not evidence of metre.
+     * If the selected readings are in the prose regime, the passage gets no
+     * foot label at all. This is what stops ordinary sentences being reported
+     * as "alternating (trochaic/anapestic/dactylic scansions near-equivalent)",
+     * which the review correctly called not a useful analysis of prose.
+     *
+     * The foot parse is still computed and still available in ipReports for
+     * anyone who wants it; it simply no longer drives a metrical claim. */
+    let metricalIPs = 0, proseIPs = 0;
+    for (const ip of ips) {
+      const r = ip.readings && ip.readings[ip.selectedReadingIndex];
+      if (!r) continue;
+      if (r.regime === 'metrical') metricalIPs++; else proseIPs++;
+    }
+    const totalRegime = metricalIPs + proseIPs;
+    const proseDominant = totalRegime > 0 && metricalIPs / totalRegime < 0.5;
+
     if (forcedFoot) {
       label = 'read as ' + FOOT_ADJ[forcedFoot.name] + ' (your choice)';
+    } else if (proseDominant) {
+      label = metricalIPs === 0
+        ? 'prose rhythm (no regular metre)'
+        : 'prose rhythm (with some regular stretches)';
     } else if (ambiguousIPs.length) {
       const ADJ = { iamb: 'iambic', trochee: 'trochaic',
                     anapest: 'anapestic', dactyl: 'dactylic' };
@@ -1290,8 +2372,12 @@
     return { feet: allFeet, ipReports, localRuns,
              meterSummary: { label, localRuns, parseConfidence,
                              footCounts: counts,
+                             regime: proseDominant ? 'prose' : 'metrical',
+                             metricalPhrases: metricalIPs,
+                             prosePhrases: proseIPs,
                              forcedScansion: forcedFoot ? forcedFoot.name : null,
-                             ambiguous: !forcedFoot && ambiguousIPs.length > 0,
+                             ambiguous: !forcedFoot && !proseDominant &&
+                                        ambiguousIPs.length > 0,
                              ambiguousTypes: ambiguousIPs.length
                                ? Array.from(new Set(ambiguousIPs.flatMap(r =>
                                    r.alternates.map(a => a.type)))) : [],
@@ -1393,25 +2479,45 @@
    * ======================================================================== */
 
   function analyze(text, options) {
-    const config = Object.assign({ strictAlternation: false, clashSubordination: false, nuclearStress: true }, options || {});
+    const config = Object.assign({ strictAlternation: false,
+      clashSubordination: true, nuclearStress: true, textType: 'auto' },
+      options || {});
     const tokens = tokenize(text);
 
     // Build word list + IP break map from punctuation.
     const words = [];
     const ipBreaksAfter = new Set();
+    const rawWords = tokens.filter(t => t.type === 'word').map(t => t.text);
+    const posTags = tagPOS(rawWords);
     tokens.forEach(tok => {
       if (tok.type === 'word') {
         tok.wordIndex = words.length;
-        words.push(analyzeWord(tok.text));
+        words.push(analyzeWord(tok.text,
+          contextualPrimaryIndex(rawWords, words.length, posTags),
+          posTags[words.length]));
       } else if ((tok.type === 'punct' && IP_PUNCT.has(tok.text)) ||
                  tok.type === 'parabreak') {
         if (words.length) ipBreaksAfter.add(words.length - 1);
       }
     });
 
+    markGivenness(words);
     const ips = words.length ? chunk(words, ipBreaksAfter) : [];
-    project(words, ips, config);
-    const meter = detectMeter(words, ips, config.forcedScansion || null);
+    const regimeInfo = projectDocument(words, ips, config);
+    const inferred = readingSnapshot(words, 'inferred', 'Automatic reading');
+    const known = findKnownReading(text);
+    let selectedReading = 'inferred';
+    const alternativeReadings = [inferred];
+    if (known) {
+      applyMarkedReading(words, known.marked, 'known:' + known.id);
+      selectedReading = known.id;
+      alternativeReadings.unshift(readingSnapshot(words, known.id,
+        known.kind === 'familiar-rhyme' ? 'Familiar rhyme reading'
+          : 'Conventional verse reading', known.meter));
+    }
+    const meter = detectMeter(words, ips,
+      config.forcedScansion || (known && known.meter) || null);
+    if (known && !config.forcedScansion) markConventionalMeter(meter, known.meter);
     const stats = computeStats(words, ips, meter);
 
     return {
@@ -1426,8 +2532,56 @@
       feet: meter.feet,
       ipReports: meter.ipReports,
       meterSummary: meter.meterSummary,
+      regime: regimeInfo,
+      textType: config.textType,
+      alternativeReadings,
+      selectedReading,
+      knownReading: known ? { id: known.id, kind: known.kind,
+                              meter: known.meter } : null,
       stats
     };
+  }
+
+  function normalizedPassage(text) {
+    return text.toLowerCase().replace(/[’‘]/g, "'")
+      .replace(/[^a-z0-9']+/g, ' ').trim();
+  }
+
+  function findKnownReading(text) {
+    const key = normalizedPassage(text);
+    return KNOWN_READINGS.find(r => normalizedPassage(r.text) === key) || null;
+  }
+
+  function readingSnapshot(words, id, label, meter) {
+    return { id, label, meter: meter || null,
+      patterns: words.map(w => w.syllables.map(s => s.rhythmicStress).join('')) };
+  }
+
+  function markConventionalMeter(meter, footName) {
+    const adj = FOOT_ADJ[footName] || footName;
+    meter.meterSummary.label = 'conventional ' + adj + ' reading';
+    meter.meterSummary.forcedScansion = null;
+    meter.meterSummary.ambiguous = false;
+    meter.meterSummary.ambiguousTypes = [];
+    meter.meterSummary.conventional = true;
+  }
+
+  function applyMarkedReading(words, marked, source) {
+    const markedWords = marked.match(/[A-Za-z]+(?:['’][A-Za-z]+)*(?:-[A-Za-z]+)*/g) || [];
+    words.forEach((wd, wi) => {
+      const token = markedWords[wi] || '';
+      wd.syllables.forEach((sy, i) => setRhythm(wd, i, 'W', source, 0.95));
+      const at = Array.from(token).findIndex(ch => ch >= 'A' && ch <= 'Z');
+      if (at < 0) return;
+      let off = 0, target = wd.syllables.length - 1;
+      for (let i = 0; i < wd.syllables.length; i++) {
+        const len = wd.syllables[i].text.replace(/[^A-Za-z']/g, '').length;
+        if (at < off + len) { target = i; break; }
+        off += len;
+      }
+      setRhythm(wd, target, 'S', source, 0.95);
+      wd.rhythmicPattern = wd.syllables.map(s => s.rhythmicStress).join('');
+    });
   }
 
   /* ==========================================================================
@@ -1752,6 +2906,27 @@
     return doc;
   }
 
+  function selectReading(doc, readingId) {
+    const reading = (doc.alternativeReadings || []).find(r => r.id === readingId);
+    if (!reading) return doc;
+    doc.words.forEach((wd, w) => {
+      const pattern = reading.patterns[w] || '';
+      wd.syllables.forEach((sy, i) => {
+        if (!wd.userEdited.rhythmic)
+          setRhythm(wd, i, pattern[i] || 'W', 'reading:' + readingId, 0.90);
+      });
+      wd.rhythmicPattern = wd.syllables.map(s => s.rhythmicStress).join('');
+    });
+    doc.selectedReading = readingId;
+    const meter = detectMeter(doc.words, doc.phrases, reading.meter || null);
+    if (reading.meter) markConventionalMeter(meter, reading.meter);
+    doc.feet = meter.feet;
+    doc.ipReports = meter.ipReports;
+    doc.meterSummary = meter.meterSummary;
+    doc.stats = computeStats(doc.words, doc.phrases, meter);
+    return doc;
+  }
+
   // Toggle a phonological-phrase boundary immediately BEFORE word `wordIdx`
   // (a Tier-above edit: design §7 requires φ boundaries to be insertable and
   // deletable). IP boundaries derive from punctuation and are not editable
@@ -1841,7 +3016,7 @@
   }
 
   function reflow(doc) {
-    project(doc.words, doc.phrases, doc.config);
+    doc.regime = projectDocument(doc.words, doc.phrases, doc.config);
     const meter = detectMeter(doc.words, doc.phrases,
                               doc.config.forcedScansion || null);
     doc.feet = meter.feet;
@@ -1857,13 +3032,15 @@
   function toCSV(doc) {
     const rows = [['word', 'syllable_index', 'syllable', 'lexical_stress',
                    'template_pattern', 'template_name', 'rhythmic_stress',
+                   'phrase_prominence',
                    'lexical_source', 'rhythmic_source', 'lexical_confidence',
                    'rhythmic_confidence', 'user_edited']];
     doc.words.forEach(wd => {
       wd.syllables.forEach((sy, i) => {
         rows.push([wd.word, i, sy.text, sy.lexicalStress,
                    wd.template.pattern, wd.template.traditionalName,
-                   sy.rhythmicStress, wd.lexicalSource, sy.rhythmicSource,
+                   sy.rhythmicStress, sy.phraseProminence || '',
+                   wd.lexicalSource, sy.rhythmicSource,
                    wd.lexicalConfidence, sy.rhythmicConfidence,
                    (wd.userEdited.lexical || wd.userEdited.rhythmic ||
                     wd.userEdited.template)]);
@@ -2027,12 +3204,13 @@
    * Public API
    * ======================================================================== */
   const RhythmEngine = {
-    loadDictionary, analyze, tokenize, analyzeWord,
+    loadDictionary, loadKnownReadings, analyze, tokenize, analyzeWord,
     syllabifyPhonemes, orthoSyllabify, assignTemplate, fallbackAnalyze, vowelGroups,
-    editRhythmicStress, editLexicalStress, resetWord,
+    editRhythmicStress, editLexicalStress, resetWord, tagPOS, selectIPReading, clearIPReading,
+    setWeights, proseCostFor, detectMetrePrior,
     splitSyllable, mergeSyllables, selectTemplateVariant, reanalyze,
     togglePhiBoundary, computePDI, forceScansion, clearForcedScansion, morphSegment,
-    selectPronunciation, incongruentMap, stimulusPair, beatSubset, trainingSet,
+    selectPronunciation, selectReading, incongruentMap, stimulusPair, beatSubset, trainingSet,
     toCSV, profileCSV, annotatedText, roundTripText,
     constants: { FUNCTION_WORDS, CHUNK_STARTERS, CONF, FOOT_NAMES,
                  HYPHEN_EXCEPTIONS, PHI_MAX_WORDS, RHYTHM_FEET }

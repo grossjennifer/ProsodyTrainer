@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Rhythm Reader — hear the beat of what you read</title>
-<link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#A03052">
 <style>
 :root {
@@ -67,6 +66,14 @@ button.chip { border-radius: 999px; font-weight: 500; font-size: .85rem;
   transform: translateX(-50%); top: -1.15em; font-size: .48em;
   color: var(--beat); }
 .mode-beats .syl.S.nodot::before { content: none; }
+.syl.prominent { text-decoration: underline; text-decoration-color: var(--phrase);
+  text-decoration-thickness: .1em; text-underline-offset: .18em; }
+.syl.prominent::after { content: "▲"; position: absolute; left: 50%;
+  transform: translateX(-50%); bottom: -1.05em; font: .4em var(--sans);
+  color: var(--phrase); }
+.reading-choices { display:flex; flex-wrap:wrap; gap:.45rem; align-items:center;
+  margin:.3rem 0 .7rem; font-size:.82rem; color:var(--muted); }
+.reading-choices button { min-height:36px; padding:.3rem .65rem; font-size:.78rem; }
 .hint { font-size: .85rem; color: var(--muted); margin-top: .6rem; }
 #dictNote { font-size: .8rem; color: var(--muted); margin-top: .5rem; }
 #dictNote.warn { color: #8A5A17; }
@@ -128,10 +135,12 @@ footer a { color: var(--phrase); }
     <button id="print">Print</button>
   </div>
   <div id="out" class="mode-caps" aria-live="polite"></div>
+  <div id="readingChoices" class="reading-choices" hidden></div>
   <p class="hint">Tap any syllable to move a beat — you know how you read
   better than any computer does.</p>
   <p id="rhythmNote" class="hint">Rhythm is fitted across each phrase using
-  strong–weak, weak–strong, weak–weak–strong, and strong–weak–weak feet.</p>
+  strong–weak, weak–strong, weak–weak–strong, and strong–weak–weak feet.
+  A teal ▲ marks the phrase-level prominence separately from the beat.</p>
   <p id="dictNote"></p>
 </section>
 
@@ -151,12 +160,14 @@ footer a { color: var(--phrase); }
 </main>
 
 <script src="../cmudict-subset.js"></script>
+<script src="../known-rhythms.js"></script>
 <!-- Four-foot linguistic engine — single source of truth, shared with test_rhythm_feet.js / test_nuclear_stress.js -->
 <script src="engine.js"></script>
 <script>
 (function () {
 'use strict';
 const E = window.RhythmEngine;
+E.loadKnownReadings(window.PROSODY_KNOWN_READINGS || []);
 let doc = null;
 let mode = 'caps';
 
@@ -180,7 +191,7 @@ function boot(full) {
   analyze();
 }
 const s = document.createElement('script');
-s.src = 'cmudict.js';
+s.src = '../cmudict.js';
 s.onload = () => boot(!!window.CMUDICT_FULL);
 s.onerror = () => boot(false);
 document.head.appendChild(s);
@@ -269,6 +280,7 @@ function render() {
                  ?? inSpan[0] ?? sylOfOffset(s);
       const b = document.createElement('button');
       b.className = 'syl' + (strong ? ' S' : '');
+      if (inSpan.some(i => wd.syllables[i].nuclear)) b.classList.add('prominent');
       if (strong) {
         if (inSpan.some(i => dotted.has(i))) b.classList.add('nodot');
         inSpan.forEach(i => {
@@ -292,6 +304,23 @@ function render() {
       'that carries it; for precise beat placement, use the other views.'
     : 'Tap any syllable to move a beat — you know how you read better than ' +
       'any computer does.';
+  renderReadingChoices();
+}
+
+function renderReadingChoices() {
+  const wrap = document.getElementById('readingChoices');
+  const choices = doc.alternativeReadings || [];
+  wrap.textContent = '';
+  if (choices.length < 2) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  wrap.append('More than one coherent reading is available:');
+  choices.forEach(reading => {
+    const b = document.createElement('button');
+    b.textContent = reading.label;
+    b.setAttribute('aria-pressed', String(doc.selectedReading === reading.id));
+    b.addEventListener('click', () => { E.selectReading(doc, reading.id); render(); });
+    wrap.appendChild(b);
+  });
 }
 
 function rendition() {
@@ -341,10 +370,6 @@ document.getElementById('partsSeg').addEventListener('click', (ev) => {
   render();
 });
 
-// Installable app when hosted over HTTPS (no effect from a local file)
-if ('serviceWorker' in navigator && location.protocol === 'https:') {
-  navigator.serviceWorker.register('sw.js').catch(() => {});
-}
 })();
 </script>
 </body>

@@ -125,6 +125,9 @@ label.opt { font-size: .85rem; color: var(--muted); display: inline-flex;
   border-color: #E4BFCC; }
 #meterLine .conf { color: var(--muted); }
 #meterLine .runs { color: var(--muted); font-size: .84rem; }
+.reading-choices { display:flex; flex-wrap:wrap; gap:.45rem; align-items:center;
+  margin:.35rem 0 .7rem; font-size:.82rem; color:var(--muted); }
+.reading-choices button { min-height:34px; padding:.28rem .62rem; font-size:.78rem; }
 
 /* Reading surface */
 #surface {
@@ -319,7 +322,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <span class="spacer"></span>
     <label class="opt research"><input type="checkbox" id="strictAlt">
       strict alternation (demote clashing secondaries)</label>
-    <label class="opt research"><input type="checkbox" id="clashSub">
+    <label class="opt research"><input type="checkbox" id="clashSub" checked>
       subordinate stress clashes (sat DOWN, thread JAMMED)</label>
     <label class="opt research"><input type="checkbox" id="researchMode">
       research mode</label>
@@ -381,6 +384,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   </div>
 
   <div id="meterLine"></div>
+  <div id="readingChoices" class="reading-choices" hidden></div>
   <div id="ambigNotice" class="notice" hidden></div>
   <div id="surface" class="mode-caps" aria-live="polite"></div>
   <p class="hint" id="hintLine"></p>
@@ -425,7 +429,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   reading. It is designed for close analysis, teaching, and research rather
   than as a rule for how a passage must be spoken.</p>
   <h2>Reading the notation</h2>
-  <p>Every syllable carries values on three tiers.
+  <p>Every syllable carries values on distinct layers.
   <strong>Word stress</strong> (lexical) is the fixed pattern a word has in the
   dictionary, written with digits: <code>1</code> primary stress,
   <code>2</code> secondary stress, <code>0</code> unstressed —
@@ -441,11 +445,15 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   sentence: <code>S</code> strong, <code>W</code> weak. A word such as
   <em>of</em> has citation stress in the dictionary but usually receives no
   rhythmic beat in context.</p>
+  <p><strong>Phrase prominence</strong> is shown separately with ▲. A phrase
+  nucleus may be prominent without occupying a regular metrical beat, so the
+  triangle and beat styling can appear independently.</p>
   <p>Feet group syllables across words using only four English patterns:
   trochee <code>SW</code>, iamb <code>WS</code>, anapest <code>WWS</code>,
   and dactyl <code>SWW</code>. A phrase may begin with a one-syllable pickup
   or end with one unmatched syllable when the available text does not form a
-  complete foot. Feet are never drawn across a phrase boundary. Some regular
+  complete foot. Feet never cross punctuation-bounded intonational phrases;
+  they may cross automatically estimated inner phrase boundaries. Some regular
   text supports more than one plausible scansion; the app reports that
   ambiguity rather than concealing it.</p>
   <h2>Editing</h2>
@@ -496,12 +504,14 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
 <dialog id="inspector" aria-labelledby="inspTitle"></dialog>
 
 <script src="../cmudict-subset.js"></script>
+<script src="../known-rhythms.js"></script>
 <!-- Four-foot linguistic engine — single source of truth, shared with test_rhythm_feet.js / test_nuclear_stress.js -->
 <script src="engine.js"></script>
 <script>
 (function () {
 'use strict';
 const E = window.RhythmEngine;
+E.loadKnownReadings(window.PROSODY_KNOWN_READINGS || []);
 
 /* ---------- dictionary: try full asset, fall back to embedded subset ----- */
 const chip = document.getElementById('dictChip');
@@ -519,7 +529,7 @@ function boot(full) {
   analyze();
 }
 const s = document.createElement('script');
-s.src = 'cmudict.js';
+s.src = '../cmudict.js';
 s.onload = () => boot(!!window.CMUDICT_FULL);
 s.onerror = () => boot(false);
 document.head.appendChild(s);
@@ -721,7 +731,7 @@ function renderSurface() {
         if (cls === 'S' && tier === 'rhythmic' && dk &&
             !dk.has(tok.wordIndex + ':' + i) && !sy.nuclear) cls = 'W';
         b.className = 'syl ' + cls;
-        if (tier === 'rhythmic' && sy.nuclear && cls === 'S') b.classList.add('nucleus');
+        if (tier === 'rhythmic' && sy.nuclear) b.classList.add('nucleus');
         const f = fmap[tok.wordIndex + ':' + i];
         if (showFeet && f !== undefined) b.classList.add('f' + (f % 2));
         if (wd.userEdited.rhythmic || wd.userEdited.lexical)
@@ -872,6 +882,27 @@ function renderMeterLine() {
   } else {
     notice.hidden = true; notice.textContent = '';
   }
+}
+
+function renderReadingChoices() {
+  const wrap = document.getElementById('readingChoices');
+  const choices = doc.alternativeReadings || [];
+  wrap.textContent = '';
+  if (choices.length < 2) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+  wrap.append('Coherent readings:');
+  choices.forEach(reading => {
+    const b = document.createElement('button');
+    b.textContent = reading.label;
+    b.setAttribute('aria-pressed', String(doc.selectedReading === reading.id));
+    b.addEventListener('click', () => {
+      logEvent({ action: 'reading-select', tier: 'rhythmic',
+        before: doc.selectedReading, after: reading.id });
+      E.selectReading(doc, reading.id);
+      renderAll();
+    });
+    wrap.appendChild(b);
+  });
 }
 
 /* ---------- debug panel ---------- */
@@ -1408,6 +1439,7 @@ document.getElementById('lexSort').addEventListener('change', renderLexicon);
 
 function renderAll() {
   renderMeterLine();
+  renderReadingChoices();
   renderSurface();
   renderDebug();
   renderLexicon();
