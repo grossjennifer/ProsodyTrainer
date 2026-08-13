@@ -1244,8 +1244,15 @@
     // Primary lexical stress inside a polysyllable is the strongest anchor in
     // the system: shifting it changes the word's identity, not just its
     // rhythm. Secondary and unstressed syllables are progressively cheaper.
+    /* Secondary stress is weak evidence for a metrical beat and must be
+     * cheap to give up. `imagine` is IH2 M AE1 JH AH0 N — secondary and
+     * primary on ADJACENT syllables. At the previous weight of 2.2, demoting
+     * the secondary cost exactly as much as the clash it created, so the tie
+     * broke arbitrarily and the engine printed `IMAGine`: an intra-word
+     * clash, which English does not permit. At 1.1 the secondary yields and
+     * the word reads `iMAGine`. */
     let weight = sy.lexicalStress === '1' ? 6.0
-      : sy.lexicalStress === '2' ? 2.2 : 3.2;
+      : sy.lexicalStress === '2' ? 1.1 : 3.2;
     // Polysyllabic function words (into, upon, without) are metrically
     // pliable despite having a lexical primary.
     if (behavesAsFunctionWord(wd)) weight = Math.min(weight, 1.6);
@@ -1456,13 +1463,27 @@
         if (beats[t] === 'S') { sCount++; sAt = t; }
         if (stream[t].pref.value === 'S') { prefS++; prefAt = t; }
       }
-      // The Rhythm Rule (iambic reversal) RETRACTS stress leftward onto an
-      // earlier syllable — `thirTEEN` → `THIRteen men`, `fifTEENTH` → `the
-      // FIFteenth of May`. It does not shift stress rightward. Restricting the
-      // discount to leftward moves is what stops the search from "solving" a
-      // grid mismatch by inventing `genTLE` or `inTO`.
+      /* The Rhythm Rule (iambic reversal) RETRACTS stress leftward —
+       * `thirTEEN` → `THIRteen men`, `fifTEENTH` → `the FIFteenth of May`. It
+       * does not shift stress rightward, so the discount is restricted to
+       * leftward moves; that stops the search "solving" a grid mismatch by
+       * inventing `genTLE` or `inTO`.
+       *
+       * It is also CLASH-motivated. Retraction happens because the word's own
+       * primary would collide with a following beat, not merely because
+       * moving it tidies the rhythm. Without this condition the rule was
+       * being used to fill a lapse: `TANner and MADison conVERSE` has three
+       * weak syllables in a row, and relocating the beat to `CON` removed
+       * them — printing `CONverse` even though the lexical variant had been
+       * correctly identified as the verb. Requiring a clash at the unshifted
+       * position keeps the rule to the environment that actually licenses it. */
+      let crowded = false;
+      for (let d = 1; d <= 2 && !crowded; d++) {
+        if (prefAt + d < beats.length && beats[prefAt + d] === 'S') crowded = true;
+        if (prefAt - d >= 0 && prefAt - d < k && beats[prefAt - d] === 'S') crowded = true;
+      }
       if (j - k > 1 && sCount === 1 && prefS === 1 && sAt < prefAt &&
-          raw > W.SHIFT && !wd.userEdited.rhythmic) {
+          crowded && raw > W.SHIFT && !wd.userEdited.rhythmic) {
         cost += W.SHIFT;
         if (shifted) shifted.push(wd);
       } else {
@@ -2056,9 +2077,18 @@
         words[w].syllables.forEach((sy, i) => stream.push({
           w, i, sy, word: words[w], pref: rhythmPreference(words[w], i)
         }));
+      /* When the reader explicitly forces a scansion, the grid is the point.
+       * Weighting a leading residue at the ordinary rate let the search skip
+       * syllables rather than destress a content word: asking for DACTYLIC on
+       * `half a league half a league` chose offset 2 and printed
+       * `HALF a LEAGUE half a LEAGUE`, which is not dactylic and makes the
+       * button look broken. Under a forced scansion a skipped opening is far
+       * more costly than an unfaithful beat, so the line actually begins on
+       * the foot the reader asked for. */
+      const FORCED_RESIDUE_COST = 2.5;
       let best = null;
       for (let off = 0; off < foot.pattern.length; off++) {
-        let cost = off * LEADING_RESIDUE_COST;
+        let cost = off * FORCED_RESIDUE_COST;
         for (let k = off; k < stream.length; k++) {
           const val = foot.pattern[(k - off) % foot.pattern.length];
           if (val !== stream[k].pref.value) cost += stream[k].pref.weight;
