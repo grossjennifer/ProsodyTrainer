@@ -180,6 +180,36 @@ One item moved the other way: `AND dePARTing LEAVE beHIND us` now reads
 the change: held-out is the more meaningful split, and clashes and metre labels
 both improved.
 
+### `the girls CONverse at lunch` — the noun-phrase scan overreached
+
+A second, independent bug in the same sentence family. The heteronym rule
+scans left for a determiner to decide whether the word heads a noun phrase
+(`a spelling CONtest`, `the science PROject`). In `the girls converse at
+lunch` it found `the` two words back and concluded `converse` was the head
+noun. But the determiner belongs to `girls`; that noun phrase is already
+complete.
+
+The discriminator is number agreement: a **plural** subject followed by a bare
+form is subject–verb agreement, so the heteronym is finite. That test now runs
+before the noun-phrase scan.
+
+It has to read the surface form rather than the tag, because the tagger
+rewrites NOUNS to NOUN after a determiner and the number information is gone
+by the time the heteronym rule sees it. The pattern deliberately excludes
+`-ss` words like `glass`, which are not plurals.
+
+Inflected heteronyms (`converses`, `conversed`, `recording`) are now gated too;
+previously only the bare form was, so inflected forms fell back to whichever
+pronunciation CMU listed first.
+
+Novel-context heteronyms went **16/17 → 24/25**, with the stimulus suite still
+27/27 and Appendix B still 38/38.
+
+Worth noting one output that looks wrong and is not: `MUScles CONtract
+QUICKly`. The *lexical* stress is correctly on `-tract`; the *beat* retracts
+because it would otherwise clash with `QUICKly`. That is textbook iambic
+reversal, and the two layers are reporting different things correctly.
+
 ### Three bugs reported from the interface — all fixed
 
 These came in as screenshots, so unlike the reconstructed items below they are

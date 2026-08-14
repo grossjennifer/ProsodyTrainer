@@ -998,6 +998,19 @@
     'incense', 'reject', 'relay', 'segment', 'survey', 'torment',
     'transfer', 'transport', 'upset'
   ]);
+
+  /* The same alternation applies to inflected forms — `converses`, `records`,
+   * `projected` — and CMU carries both variants for many of them. Gating only
+   * the bare form meant `the girls converses` style inputs fell back to the
+   * dictionary's first listing. Forms whose CMU entry has no second variant
+   * are unaffected; the gate simply never has anything to choose between. */
+  for (const base of Array.from(SHIFTING_HETERONYMS)) {
+    const stem = base.replace(/e$/, '');
+    for (const form of [base + 's', stem + 'es', base + 'd', stem + 'ed',
+                        stem + 'ing']) {
+      SHIFTING_HETERONYMS.add(form);
+    }
+  }
   const DETERMINERS = new Set(['a', 'an', 'the', 'this', 'that', 'my', 'your',
     'his', 'her', 'its', 'our', 'their', "learner's"]);
   const VERB_CUES = new Set(['to', 'will', 'would', 'shall', 'should', 'can',
@@ -1070,6 +1083,24 @@
 
     // Predicative after a copula/auxiliary: "she was content to wait".
     if (prevTag === 'AUX' || prevTag === 'MODAL') return 1;
+
+    /* Plural subject + bare form = subject–verb agreement, so the heteronym is
+     * finite: "the girls CONVERSE at lunch", "muscles CONTRACT quickly".
+     *
+     * This must be tested BEFORE the NP-head scan below. That scan walks left
+     * looking for a determiner, and in "the girls converse" it finds "the" and
+     * concludes the heteronym heads a determiner-initial noun phrase — reading
+     * it as `CONverse`. The determiner belongs to "girls"; the noun phrase is
+     * already complete.
+     *
+     * The plural test reads the surface form rather than the tag, because the
+     * context pass rewrites NOUNS to NOUN after a determiner and the number
+     * information is gone by the time we get here. `/[^s]s$/` deliberately
+     * excludes `-ss` words like "glass", which are not plurals. */
+    const prevPlural = /[^s]s$/.test(prev);
+    if (prevPlural && ['NOUN', 'NOUNS'].includes(prevTag) &&
+        (['PREP', 'DET', 'ADV', 'PRON'].includes(nextTag) ||
+         i === rawWords.length - 1)) return 1;
 
     // NP-head test: scan left for a determiner or possessive that is not
     // separated from the heteronym by a verb. If the heteronym is the head of

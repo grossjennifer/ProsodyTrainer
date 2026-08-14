@@ -31,7 +31,22 @@ const CASES = [
   ['she will present the findings', 'present', 1],
   ['a lovely present', 'present', 0],
   ['they subject him to tests', 'subject', 1],
-  ['the subject of the study', 'subject', 0]
+  ['the subject of the study', 'subject', 0],
+
+  /* Plural subject + bare verb, vs a determiner-initial noun phrase. These
+   * look alike three words back — DET, NOUN, HETERONYM — and the NP-head scan
+   * used to read `the girls converse` as a noun phrase, giving `CONverse`.
+   * Number agreement is what separates them. */
+  ['the girls converse at lunch', 'converse', 1],
+  ['the boys record their voices', 'record', 1],
+  ['the students protest the ruling', 'protest', 1],
+  ['a spelling contest', 'contest', 0],
+  ['a sharp increase in prices', 'increase', 0],
+  ['the science project', 'project', 0],
+
+  // Inflected forms carry the same alternation.
+  ['the girls conversed about school', 'conversed', 1],
+  ['she recorded the lecture', 'recorded', 1]
 ];
 
 let ok = 0;
