@@ -8,6 +8,48 @@ round addresses the architectural one.
 
 ---
 
+## The interfaces are now wired to the engine
+
+Previously the engine gained three capabilities that no interface used, so as
+far as any reader was concerned they did not exist — and every engine suite
+passed the whole time.
+
+**The in-app help text was wrong.** `rhythm-reader/index.html` stated that
+rhythm is fitted across each phrase using the four feet. That stopped being
+true when the prose regime was added: in prose no foot is fitted and no metre
+is named. The text is now generated from the regime actually used, so it
+cannot drift from the analysis again.
+
+**The text-type buttons only inserted examples.** `Nursery rhyme` / `Story
+sentence` / `Poem line` were `data-ex` chips loading sample text. Both tools
+now have a real control (`Let it decide` / `Ordinary prose` / `Verse` / `Song
+or rhyme`; a select in Pro) passed to `analyze()` as `config.textType`. It is
+a prior, not an override, and the interface says so.
+
+**The prose/verse verdict was invisible.** The basic tool never displayed
+`meterSummary` at all, so a reader could not tell whether they were being
+given a metrical claim or a prose reading. Both tools now say which, and
+disclose when the reader chose it rather than the tool inferring it.
+
+**Inferred alternatives are now visible and switchable.** `ip.readings`,
+`readingAmbiguity`, `selectIPReading()` and `clearIPReading()` are connected in
+both tools. Each choice is labelled with the reading itself —
+`the LITtle PUPpy RAN aWAY beFORE the CHILdren NOticed` versus
+`... before ...` — rather than an index. Pro logs the selection to the research
+export alongside other tier edits. This closes review criteria 7 and 10.
+
+`test_interface.js` drives the real pages through jsdom: it sets text, clicks
+buttons and reads what is displayed, without reaching inside the page script
+(which is an IIFE, so none of its state is reachable — the same constraint a
+user is under). **21 checks.** It skips loudly if jsdom is missing rather than
+passing silently, and acceptance treats a skip as a failure.
+
+Two things that test caught, worth knowing if you edit it: the CAPS display is
+applied with CSS, so `textContent` is identical whichever beats are chosen and
+assertions must compare markup; and `renderPhraseChoices()` rebuilds its
+buttons on every render, so a clicked node is detached immediately and must be
+re-queried.
+
 ## What I did, and did not, do this round
 
 You asked me to work from the failures the review names (the original corpus
@@ -16,10 +58,6 @@ replacement prominence tests from scratch. That is what this is.
 
 **Not done** — deliberately deferred, still outstanding from the review's list:
 
-- Wiring `ip.readings` / `selectIPReading()` into the two `index.html` files.
-  The engine side is ready and tested; the interfaces still build their
-  controls only from `doc.alternativeReadings`. **Review criteria 7 and 10 are
-  still unmet.**
 - Filtering literal grid seeds out of the user-facing candidate list.
 - Boundary-sensitive clash costs beyond the nucleus (φ vs IP vs line).
 - Richer prominence categories (prenuclear, contrastive, uncertain). Still one
@@ -315,12 +353,14 @@ its header for why the old assertion was theoretically wrong),
 `eval/review_cases.js`, `eval/novel_heteronyms.js`.
 
 ```bash
-node eval/acceptance.js            # 13 criteria
+node eval/acceptance.js            # 14 criteria (incl. interface wiring)
+node test_interface.js             # browser-level; needs jsdom
 node eval/harness.js --verbose     # full per-metric report
 node eval/review_cases.js          # review-named probes
 node eval/novel_heteronyms.js
 node test_contextual_heteronyms.js && node test_known_readings.js \
   && node test_phrase_prominence.js
+npm install --no-save jsdom        # required by test_interface.js
 ```
 
 Nothing has been pushed or deployed.

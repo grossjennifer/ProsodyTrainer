@@ -177,6 +177,19 @@ check('R4', 'heteronyms generalize to novel contexts', () => {
     `novel-context heteronyms ${got}/${total}\n${out}`);
 });
 
+/* R7 + R10 — the reader can SEE and TOGGLE inferred alternatives in the
+ * actual interfaces, and the text-type control is a real analysis prior.
+ * This is a browser-level check by necessity: the engine side of this was
+ * complete and passing for a whole revision while no interface called it. */
+check('R7', 'interfaces expose text type, regime and inferred alternatives', () => {
+  const { execFileSync } = require('child_process');
+  const out = execFileSync(process.execPath, ['test_interface.js'],
+    { cwd: ROOT, encoding: 'utf8' });
+  assert.ok(!/SKIPPED/.test(out),
+    'interface wiring was not verified — install jsdom:\n' + out);
+  assert.ok(/Interface suite passed/.test(out), out);
+});
+
 /* Extra: coherence invariant the handoff calls out explicitly —
  * beats and meter label must come from the same candidate. */
 check('X', 'no hybrid readings: beats and template are from one candidate', () => {

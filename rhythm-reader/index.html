@@ -114,6 +114,21 @@ footer a { color: var(--phrase); }
     <span class="spacer"></span>
     <button class="primary" id="go">Show the beat</button>
   </div>
+  <div class="row" style="margin-top:.5rem">
+    <label for="textType" style="font-weight:600;font-size:.95rem">
+      Read this as</label>
+    <div class="seg" role="group" aria-label="What kind of text this is"
+      id="textType" style="margin-left:.4rem">
+      <button data-type="auto" aria-pressed="true">Let it decide</button>
+      <button data-type="prose" aria-pressed="false">Ordinary prose</button>
+      <button data-type="verse" aria-pressed="false">Verse</button>
+      <button data-type="song" aria-pressed="false">Song or rhyme</button>
+    </div>
+  </div>
+  <p class="hint" style="margin-top:.35rem">This changes the analysis, not
+  just the label. Verse and song expect a regular beat; prose does not. It is
+  a starting assumption, not an override — strongly rhythmic text can still
+  come out metrical when you choose prose.</p>
 </section>
 
 <section class="card">
@@ -134,13 +149,13 @@ footer a { color: var(--phrase); }
     <button id="copy">Copy</button>
     <button id="print">Print</button>
   </div>
+  <p id="regimeNote" class="hint" aria-live="polite"></p>
   <div id="out" class="mode-caps" aria-live="polite"></div>
   <div id="readingChoices" class="reading-choices" hidden></div>
+  <div id="phraseChoices" class="reading-choices" hidden></div>
   <p class="hint">Tap any syllable to move a beat — you know how you read
   better than any computer does.</p>
-  <p id="rhythmNote" class="hint">Rhythm is fitted across each phrase using
-  strong–weak, weak–strong, weak–weak–strong, and strong–weak–weak feet.
-  A teal ▲ marks the phrase-level prominence separately from the beat.</p>
+  <p id="rhythmNote" class="hint"></p>
   <p id="dictNote"></p>
 </section>
 
@@ -196,8 +211,10 @@ s.onload = () => boot(!!window.CMUDICT_FULL);
 s.onerror = () => boot(false);
 document.head.appendChild(s);
 
+let textType = 'auto';   // 'auto' | 'prose' | 'verse' | 'song'
+
 function analyze() {
-  doc = E.analyze(document.getElementById('input').value);
+  doc = E.analyze(document.getElementById('input').value, { textType });
   render();
 }
 
@@ -311,16 +328,114 @@ function renderReadingChoices() {
   const wrap = document.getElementById('readingChoices');
   const choices = doc.alternativeReadings || [];
   wrap.textContent = '';
-  if (choices.length < 2) { wrap.hidden = true; return; }
+  if (choices.length < 2) { wrap.hidden = true; }
+  else {
+    wrap.hidden = false;
+    wrap.append('This is a passage the tool recognises. You can read it the ' +
+      'conventional way or see what the analysis makes of it on its own:');
+    choices.forEach(reading => {
+      const b = document.createElement('button');
+      b.textContent = reading.label;
+      b.setAttribute('aria-pressed', String(doc.selectedReading === reading.id));
+      b.addEventListener('click', () => { E.selectReading(doc, reading.id); render(); });
+      wrap.appendChild(b);
+    });
+  }
+  renderPhraseChoices();
+  renderRegimeNote();
+}
+
+/* Render one candidate reading of one phrase as readable text, so the choice
+ * buttons show the READING rather than an abstract label. A reader should not
+ * have to decode "candidate 2". */
+function candidateText(ipIndex, cand) {
+  const ip = doc.phrases[ipIndex];
+  let k = 0, out = [];
+  for (let w = ip.span[0]; w <= ip.span[1]; w++) {
+    const wd = doc.words[w];
+    out.push(wd.syllables.map(sy =>
+      cand.beats[k++] === 'S' ? sy.text.toUpperCase() : sy.text.toLowerCase()
+    ).join(''));
+  }
+  return out.join(' ');
+}
+
+/* Inferred alternatives, per phrase.
+ *
+ * These come from the analyser itself — they are not memorised readings of
+ * recognised poems. Until now they existed only inside the engine
+ * (`ip.readings`) and no interface exposed them, so a reader could toggle
+ * between a known nursery-rhyme reading and the automatic one, but could not
+ * see that the automatic analysis had a close rival of its own. */
+function renderPhraseChoices() {
+  const wrap = document.getElementById('phraseChoices');
+  wrap.textContent = '';
+  const ambiguous = (doc.phrases || [])
+    .map((ip, i) => ({ ip, i }))
+    .filter(({ ip }) => (ip.readingAmbiguity || []).length > 0);
+  if (!ambiguous.length) { wrap.hidden = true; return; }
   wrap.hidden = false;
-  wrap.append('More than one coherent reading is available:');
-  choices.forEach(reading => {
-    const b = document.createElement('button');
-    b.textContent = reading.label;
-    b.setAttribute('aria-pressed', String(doc.selectedReading === reading.id));
-    b.addEventListener('click', () => { E.selectReading(doc, reading.id); render(); });
-    wrap.appendChild(b);
-  });
+
+  const intro = document.createElement('p');
+  intro.style.margin = '0 0 .4rem';
+  intro.textContent = ambiguous.length === 1
+    ? 'This phrase supports more than one reading. They score closely, so the ' +
+      'tool is not confident which you hear — pick the one you actually read:'
+    : 'Some phrases support more than one reading. They score closely, so the ' +
+      'tool is not confident which you hear — pick the ones you actually read:';
+  wrap.appendChild(intro);
+
+  for (const { ip, i } of ambiguous) {
+    const row = document.createElement('div');
+    row.style.marginBottom = '.35rem';
+    const shown = ip.readings.slice(0, 3);
+    shown.forEach((cand, k) => {
+      const b = document.createElement('button');
+      b.textContent = candidateText(i, cand);
+      b.setAttribute('aria-pressed', String(ip.selectedReadingIndex === k));
+      b.setAttribute('aria-label',
+        `Read phrase ${i + 1} as: ${candidateText(i, cand)}`);
+      b.addEventListener('click', () => { E.selectIPReading(doc, i, k); render(); });
+      row.appendChild(b);
+    });
+    if (ip.pinnedReadingKey) {
+      const clear = document.createElement('button');
+      clear.textContent = 'let the tool choose';
+      clear.addEventListener('click', () => { E.clearIPReading(doc, i); render(); });
+      row.appendChild(clear);
+    }
+    wrap.appendChild(row);
+  }
+}
+
+/* The tool now decides whether a passage has a regular beat at all. Saying so
+ * matters: a foot name is a much stronger claim than a prose reading, and a
+ * reader should be able to tell which one they are being given. */
+function renderRegimeNote() {
+  const note = document.getElementById('regimeNote');
+  const rhythmNote = document.getElementById('rhythmNote');
+  const regime = (doc.regime && doc.regime.regime) || 'metrical';
+  const label = (doc.meterSummary && doc.meterSummary.label) || '';
+  const chosen = doc.regime && String(doc.regime.reason || '').startsWith('user:');
+
+  if (regime === 'prose') {
+    note.textContent = 'Read as ordinary prose — no regular beat found' +
+      (chosen ? ' (your choice).' : '.') +
+      ' The beats below are where the stress falls, not a repeating pattern.';
+    rhythmNote.textContent = 'In prose the tool does not fit a repeating foot ' +
+      'and does not name a metre. Beats come from word stress, sentence ' +
+      'structure, and English’s preference for alternating strong and weak ' +
+      'syllables. A teal ▲ marks the phrase’s strongest point, which ' +
+      'need not sit on a beat.';
+  } else {
+    note.textContent = 'Read as having a regular beat' +
+      (chosen ? ' (your choice)' : '') + (label ? ' — ' + label : '') + '.';
+    rhythmNote.textContent = 'Here the tool fits a repeating beat across each ' +
+      'phrase using strong–weak, weak–strong, weak–weak–strong ' +
+      'and strong–weak–weak feet. That is a deliberately small set, not ' +
+      'the whole of English metre. A teal ▲ marks the phrase’s strongest ' +
+      'point, which need not sit on a beat.';
+  }
 }
 
 function rendition() {
@@ -345,6 +460,13 @@ function rendition() {
 }
 
 document.getElementById('go').addEventListener('click', analyze);
+document.getElementById('textType').addEventListener('click', (ev) => {
+  const b = ev.target.closest('button'); if (!b) return;
+  textType = b.dataset.type;
+  document.querySelectorAll('#textType button').forEach(x =>
+    x.setAttribute('aria-pressed', String(x === b)));
+  analyze();
+});
 document.querySelectorAll('[data-ex]').forEach(b =>
   b.addEventListener('click', () => {
     document.getElementById('input').value = EXAMPLES[+b.dataset.ex];

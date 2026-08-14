@@ -320,6 +320,13 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <button class="chip" data-ex="dactylic">Dactylic — STRONG-weak-weak</button>
     <button class="chip" data-ex="mixed">Mixed prose</button>
     <span class="spacer"></span>
+    <label class="opt" for="textType" style="font-weight:600">text type</label>
+    <select id="textType" aria-label="Analyse this text as">
+      <option value="auto" selected>auto-detect</option>
+      <option value="prose">prose</option>
+      <option value="verse">verse</option>
+      <option value="song">song or rhyme</option>
+    </select>
     <label class="opt research"><input type="checkbox" id="strictAlt">
       strict alternation (demote clashing secondaries)</label>
     <label class="opt research"><input type="checkbox" id="clashSub" checked>
@@ -611,7 +618,8 @@ function analyze() {
   const text = document.getElementById('input').value;
   doc = E.analyze(text, {
     strictAlternation: document.getElementById('strictAlt').checked,
-    clashSubordination: document.getElementById('clashSub').checked });
+    clashSubordination: document.getElementById('clashSub').checked,
+    textType: document.getElementById('textType').value });
   feetForced = false;
   ambigAccepted = false;
   ambigLogged = false;
@@ -782,11 +790,29 @@ function renderMeterLine() {
   ml.textContent = '';
   const ms = doc.meterSummary;
   const badge = document.createElement('span');
+  const isProse = ms.regime === 'prose';
   const isAmbig = ms.label.startsWith('alternating');
-  const isMixed = ms.label.startsWith('mixed');
+  const isMixed = ms.label.startsWith('mixed') || isProse;
   badge.className = 'badge' + (isAmbig ? ' ambig' : isMixed ? ' mixed' : '');
-  badge.textContent = isAmbig ? 'Two rhythms fit nearly equally well' : ms.label;
+  badge.textContent = isProse ? ms.label
+    : isAmbig ? 'Two rhythms fit nearly equally well' : ms.label;
   ml.appendChild(badge);
+
+  /* Say plainly whether a metre is being claimed, and whether the reader
+   * asked for it. A foot name is a far stronger claim than a prose reading
+   * and the two should not look alike. */
+  const forcedType = doc.regime && String(doc.regime.reason || '');
+  const note = document.createElement('span');
+  note.className = 'hint';
+  note.style.marginLeft = '.5rem';
+  note.textContent = isProse
+    ? (forcedType.startsWith('user:')
+        ? '— no repeating foot is fitted (you chose this text type)'
+        : '— no repeating foot is fitted; beats come from stress and syntax')
+    : (forcedType.startsWith('user:')
+        ? '— a repeating foot is fitted (you chose this text type)'
+        : '');
+  if (note.textContent) ml.appendChild(note);
   // A plain-language finding appears first. The exact computational label is
   // retained for users who open the analysis tools.
   const GLOSS = [
@@ -888,21 +914,95 @@ function renderReadingChoices() {
   const wrap = document.getElementById('readingChoices');
   const choices = doc.alternativeReadings || [];
   wrap.textContent = '';
-  if (choices.length < 2) { wrap.hidden = true; return; }
-  wrap.hidden = false;
-  wrap.append('Coherent readings:');
-  choices.forEach(reading => {
-    const b = document.createElement('button');
-    b.textContent = reading.label;
-    b.setAttribute('aria-pressed', String(doc.selectedReading === reading.id));
-    b.addEventListener('click', () => {
-      logEvent({ action: 'reading-select', tier: 'rhythmic',
-        before: doc.selectedReading, after: reading.id });
-      E.selectReading(doc, reading.id);
-      renderAll();
+  if (choices.length < 2) { wrap.hidden = true; }
+  else {
+    wrap.hidden = false;
+    wrap.append('Recognised passage — conventional vs inferred reading:');
+    choices.forEach(reading => {
+      const b = document.createElement('button');
+      b.textContent = reading.label;
+      b.setAttribute('aria-pressed', String(doc.selectedReading === reading.id));
+      b.addEventListener('click', () => {
+        logEvent({ action: 'reading-select', tier: 'rhythmic',
+          before: doc.selectedReading, after: reading.id });
+        E.selectReading(doc, reading.id);
+        renderAll();
+      });
+      wrap.appendChild(b);
     });
-    wrap.appendChild(b);
-  });
+  }
+  renderPhraseChoices();
+}
+
+function candidateText(ipIndex, cand) {
+  const ip = doc.phrases[ipIndex];
+  let k = 0; const out = [];
+  for (let w = ip.span[0]; w <= ip.span[1]; w++) {
+    const wd = doc.words[w];
+    out.push(wd.syllables.map(sy =>
+      cand.beats[k++] === 'S' ? sy.text.toUpperCase() : sy.text.toLowerCase()
+    ).join(''));
+  }
+  return out.join(' ');
+}
+
+/* Inferred per-phrase alternatives from the analyser itself, as distinct from
+ * the memorised readings above. These were computed but never displayed:
+ * `ip.readings` existed in the engine and no interface read it, so genuine
+ * ambiguity found by the analysis was invisible to the user. Selections are
+ * logged like any other tier edit so they appear in the research export. */
+function renderPhraseChoices() {
+  let wrap = document.getElementById('phraseChoices');
+  if (!wrap) {
+    wrap = document.createElement('div');
+    wrap.id = 'phraseChoices';
+    wrap.className = 'reading-choices';
+    const anchor = document.getElementById('readingChoices');
+    anchor.parentNode.insertBefore(wrap, anchor.nextSibling);
+  }
+  wrap.textContent = '';
+  const ambiguous = (doc.phrases || [])
+    .map((ip, i) => ({ ip, i }))
+    .filter(({ ip }) => (ip.readingAmbiguity || []).length > 0);
+  if (!ambiguous.length) { wrap.hidden = true; return; }
+  wrap.hidden = false;
+
+  const intro = document.createElement('div');
+  intro.textContent = 'Inferred alternatives (close-scoring, not memorised):';
+  wrap.appendChild(intro);
+
+  for (const { ip, i } of ambiguous) {
+    const row = document.createElement('div');
+    ip.readings.slice(0, 3).forEach((cand, k) => {
+      const b = document.createElement('button');
+      b.textContent = candidateText(i, cand) +
+        '  (' + (cand.template && cand.template.foot ? cand.template.foot
+                                                     : cand.regime) +
+        ', cost ' + cand.cost + ')';
+      b.setAttribute('aria-pressed', String(ip.selectedReadingIndex === k));
+      b.addEventListener('click', () => {
+        logEvent({ action: 'phrase-reading-select', tier: 'rhythmic',
+          before: String(ip.selectedReadingIndex), after: String(k),
+          word: 'phrase' + i });
+        E.selectIPReading(doc, i, k);
+        renderAll();
+      });
+      row.appendChild(b);
+    });
+    if (ip.pinnedReadingKey) {
+      const clear = document.createElement('button');
+      clear.textContent = 'auto';
+      clear.addEventListener('click', () => {
+        logEvent({ action: 'phrase-reading-clear', tier: 'rhythmic',
+          before: String(ip.selectedReadingIndex), after: 'auto',
+          word: 'phrase' + i });
+        E.clearIPReading(doc, i);
+        renderAll();
+      });
+      row.appendChild(clear);
+    }
+    wrap.appendChild(row);
+  }
 }
 
 /* ---------- debug panel ---------- */
