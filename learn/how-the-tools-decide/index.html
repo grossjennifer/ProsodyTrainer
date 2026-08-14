@@ -29,6 +29,7 @@
     ],
     "learningResourceType": "Explainer",
     "citation": [
+      "Chomsky, N., & Halle, M. (1968). The sound pattern of English. Harper & Row.",
       "Liberman, M., & Prince, A. (1977). On stress and linguistic rhythm. Linguistic Inquiry, 8(2), 249-336.",
       "Selkirk, E. O. (1996). The prosodic structure of function words. In J. L. Morgan & K. Demuth (Eds.), Signal to syntax: Bootstrapping from speech to grammar in early acquisition (pp. 187-213). Lawrence Erlbaum.",
       "Carnegie Mellon University Speech Group. The CMU Pronouncing Dictionary. http://www.speech.cs.cmu.edu/cgi-bin/cmudict"
@@ -102,7 +103,8 @@
         <p>The analysis runs in three passes, each taking the previous one as
         input. Keeping them separate matters: a later pass can modify how
         information from an earlier pass is realized in context, and you can
-        edit any tier without discarding the others.</p>
+        edit any tier without discarding the others. Two further decisions sit
+        on top of the three, and are described after them.</p>
 
         <h3>Tier 1 &mdash; what the word brings</h3>
 
@@ -118,13 +120,14 @@
         pronunciations on which speakers sometimes disagree, so it is a
         reference, not a ground truth.</p>
 
-        <p>Two practical limits follow. The tools ship with a small common-word
-        subset, so an uncommon word may fall through to the fallback analysis
-        rather than being looked up; when that happens the tool says so beneath
-        the text. And the exact dictionary release in use is not currently
-        recorded anywhere in the code or in the exports, which is a
-        reproducibility gap rather than an accuracy one &mdash; see the note for
-        researchers below.</p>
+        <p>Two practical limits follow. The tools load the full dictionary as a
+        separate file when the page opens; if that file cannot be reached they
+        fall back to a small common-word subset, and an uncommon word then falls
+        through to the rule-based fallback analysis rather than being looked up.
+        The tool says so beneath the text when it is running on the subset. And
+        the exact dictionary release in use is not recorded anywhere in the code
+        or in the exports, which is a reproducibility gap rather than an
+        accuracy one &mdash; see the note for researchers below.</p>
 
         <p>The dictionary does not supply syllable <i>boundaries</i>. The tool
         estimates those with the Maximal Onset Principle, constrained by an
@@ -140,12 +143,26 @@
         absent from the dictionary get a fallback analysis driven by
         stress-relevant suffixes.</p>
 
-        <p>Each result also carries an internal <strong>ranking score</strong>.
-        It records how directly the tool reached the result &mdash; a single
-        dictionary entry, competing entries that agree, competing entries that
-        disagree, or a fallback analysis &mdash; not the probability that the
-        displayed mark is correct. A word with one entry is not thereby more
-        likely to be right; it is only less ambiguously derived.</p>
+        <p>Words with two dictionary pronunciations get a further step. For a
+        short, explicit list of stress-shifting heteronyms &mdash;
+        <i><span class="learn-stress">PRO</span>duce</i> the noun against
+        <i>pro<span class="learn-stress">DUCE</span></i> the verb &mdash; the
+        tool reads the surrounding words for syntactic cues and chooses a
+        variant. The gate is deliberately narrow. The list is fixed, and the
+        rule is never widened into the general claim that nouns are
+        first-stressed and verbs second-stressed, which is wrong often enough
+        to matter. Outside that list, competing pronunciations are kept rather
+        than resolved. The cues are a <strong>heuristic</strong>.</p>
+
+        <p>Each result also carries an internal <strong>confidence</strong>
+        score, which Rhythm Reader Pro can display. The name overstates it.
+        What the number records is how directly the tool reached the result
+        &mdash; a single dictionary entry, competing entries that agree,
+        competing entries that disagree, or a fallback analysis &mdash; not the
+        probability that the displayed mark is correct. A word with one entry is
+        not thereby more likely to be right; it is only less ambiguously
+        derived. The code says the same thing in its own words: these are
+        heuristic indications, not calibrated probabilities.</p>
 
         <h3>Tier 2 &mdash; the metrical template</h3>
 
@@ -168,18 +185,20 @@
         <p>Only now does the sentence matter. Words are grouped into phrases,
         and within each phrase the syllable stream is fitted to the four feet.
         Lexical stress supplies weighted preferences at this stage; it does not
-        force every word to behave like a complete foot. Feet never cross a
-        phrase boundary, and a phrase may open or close on an incomplete foot,
-        because ordinary prose does not arrive in tidy metrical parcels. These
-        foot-fitting rules are modelling constraints used by the analyser, not
-        established properties of prose rhythm.</p>
+        force every word to behave like a complete foot. A phrase may open or
+        close on an incomplete foot &mdash; a single weak pickup, or an
+        unmatched syllable at the end &mdash; because ordinary prose does not
+        arrive in tidy metrical parcels. At this tier feet never cross a phrase
+        boundary. These foot-fitting rules are modelling constraints used by the
+        analyser, not established properties of prose rhythm.</p>
 
-        <p>Phrase boundaries themselves come from punctuation plus a
-        <strong>heuristic</strong>: a new phrase opens at a function word that
-        follows at least one content word, with a cap on how long a phrase may
-        run. This produces an editable candidate boundary. It is intended as a
-        useful starting point, not as a validated predictor of where a
-        particular reader would place a boundary. The
+        <p>Phrase boundaries come in two kinds, and the distinction matters more
+        than it looks. Punctuation sets the outer boundary. Inside it, a
+        <strong>heuristic</strong> proposes further boundaries: a new phrase
+        opens at a function word that follows at least one content word, with a
+        cap of four words on how long a phrase may run. These inner boundaries
+        are editable candidates. They are a useful starting point, not a
+        validated predictor of where a particular reader would break. The
         <a href="../phrasing/">Phrasing</a> page describes what those boundaries
         do to meaning.</p>
 
@@ -191,6 +210,75 @@
         focus</a> page shows with <i>He <span class="learn-stress">CAN</span></i>.
         That broad tendency is well supported (Selkirk, 1996); the particular
         word list and demotion rule used here are heuristics.</p>
+
+        <p>The demotion is graded rather than flat. Determiners resist taking a
+        beat strongly; prepositions, particles and negation barely resist at
+        all. Among content monosyllables, a noun resists losing its beat more
+        than a finite verb does. That is what lets <i>the
+        <span class="learn-stress">MOUSE</span> ran
+        <span class="learn-stress">UP</span> the
+        <span class="learn-stress">CLOCK</span></i> and <i>do
+        <span class="learn-stress">NOT</span> go gentle</i> come out right
+        without special-casing either phrase &mdash; and it is why the engine
+        can decide <i>which</i> member of a collision should yield rather than
+        always demoting the left one. These weights were tuned by hand on
+        development examples. They are engineering quantities, not measured
+        psycholinguistic ones.</p>
+
+        <p>Two further pressures act at this tier. English avoids adjacent
+        strong syllables (a clash) and long runs of weak ones (a lapse), so the
+        fitting carries a cost for both, and a beat may be moved rather than
+        deleted &mdash; the retraction that turns <i>Tennes<span
+        class="learn-stress">SEE</span></i> plus <i><span
+        class="learn-stress">AIR</span></i> into <i><span
+        class="learn-stress">TEN</span>nessee <span
+        class="learn-stress">AIR</span></i>. The tendency is the rhythm rule,
+        and it is <strong>reference-backed</strong> (Liberman &amp; Prince,
+        1977). The specific costs, and the judgement of which member of a clash
+        yields, are <strong>heuristic</strong>. Rhythm Reader Pro exposes them
+        as switches, so the clash pressure can be raised, lowered, or removed
+        entirely &mdash; the quickest way to see what it was doing.</p>
+
+        <p>Last, one beat in each phrase is marked as the strongest: the nuclear
+        accent, which in a neutral reading falls on the last content word. It is
+        recorded on a layer of its own, separate from the beats, so a syllable
+        can carry phrase prominence without sitting on a regular metrical beat.
+        The nuclear stress tendency is <strong>reference-backed</strong>
+        (Chomsky &amp; Halle, 1968; Liberman &amp; Prince, 1977). That it should
+        be applied at all to a sentence whose context is unknown is a
+        <strong>heuristic</strong>, which is why the rule can be switched off.</p>
+
+        <h3>After the tiers &mdash; meter, and texts the tools already know</h3>
+
+        <p>Two further decisions sit on top of the three tiers.</p>
+
+        <p>The first is a <strong>meter pass</strong>. Once the beats are
+        settled, the tool parses each punctuation-bounded phrase into feet a
+        second time, looking for a pattern that prevails across the passage, and
+        keeps near-equal alternative scansions rather than hiding them. This
+        second parse works to the coarser, punctuation-bounded unit, so its feet
+        can cross the inner boundaries the tool estimated at Tier 3. The two
+        layers are easy to confuse, because both draw feet. Before either, the
+        passage is classified as prose or as metrical verse &mdash; from the
+        regularity found in it, unless you say which &mdash; and that verdict
+        changes the costs used throughout. The same sentence can therefore be
+        analysed differently depending on the company it keeps. This layer is
+        <strong>exploratory</strong>.</p>
+
+        <p>The second is a table of <strong>known readings</strong>. A short
+        list of familiar verse and of stimuli used in the 2026 study carries a
+        stored conventional reading &mdash; <i><span class="learn-stress">ALL</span>
+        the king&rsquo;s <span class="learn-stress">HOR</span>ses and
+        <span class="learn-stress">ALL</span> the king&rsquo;s
+        <span class="learn-stress">MEN</span></i> &mdash; and when text you
+        paste matches one, that reading is offered and selected by default, with
+        its meter handed to the meter pass. The intent is straightforward: for a
+        rhyme most readers already share, the conventional scansion is the more
+        useful starting point. The automatic analysis is still computed and
+        remains available as an alternative reading, and the table is never
+        generalized to unrelated prose. It is worth knowing about all the same,
+        since for those particular texts the display begins from a stored
+        reading rather than a derived one.</p>
 
         <h2>What it will not tell you</h2>
 
@@ -204,9 +292,11 @@
         hamster?</i> differs from <i><span class="learn-stress">WHERE</span> is
         my hamster?</i>. It assigns one context-free default analysis &mdash;
         which is not the same as a neutral one, since the default itself encodes
-        choices. Everything on the <a href="../focus/">Emphasis and focus</a>
-        page describes work the tools do not do, which is precisely why the
-        marks are editable by hand.</p>
+        choices. The nuclear accent described above is not an exception to this:
+        it says where prominence falls by default position, not what the
+        sentence is about. Everything on the <a href="../focus/">Emphasis and
+        focus</a> page describes work the tools do not do, which is precisely
+        why the marks are editable by hand.</p>
 
         <p><strong>Orthographic syllabification has no single right
         answer.</strong> Where to place a hyphen in spelling is a matter of
@@ -222,30 +312,50 @@
 
         <h2>For researchers</h2>
 
-        <p>Three properties matter if you are considering using the output in a
-        study. Every analysis records its source and a ranking score, so
-        dictionary-backed marks can be separated from fallback ones. The three
-        tiers can be edited independently &mdash; lexical stress, template
-        choice, and phrase boundaries each have their own edit operations, and
-        the analysis reflows afterwards rather than being discarded. And
-        analyses export as CSV and as annotated plain text, so the marks can be
-        checked against your own coding.</p>
+        <p>Several properties matter if you are considering using the output in
+        a study. Every analysis records its source and a confidence score, so
+        dictionary-backed marks can be separated from fallback ones and from
+        your own edits. The three tiers can be edited independently &mdash;
+        lexical stress, template choice, and phrase boundaries each have their
+        own edit operations, and the analysis reflows afterwards rather than
+        being discarded. Rhythm Reader Pro exports annotated plain text, four
+        CSVs (syllable table, prosody profile, metrical lexicon, and a session
+        log), and a full JSON document carrying the analyser&rsquo;s document
+        version, which dictionary was loaded, and the configuration in force.</p>
+
+        <p>With research mode on, the instrument also logs every edit as a
+        process measure &mdash; what changed, on which tier, the latency since
+        the previous action, the confidence of the value being overridden, and
+        whether the edit reverses an earlier one &mdash; and reports a Prosodic
+        Divergence Index summarising how far the current annotation has moved
+        from the automatic default. That index is a proposed measure, tagged
+        <i>speculative</i> in the code, and its per-tier components carry more
+        information than the composite, since a single number cannot say
+        <i>which</i> representation the reader disagreed with. Two cautions the
+        instrument states itself: the latencies are click-level browser timings,
+        informative about ordering and deliberation but not eye-tracking-grade;
+        and logging is always visibly indicated, never covert.</p>
 
         <p>What is not yet published is a versioned technical specification: the
         exact dictionary release, the tokenisation rules, the suffix and
-        exception tables, the ranking formula, the metrical fitting weights and
-        tie-breaking, the phrase-length cap, the full function-word list, and the
-        export schema. The prose above is deliberately readable; it is not
-        sufficient to reproduce an output.</p>
+        exception tables, the confidence table, the metrical fitting weights and
+        tie-breaking, the clash and lapse costs, the role-graded resistance
+        weights, the phrase-length cap, the full function-word list, the
+        heteronym list and its syntactic cues, the prose/verse classifier and
+        its thresholds, the contents of the known-readings table, and the export
+        schema. The prose above is deliberately readable; it is not sufficient
+        to reproduce an output.</p>
 
-        <p>The dictionary is the sharpest instance. The subset shipped with the
-        tools is built from the CMU Pronouncing Dictionary, but the build recipe
-        points at an unpinned branch, so two builds made on different days may
-        not contain the same entries, and no release identifier is written into
-        the shipped file or into any export. Until an analyser version and a
-        dictionary release are recorded in the exports themselves, treat any
-        figure taken from these tools as tied to the copy that produced it,
-        and archive that copy alongside your data.</p>
+        <p>The dictionary is the sharpest instance. Both the full dictionary and
+        the common-word subset shipped alongside it are built from the CMU
+        Pronouncing Dictionary, but the build recipe points at an unpinned
+        branch, so two builds made on different days may not contain the same
+        entries. The JSON export records which of the two was loaded and the
+        analyser&rsquo;s document version, but no dictionary release identifier
+        and no analyser build identifier is written into the shipped files or
+        into any export. Until those are recorded in the exports themselves,
+        treat any figure taken from these tools as tied to the copy that
+        produced it, and archive that copy alongside your data.</p>
 
         <p>What does not yet exist is a validation study of the tools
         themselves. The published work behind this site tested the effects of
@@ -261,8 +371,10 @@
         <p><a href="../../rhythm-reader/">Rhythm Reader</a> shows the result of
         all three tiers with every syllable tappable.
         <a href="../../rhythm-reader-pro/">Rhythm Reader Pro</a> exposes the
-        tiers separately, shows phrase structure directly, and lets you move
-        boundaries to watch Tier 3 recompute.</p>
+        tiers separately, shows phrase structure directly, lets you move
+        boundaries to watch Tier 3 recompute, names the feet, marks the nuclear
+        beat, and lets you switch the clash and nuclear rules off &mdash; which
+        is the quickest way to see what each of them was contributing.</p>
 
         <p>The most informative thing you can do is disagree with it. Where your
         inner voice and the analysis part company, one of you is responding to
@@ -272,6 +384,9 @@
         <h2>References and further reading</h2>
 
         <div class="learn-refs">
+          <p>Chomsky, N., &amp; Halle, M. (1968). <i>The sound pattern of
+          English.</i> Harper &amp; Row.</p>
+
           <p>Liberman, M., &amp; Prince, A. (1977). On stress and linguistic
           rhythm. <i>Linguistic Inquiry, 8</i>(2), 249&ndash;336.</p>
 

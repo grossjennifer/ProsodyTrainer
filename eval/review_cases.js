@@ -123,6 +123,37 @@ CASES.push(
     }
   },
   {
+    id: 'doc-tennessee-retraction',
+    why: 'The Learn page uses `Tennessee air` as its worked example of stress ' +
+         'retraction. The engine produced `tenNESsee AIR` — a beat on the ' +
+         'schwa (`T EH2 N AH0 S IY1`), while the secondary-stressed first ' +
+         'syllable stayed weak. Retraction must land on a full vowel.',
+    text: 'Tennessee air',
+    expect: d => {
+      const wd = d.words.find(w => w.normalized === 'tennessee');
+      return wd.syllables.map(s => s.rhythmicStress).join('') === 'SWW';
+    }
+  },
+  {
+    id: 'doc-no-beat-on-schwa',
+    why: 'General form of the same constraint: no metrical beat may land on a ' +
+         'reduced (AH0) syllable, in any word.',
+    text: 'the Tennessee valley and a banana',
+    expect: d => d.words.every(w => w.syllables.every(s =>
+      !(s.rhythmicStress === 'S' && s.lexicalStress === '0' &&
+        (s.phonemes || []).includes('AH0'))))
+  },
+  {
+    id: 'doc-fifteenth-retraction-preserved',
+    why: 'The schwa constraint must not block legitimate retraction onto an ' +
+         'unstressed but FULL vowel: `fifteenth` is `F IH0 F T IY1 N TH`.',
+    text: 'on the fifteenth of May in the jungle of Nool',
+    expect: d => {
+      const wd = d.words.find(w => w.normalized === 'fifteenth');
+      return wd.syllables[0].rhythmicStress === 'S';
+    }
+  },
+  {
     id: 'ui-nucleus-outranks-preposition',
     why: 'Reported: `the girls conversed about school` printed ' +
          '`aBOUT school` — a preposition took a beat while the phrase\'s own ' +

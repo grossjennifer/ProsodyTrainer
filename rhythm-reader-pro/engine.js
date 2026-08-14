@@ -1249,6 +1249,25 @@
   const DEFAULT_DEMOTE = 1.60;
   const DEFAULT_PROMOTE = 1.00;
 
+  /* A syllable whose vowel is reduced to schwa cannot carry a metrical beat.
+   * This is a hard phonological fact, not a preference: you cannot stress the
+   * middle syllable of `Tennessee` (`T EH2 N AH0 S IY1`) because there is no
+   * full vowel there to stress.
+   *
+   * CMU's stress digits do not encode this. Both `AH0` in `Tennessee` and
+   * `IH0` in `fifteenth` are written `0`, but only the first is reduced —
+   * `FIFteenth` is a perfectly good retraction while `tenNESsee` is not a
+   * possible English word-shape at all. The distinction has to be read off
+   * the vowel phoneme.
+   *
+   * Without this the Rhythm Rule would retract a beat onto the nearest
+   * syllable to the left regardless of what vowel was there, and
+   * `Tennessee air` came out as `tenNESsee AIR`. */
+  function isReducedSyllable(sy) {
+    if (!sy.phonemes) return false;
+    return sy.phonemes.some(p => p === 'AH0');
+  }
+
   function rhythmPreference(wd, i) {
     const sy = wd.syllables[i];
     if (wd.userEdited.rhythmic && sy.rhythmicStress) {
@@ -1325,6 +1344,8 @@
      * the word reads `iMAGine`. */
     let weight = sy.lexicalStress === '1' ? 6.0
       : sy.lexicalStress === '2' ? 1.1 : 3.2;
+    // A reduced syllable has no full vowel to carry a beat.
+    if (sy.lexicalStress === '0' && isReducedSyllable(sy)) weight = 9.0;
     // Polysyllabic function words (into, upon, without) are metrically
     // pliable despite having a lexical primary.
     if (behavesAsFunctionWord(wd)) weight = Math.min(weight, 1.6);
@@ -1554,8 +1575,10 @@
         if (prefAt + d < beats.length && beats[prefAt + d] === 'S') crowded = true;
         if (prefAt - d >= 0 && prefAt - d < k && beats[prefAt - d] === 'S') crowded = true;
       }
+      const targetReduced = sAt >= 0 && isReducedSyllable(stream[sAt].sy);
       if (j - k > 1 && sCount === 1 && prefS === 1 && sAt < prefAt &&
-          crowded && raw > W.SHIFT && !wd.userEdited.rhythmic) {
+          crowded && !targetReduced &&
+          raw > W.SHIFT && !wd.userEdited.rhythmic) {
         cost += W.SHIFT;
         if (shifted) shifted.push(wd);
       } else {
