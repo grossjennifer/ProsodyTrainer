@@ -5,6 +5,11 @@
   'use strict';
   global.PROSODY_KNOWN_READINGS = [
     {
+      id: 'study-waltz-count', kind: 'validated-study-stimulus', meter: 'dactyl',
+      text: 'Waltz two three, waltz two three.',
+      marked: 'WALTZ two three WALTZ two three'
+    },
+    {
       id: 'nursery-mouse', kind: 'familiar-rhyme', meter: 'iamb',
       text: 'The mouse ran up the clock.',
       marked: 'the MOUSE ran UP the CLOCK'

@@ -42,6 +42,19 @@ assert.notStrictEqual(doc.regime.evidence, 'weak-boundary-grid'); checks++;
 check(doc.phrases.every(ip => ip.boundaryAfter === 'strong'),
   'periods must remain strong boundaries');
 
+// Exact repetition can establish two short ternary cycles. The phrase-final
+// nucleus remains visible, but it does not become an extra metrical beat.
+doc = E.analyze('Waltz two three, waltz two three.',
+  { useKnownReadings: false });
+assert.strictEqual(doc.regime.evidence, 'repeated-ternary'); checks++;
+check(/dactylic/.test(doc.meterSummary.label), doc.meterSummary.label);
+assert.strictEqual(render(doc), 'WALTZ two three WALTZ two three'); checks++;
+const finalThree = doc.words[5].syllables[0];
+assert.strictEqual(finalThree.rhythmicStress, 'W'); checks++;
+assert.strictEqual(finalThree.phraseProminence, 'nucleus'); checks++;
+assert.notStrictEqual(doc.meterSummary.regularityConfidence, undefined); checks++;
+assert.strictEqual(doc.meterSummary.meterChoiceStatus, 'selected'); checks++;
+
 // Two short prose clauses that happen to alternate are the hard negative:
 // binary aggregation requires more evidence than a single comma.
 doc = E.analyze('The sun arose, and the birds sang.',

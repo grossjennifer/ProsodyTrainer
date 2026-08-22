@@ -170,7 +170,8 @@ label.opt { font-size: .85rem; color: var(--muted); display: inline-flex;
   content: "○"; position: absolute; left: 50%; transform: translateX(-50%);
   top: -1.15em; font-size: .5em; color: var(--beat);
 }
-.syl.nucleus { font-weight: 700; }               /* the phrase's main beat (NSR) */
+/* The triangle alone marks phrase prominence. Weight still comes exclusively
+   from the S class, so a weak nucleus does not look like an extra beat. */
 .syl.nucleus::after {
   content: "\25B2";                             /* ▲ shape cue — visible in every mode */
   position: absolute; left: 50%; transform: translateX(-50%);
@@ -301,7 +302,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   then adjust the beats, phrase boundaries, word stress, and metrical analysis.</p>
   <div class="legend" aria-hidden="true">
     <span class="key k-beat">beats (rhythmic stress)</span>
-    <span class="key k-nucleus">main beat (phrase nucleus)</span>
+    <span class="key k-nucleus">phrase nucleus</span>
     <span class="key k-phrase">phrase boundaries</span>
     <span class="key k-meter">metrical feet</span>
     <span class="key k-edit">your edits</span>
@@ -349,8 +350,8 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   <h2 id="outH">Rhythm-enhanced text</h2>
   <div class="toolbar">
     <div class="seg" role="group" aria-label="Display mode" id="modeSeg">
-      <button data-mode="caps" aria-pressed="true">CAPS</button>
-      <button data-mode="bold" aria-pressed="false"><b>Bold</b></button>
+      <button data-mode="caps" aria-pressed="false">CAPS</button>
+      <button data-mode="bold" aria-pressed="true"><b>Bold</b></button>
       <button data-mode="big" aria-pressed="false">Large</button>
       <button data-mode="beats" aria-pressed="false">● Beats</button>
       <button data-mode="notation" aria-pressed="false">Notation</button>
@@ -393,7 +394,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   <div id="meterLine"></div>
   <div id="readingChoices" class="reading-choices" hidden></div>
   <div id="ambigNotice" class="notice" hidden></div>
-  <div id="surface" class="mode-caps" aria-live="polite"></div>
+  <div id="surface" class="mode-bold" aria-live="polite"></div>
   <p class="hint" id="hintLine"></p>
   <div id="discloseRow">
     <button id="toolsBtn">Open analysis tools</button>
@@ -598,7 +599,7 @@ function researchCSV() {
     .concat(session.log.map(r => cols.map(c => esc(r[c])).join(',')))
     .join('\n');
 }
-let mode = 'caps';
+let mode = 'bold';
 let tier = 'rhythmic';
 let showFeet = false;
 let feetForced = false;
@@ -749,10 +750,11 @@ function renderSurface() {
           : rc >= 0.6 ? 'c-mid' : 'c-lo');
         // preserve original casing from the token where possible
         b.textContent = restoreCase(tok.text, wd, i);
+        const rhythmLabel = (sy.rhythmicStress === 'S' ? 'beat' : 'no beat') +
+          (sy.nuclear ? ', phrase nucleus' : '');
         b.setAttribute('aria-label', wd.word + ' syllable ' + (i + 1) + ', ' +
-          (tier === 'rhythmic'
-            ? (sy.rhythmicStress === 'S' ? (sy.nuclear ? 'main beat, phrase nucleus' : 'beat') : 'no beat')
-            : 'stress ' + sy.lexicalStress) + '. Activate to change.');
+          (tier === 'rhythmic' ? rhythmLabel : 'stress ' + sy.lexicalStress) +
+          '. Activate to change.');
         b.addEventListener('click', () => onSylClick(tok.wordIndex, i));
         inner.appendChild(b);
       });
@@ -838,7 +840,16 @@ function renderMeterLine() {
   }
   const conf = document.createElement('span');
   conf.className = 'conf';
-  conf.textContent = 'parse confidence ' + ms.parseConfidence;
+  const regularity = ms.regularityConfidence ?? ms.parseConfidence;
+  const choice = ms.meterChoiceStatus === 'not-applicable'
+    ? 'meter choice not applicable'
+    : ms.meterChoiceStatus === 'registered'
+      ? 'meter choice from a registered reading'
+      : ms.meterChoiceStatus === 'unresolved'
+        ? 'meter choice unresolved'
+        : 'meter-choice confidence ' + ms.meterChoiceConfidence;
+  conf.textContent = 'regularity confidence ' + regularity +
+    ' · ' + choice;
   ml.appendChild(conf);
   if (ms.localRuns.length) {
     const r = document.createElement('span');

@@ -1828,6 +1828,36 @@
     return candidates.sort((a, b) => a.fit - b.fit)[0] || null;
   }
 
+  /* Repetition can establish a short ternary cycle that is too brief for the
+   * ordinary aggregate-evidence threshold.  A duplicated three-syllable unit
+   * such as `waltz two three, waltz two three` supplies two aligned cycles:
+   * the repeated wording fixes the grouping, and a content word at the start
+   * fixes the phase.  Keep this deliberately narrow so that two unrelated
+   * three-word prose clauses do not manufacture a dactylic reading. */
+  function repeatedTernaryGridEvidence(words, ips) {
+    for (let i = 0; i + 1 < ips.length; i++) {
+      const left = ips[i], right = ips[i + 1];
+      if (left.boundaryAfter !== 'weak') continue;
+      const leftWords = words.slice(left.span[0], left.span[1] + 1);
+      const rightWords = words.slice(right.span[0], right.span[1] + 1);
+      const leftSyllables = leftWords.reduce((n, w) => n + w.syllables.length, 0);
+      const rightSyllables = rightWords.reduce((n, w) => n + w.syllables.length, 0);
+      if (leftSyllables !== 3 || rightSyllables !== 3) continue;
+      if (leftWords.length !== rightWords.length || !leftWords.length) continue;
+      const sameWords = leftWords.every((w, k) =>
+        w.normalized === rightWords[k].normalized &&
+        w.syllables.length === rightWords[k].syllables.length);
+      if (!sameWords || leftWords[0].isFunctionWord) continue;
+      return {
+        fit: 0, syllables: 6, phraseCount: 2,
+        template: { period: 3, phase: 0, foot: 'dactyl' },
+        aggregateSpan: [left.span[0], right.span[1]],
+        phrasePhases: { [left.span[0]]: 0, [right.span[0]]: 0 }
+      };
+    }
+    return null;
+  }
+
   function classifyRegime(words, ips, textType, config) {
     if (textType === 'prose') return { regime: 'prose', reason: 'user:prose' };
     if (textType === 'verse' || textType === 'song')
@@ -1877,17 +1907,23 @@
     }
     const agreement = total > 0 ? top / total : 0;
 
+    const repeatedTernary = repeatedTernaryGridEvidence(words, ips);
     const aggregate = weakBoundaryGridEvidence(words, ips, config);
     const byAggregate = !!aggregate;
+    // Prefer the broader aggregate account when enough text supports it;
+    // repetition is the short-passage fallback.
+    const byRepeatedTernary = !!repeatedTernary && !byAggregate;
     const byLength = longSyll >= REGIME_MIN_EVIDENCE && fit <= REGIME_FIT_THRESHOLD;
     const byAgreement = phrases >= REGIME_MIN_AGREEING_PHRASES &&
                         agreement >= REGIME_AGREEMENT &&
                         fit <= REGIME_FIT_THRESHOLD * 2;
-    const metrical = byLength || byAgreement || byAggregate;
+    const metrical = byLength || byAgreement || byAggregate || byRepeatedTernary;
 
     let metrePrior = null;
     let priorKey = null;
-    if (byAggregate) {
+    if (byRepeatedTernary) {
+      priorKey = '3-0';
+    } else if (byAggregate) {
       priorKey = `${aggregate.template.period}-${aggregate.template.phase}`;
     } else if (metrical && phrases === 1) {
       const evidenceIP = ips.find(ip => {
@@ -1903,7 +1939,16 @@
       const [period, phase] = priorKey.split('-').map(Number);
       metrePrior = { period, phase, support: top, of: total,
                      foot: PERIOD_FOOT[priorKey] || null };
-      if (byAggregate) Object.assign(metrePrior, {
+      if (byRepeatedTernary) Object.assign(metrePrior, {
+        support: repeatedTernary.phraseCount,
+        of: repeatedTernary.phraseCount,
+        aggregate: true,
+        repeatedTernary: true,
+        aggregateEvidenceSyllables: repeatedTernary.syllables,
+        aggregateSpan: repeatedTernary.aggregateSpan,
+        phrasePhases: repeatedTernary.phrasePhases
+      });
+      else if (byAggregate) Object.assign(metrePrior, {
         support: aggregate.phraseCount, of: aggregate.phraseCount,
         aggregate: true,
         aggregateEvidenceSyllables: aggregate.syllables,
@@ -1914,11 +1959,13 @@
 
     return { regime: metrical ? 'metrical' : 'prose', reason: 'auto',
              evidence: metrical
-               ? (byAggregate ? 'weak-boundary-grid'
+               ? (byRepeatedTernary ? 'repeated-ternary'
+                 : byAggregate ? 'weak-boundary-grid'
                  : byLength ? 'length' : 'agreement') : 'none',
              fit: round2(fit), agreement: round2(agreement),
              aggregateFit: aggregate ? round2(aggregate.fit) : null,
-             evidenceSyllables: byAggregate ? aggregate.syllables : longSyll,
+             evidenceSyllables: byRepeatedTernary ? repeatedTernary.syllables
+               : byAggregate ? aggregate.syllables : longSyll,
              phrases, metrePrior };
   }
 
@@ -2698,16 +2745,33 @@
     const meanConf = totalSyll ? confSum / totalSyll : 0;
     const parseConfidence = totalSyll
       ? round2(Math.max(0, (1 - totalCost / totalSyll)) * meanConf) : 0;
+    const ambiguous = !forcedFoot && !proseDominant && ambiguousIPs.length > 0;
+    const selectedConfidences = ips.map(ip => {
+      const reading = ip.readings && ip.readings[ip.selectedReadingIndex];
+      return reading && reading.regime === 'metrical' && reading.template
+        ? reading.confidence : null;
+    }).filter(v => typeof v === 'number');
+    const meterChoiceConfidence = proseDominant ? null
+      : forcedFoot ? 1
+      : ambiguous ? 0.5
+      : selectedConfidences.length
+        ? round2(selectedConfidences.reduce((a, b) => a + b, 0) /
+                 selectedConfidences.length)
+        : 0.9;
+    const meterChoiceStatus = proseDominant ? 'not-applicable'
+      : forcedFoot ? 'forced'
+      : ambiguous ? 'unresolved' : 'selected';
 
     return { feet: allFeet, ipReports, localRuns,
              meterSummary: { label, localRuns, parseConfidence,
+                             regularityConfidence: parseConfidence,
+                             meterChoiceConfidence, meterChoiceStatus,
                              footCounts: counts,
                              regime: proseDominant ? 'prose' : 'metrical',
                              metricalPhrases: metricalIPs,
                              prosePhrases: proseIPs,
                              forcedScansion: forcedFoot ? forcedFoot.name : null,
-                             ambiguous: !forcedFoot && !proseDominant &&
-                                        ambiguousIPs.length > 0,
+                             ambiguous,
                              ambiguousTypes: ambiguousIPs.length
                                ? Array.from(new Set(ambiguousIPs.flatMap(r =>
                                    r.alternates.map(a => a.type)))) : [],
@@ -2912,6 +2976,8 @@
     meter.meterSummary.ambiguous = false;
     meter.meterSummary.ambiguousTypes = [];
     meter.meterSummary.conventional = true;
+    meter.meterSummary.meterChoiceConfidence = null;
+    meter.meterSummary.meterChoiceStatus = 'registered';
   }
 
   function applyMarkedReading(words, marked, source) {

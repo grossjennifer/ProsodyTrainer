@@ -13,6 +13,13 @@ function render(doc) {
   ).join('')).join(' ');
 }
 
+let waltz = E.analyze('Waltz two three, waltz two three.');
+assert.strictEqual(waltz.selectedReading, 'study-waltz-count');
+assert.strictEqual(render(waltz), 'WALTZ two three WALTZ two three');
+assert.strictEqual(waltz.words[5].syllables[0].rhythmicStress, 'W');
+assert.strictEqual(waltz.words[5].syllables[0].phraseProminence, 'nucleus');
+assert.strictEqual(waltz.meterSummary.meterChoiceStatus, 'registered');
+
 let doc = E.analyze('The mouse ran up the clock.');
 assert.strictEqual(render(doc), 'the MOUSE ran UP the CLOCK');
 assert.strictEqual(doc.alternativeReadings.length, 2);

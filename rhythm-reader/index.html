@@ -134,8 +134,8 @@ footer a { color: var(--phrase); }
 <section class="card">
   <div class="row" style="margin-top:0">
     <div class="seg" role="group" aria-label="How to show the beat" id="modes">
-      <button data-mode="caps" aria-pressed="true">CAPS</button>
-      <button data-mode="bold" aria-pressed="false"><b>Bold</b></button>
+      <button data-mode="caps" aria-pressed="false">CAPS</button>
+      <button data-mode="bold" aria-pressed="true"><b>Bold</b></button>
       <button data-mode="big" aria-pressed="false">Big</button>
       <button data-mode="beats" aria-pressed="false">● Dots</button>
     </div>
@@ -150,7 +150,7 @@ footer a { color: var(--phrase); }
     <button id="print">Print</button>
   </div>
   <p id="regimeNote" class="hint" aria-live="polite"></p>
-  <div id="out" class="mode-caps" aria-live="polite"></div>
+  <div id="out" class="mode-bold" aria-live="polite"></div>
   <div id="readingChoices" class="reading-choices" hidden></div>
   <div id="phraseChoices" class="reading-choices" hidden></div>
   <p class="hint">Tap any syllable to move a beat — you know how you read
@@ -184,7 +184,7 @@ footer a { color: var(--phrase); }
 const E = window.RhythmEngine;
 E.loadKnownReadings(window.PROSODY_KNOWN_READINGS || []);
 let doc = null;
-let mode = 'caps';
+let mode = 'bold';
 
 const EXAMPLES = [
   'Twinkle, twinkle, little star, how I wonder what you are.',
