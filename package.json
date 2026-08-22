@@ -4,6 +4,8 @@
   "version": "1.0.0",
   "description": "Local dev server for the ProsodyTrainer static site",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test:acceptance": "node eval/acceptance.js",
+    "test:rhythm-candidates": "node eval/rhythm_measure_diagnostic.js --assert"
   }
 }

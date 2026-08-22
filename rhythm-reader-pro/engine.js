@@ -1520,6 +1520,7 @@
     NUCLEUS_PROSE: 1.00, // ... in prose, where it is the main organising accent
     PROSE:        1.80,  // flat cost of the unmetered-prose hypothesis
     METRE_PRIOR:  0.90,  // discount for matching the document's settled metre
+    GRID_COHERENCE: 1.50,// bonus for a long, exact grid after metre is established
     GIVEN:        0.45   // demotion-resistance multiplier for repeated content
   };
   /* Provenance of these values (see eval/sweep.js):
@@ -1532,10 +1533,12 @@
    *     mid-range values, with SHIFT deliberately toward the conservative end
    *     so the Rhythm Rule fires only when it clearly pays. If a later corpus
    *     does discriminate them, re-run the sweep.
-   *   LAPSE, TRAIL_LAPSE, GRID_EXTRA, NO_BEAT and NUCLEUS were set by hand and
-   *     not swept. */
+   *   LAPSE, TRAIL_LAPSE, GRID_EXTRA, NO_BEAT, NUCLEUS and GRID_COHERENCE
+   *     were set by hand and not swept. */
   const GRID_PERIODS    = [2, 3];
   const AMBIGUITY_BAND  = 0.75;  // candidates within this of the best are shown
+  const REGIME_EVIDENCE_BAND = 1.50; // near reading may establish metre
+  const GRID_COHERENCE_MIN_SYLLABLES = 8;
   const MAX_READINGS    = 4;
 
   // Development-time hook; not used by the shipped tools.
@@ -1698,6 +1701,45 @@
   const REGIME_MIN_AGREEING_PHRASES = 3;
   const REGIME_AGREEMENT = 0.75;
 
+  /* Auto-detection must not decide whether text is metrical from only the
+   * lexically cheapest reading. That creates a circular content-word bias:
+   * a near-tied, perfectly periodic reading can be ignored, causing the text
+   * to be labelled prose, after which its grid evidence disappears entirely.
+   * For regime evidence only, inspect close candidates and prefer the one
+   * with the cleanest grid. The displayed/default reading is not changed at
+   * this stage. */
+  function regimeEvidenceReading(ip) {
+    const near = (ip.readings || [])
+      .filter(r => r.margin <= REGIME_EVIDENCE_BAND && r.template);
+    if (!near.length)
+      return ip.readings && ip.readings[ip.selectedReadingIndex];
+    return near.reduce((best, r) => {
+      if (!best) return r;
+      if (r.components.structure !== best.components.structure)
+        return r.components.structure < best.components.structure ? r : best;
+      return r.cost < best.cost ? r : best;
+    }, null);
+  }
+
+  function unambiguousRegimeTemplate(ip) {
+    const near = (ip.readings || [])
+      .filter(r => r.margin <= REGIME_EVIDENCE_BAND && r.template);
+    if (!near.length) return null;
+    const minStructure = Math.min(...near.map(r => r.components.structure));
+    const cleanest = near.filter(r =>
+      Math.abs(r.components.structure - minStructure) < 1e-9);
+    const keys = new Set(cleanest.map(r =>
+      `${r.template.period}-${r.template.phase}`));
+    if (keys.size !== 1) return null;
+    const chosen = cleanest[0].template;
+    const selected = ip.readings && ip.readings[ip.selectedReadingIndex];
+    if (!selected || !selected.template ||
+        selected.template.period !== chosen.period ||
+        selected.template.phase !== chosen.phase)
+      return null;
+    return chosen;
+  }
+
   function classifyRegime(ips, textType) {
     if (textType === 'prose') return { regime: 'prose', reason: 'user:prose' };
     if (textType === 'verse' || textType === 'song')
@@ -1725,7 +1767,7 @@
     const votes = new Map();
     let phrases = 0;
     for (const ip of ips) {
-      const r = ip.readings && ip.readings[ip.selectedReadingIndex];
+      const r = regimeEvidenceReading(ip);
       if (!r || r.beats.length < 3) continue;
       phrases++;
       cost += r.components.structure;
@@ -1741,7 +1783,10 @@
 
     const fit = cost / syll;
     const total = Array.from(votes.values()).reduce((a, b) => a + b, 0);
-    const top = Math.max(0, ...votes.values());
+    let top = 0, topKey = null;
+    for (const [key, value] of votes) {
+      if (value > top) { top = value; topKey = key; }
+    }
     const agreement = total > 0 ? top / total : 0;
 
     const byLength = longSyll >= REGIME_MIN_EVIDENCE && fit <= REGIME_FIT_THRESHOLD;
@@ -1750,10 +1795,28 @@
                         fit <= REGIME_FIT_THRESHOLD * 2;
     const metrical = byLength || byAgreement;
 
+    let metrePrior = null;
+    let priorKey = null;
+    if (metrical && phrases === 1) {
+      const evidenceIP = ips.find(ip => {
+        const r = regimeEvidenceReading(ip);
+        return r && r.beats.length >= GRID_COHERENCE_MIN_SYLLABLES;
+      });
+      const template = evidenceIP && unambiguousRegimeTemplate(evidenceIP);
+      if (template) priorKey = `${template.period}-${template.phase}`;
+    } else if (metrical && topKey && agreement >= 0.60) {
+      priorKey = topKey;
+    }
+    if (priorKey) {
+      const [period, phase] = priorKey.split('-').map(Number);
+      metrePrior = { period, phase, support: top, of: total,
+                     foot: PERIOD_FOOT[priorKey] || null };
+    }
+
     return { regime: metrical ? 'metrical' : 'prose', reason: 'auto',
              evidence: metrical ? (byLength ? 'length' : 'agreement') : 'none',
              fit: round2(fit), agreement: round2(agreement),
-             evidenceSyllables: longSyll, phrases };
+             evidenceSyllables: longSyll, phrases, metrePrior };
   }
 
   function eurhythmyCost(beats, ctx, regime) {
@@ -1791,6 +1854,21 @@
     let cost = faithfulnessCost(stream, beats, null) +
                structure.cost +
                eurhythmyCost(beats, ctx, structure.regime);
+    /* Once the first pass has independently established that the passage is
+     * metrical, reward an exact sustained grid. This is deliberately absent
+     * from the exploratory pass, where it could manufacture metre in prose.
+     * The period-3 surcharge is not a mismatch, so a ternary grid is exact
+     * when its remaining structure cost is W.TERNARY (or lower with a prior). */
+    const exactGridCost = structure.period === 3 ? W.TERNARY : 0;
+    const priorMatched = ctx.metrePrior &&
+      ctx.metrePrior.period === structure.period &&
+      ctx.metrePrior.phase === structure.phase;
+    const uncreditedStructureCost = structure.cost +
+      (priorMatched ? W.METRE_PRIOR : 0);
+    if (ctx.settledMeter && priorMatched && structure.regime === 'metrical' &&
+        stream.length >= GRID_COHERENCE_MIN_SYLLABLES &&
+        uncreditedStructureCost <= exactGridCost + 1e-9)
+      cost -= W.GRID_COHERENCE;
     /* Keeping a beat on the nucleus is worth more in prose than in verse.
      * Prose rhythm is organised around phrase accents rather than a periodic
      * grid, so the nuclear accent is the main thing holding the phrase
@@ -2045,7 +2123,8 @@
         : config.clashSubordination ? W.CLASH : 0;
       const ctx = { nucleusIdx, clashWeight,
                     regime: config.regime || 'metrical',
-                    metrePrior: config.metrePrior || null };
+                    metrePrior: config.metrePrior || null,
+                    settledMeter: !!config.settledMeter };
 
       const freeFit = fitPhraseRhythm(stream);
       const freeBeats = new Array(stream.length).fill(null);
@@ -2126,7 +2205,8 @@
   function projectDocument(words, ips, config) {
     // Pass 1 — metrical objective, no prior. Establishes how well the text
     // takes to a grid at all.
-    project(words, ips, Object.assign({}, config, { regime: 'metrical' }));
+    project(words, ips, Object.assign({}, config,
+      { regime: 'metrical', settledMeter: false }));
     if (config.forcedScansion)
       return { regime: 'metrical', reason: 'forced', metrePrior: null };
 
@@ -2136,10 +2216,12 @@
     // phrases agree on; a poem's established rhythm is exactly the context an
     // individual line lacks. Only one feedback round runs, so a weak majority
     // cannot amplify itself into a metre the text does not have.
-    const prior = verdict.regime === 'metrical' ? detectMetrePrior(ips) : null;
+    const prior = verdict.regime === 'metrical'
+      ? (verdict.metrePrior || detectMetrePrior(ips)) : null;
     if (verdict.regime !== 'metrical' || prior) {
       project(words, ips, Object.assign({}, config,
-        { regime: verdict.regime, metrePrior: prior }));
+        { regime: verdict.regime, metrePrior: prior,
+          settledMeter: verdict.regime === 'metrical' }));
     }
     return Object.assign({}, verdict, { metrePrior: prior });
   }

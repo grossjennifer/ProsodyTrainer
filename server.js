@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 
 const port = process.env.PORT || 3000;
+const host = process.env.HOST || '127.0.0.1';
 const root = __dirname;
 
 const mimeTypes = {
@@ -44,6 +45,6 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(port, () => {
-  console.log(`Serving ProsodyTrainer at http://localhost:${port}`);
+server.listen(port, host, () => {
+  console.log(`Serving ProsodyTrainer at http://${host}:${port}`);
 });
