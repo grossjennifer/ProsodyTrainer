@@ -1,3 +1,19 @@
+# Rhythm Reader Pro — build 3.2.0 (research-facing polish)
+
+Build 3.2.0 changes presentation and reproducibility without changing the
+rhythm model's scoring weights. The interface now calls its numeric estimates
+model-fit scores rather than calibrated confidence, describes PDI explicitly
+as distance from the automatic model, and shows the build identifier on the
+page. Every downloadable file now carries the same build identifier while
+retaining the existing export fields.
+
+The analysis tabs implement the standard Left/Right/Home/End keyboard pattern,
+keep one tab in the tab order, and connect tabs to hidden tab panels with ARIA.
+Letter-boundary syllable split targets are now keyboard focusable and activate
+with Enter or Space.
+
+---
+
 # Prosody Trainer rhythm engine — revision 4 (weak-boundary metre)
 
 Revision 4 adds passage-level metrical evidence across comma boundaries while

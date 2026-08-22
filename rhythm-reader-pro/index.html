@@ -74,6 +74,9 @@ body:not(.simple) #meterLine .gloss { color: var(--muted); font-size: .84rem; }
   border-radius: 999px; font-size: .8rem; background: var(--card);
   border: 1px solid var(--line); color: var(--muted); }
 #dictChip.warn { color: var(--muted); }
+.build-chip { display: inline-block; margin: .8rem 0 0 .35rem;
+  padding: .25rem .7rem; border-radius: 999px; font-size: .8rem;
+  background: var(--card); border: 1px solid var(--line); color: var(--muted); }
 
 /* Cards */
 .card { background: var(--card); border: 1px solid var(--line);
@@ -268,8 +271,11 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
 .insp-syl button.digit.d2 { background: var(--beat-soft); color: var(--beat-ink); }
 .mergebtn { align-self: center; font-size: .72rem; padding: .2rem .4rem; }
 .splitchars { display: flex; }
-.splitchars .gap { width: 4px; cursor: pointer; border-radius: 2px; }
+.splitchars .gap { display: inline-block; width: 8px; min-height: 1.4em;
+  cursor: pointer; border-radius: 2px; }
 .splitchars .gap:hover { background: var(--phrase); }
+.splitchars .gap:focus-visible { outline: 2px solid var(--phrase);
+  outline-offset: 1px; background: var(--phrase-soft); }
 .varbtn[aria-pressed="true"] { background: var(--meter-soft); border-color: var(--meter); }
 .meta { font-size: .8rem; color: var(--muted); margin-top: .5rem; }
 
@@ -308,6 +314,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <span class="key k-edit">your edits</span>
   </div>
   <span id="dictChip" class="research">Dictionary coverage: loading…</span>
+  <span id="buildChip" class="build-chip">Build loading…</span>
 </header>
 
 <section class="card" aria-labelledby="inH">
@@ -371,7 +378,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
         <option value="sentence">one per sentence</option>
         <option value="none">none</option>
       </select></label>
-    <label class="opt research"><input type="checkbox" id="confView"> confidence</label>
+    <label class="opt research"><input type="checkbox" id="confView"> show model fit</label>
     <label class="opt research"><input type="checkbox" id="editsOnly"> edits only</label>
     <span class="spacer"></span>
     <span id="recChip" hidden style="font-size:.78rem; color:var(--beat-ink);
@@ -402,13 +409,17 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   </div>
 </section>
 
-<div class="tabs" role="tablist">
-  <button role="tab" aria-selected="true" data-tab="debug">Analysis table</button>
-  <button role="tab" aria-selected="false" data-tab="lexicon">Metrical lexicon</button>
-  <button role="tab" aria-selected="false" data-tab="about">Notation &amp; about</button>
+<div class="tabs" role="tablist" aria-label="Analysis sections">
+  <button id="tab-debug" role="tab" aria-selected="true" aria-controls="panel-debug"
+    tabindex="0" data-tab="debug">Analysis table</button>
+  <button id="tab-lexicon" role="tab" aria-selected="false"
+    aria-controls="panel-lexicon" tabindex="-1" data-tab="lexicon">Metrical lexicon</button>
+  <button id="tab-about" role="tab" aria-selected="false"
+    aria-controls="panel-about" tabindex="-1" data-tab="about">Notation &amp; about</button>
 </div>
 
-<section class="card panel active" id="panel-debug" role="tabpanel">
+<section class="card panel active" id="panel-debug" role="tabpanel"
+  aria-labelledby="tab-debug">
   <h2>Word-by-word analysis</h2>
   <div class="statgrid" id="statGrid"></div>
   <div id="debugTableWrap"></div>
@@ -416,7 +427,8 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   <div id="meterDetail" class="mono" style="font-size:.82rem"></div>
 </section>
 
-<section class="card panel" id="panel-lexicon" role="tabpanel">
+<section class="card panel" id="panel-lexicon" role="tabpanel"
+  aria-labelledby="tab-lexicon" hidden>
   <h2>Metrical lexicon</h2>
   <div class="lexctl">
     <label class="opt">template
@@ -425,13 +437,14 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
       <select id="lexSort">
         <option value="word">word</option>
         <option value="template">template</option>
-        <option value="confidence">confidence</option>
+        <option value="confidence">model fit</option>
       </select></label>
   </div>
   <div class="lexgrid" id="lexGrid"></div>
 </section>
 
-<section class="card panel about" id="panel-about" role="tabpanel">
+<section class="card panel about" id="panel-about" role="tabpanel"
+  aria-labelledby="tab-about" hidden>
   <h2>About Rhythm Reader Pro</h2>
   <p>Rhythm Reader Pro is an interactive model of implicit prosody in silent
   reading. It is designed for close analysis, teaching, and research rather
@@ -477,22 +490,24 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   automatic default, averaged over four components — word stress, template,
   beats, and phrasing (each 0–1). The component breakdown matters more than
   the composite: it says <em>which</em> representation you disagreed with.
+  PDI is an edit-distance measure from this model's default; it is not an
+  independent measure of a reader's prosodic ability.
   In the Phrases display mode, boundaries themselves are editable: click
   <code>❘</code> to remove one, <code>+</code> to insert one.</p>
   <h2>Research mode</h2>
   <p>With <em>research mode</em> on (and an optional participant ID), the app
   records every edit as a process measure: what changed, on which tier,
-  latency since the previous action, the confidence of the value being
+  latency since the previous action, the model-fit score of the value being
   overridden, and whether the edit reverses an earlier one. A recording
   indicator is always shown while logging — the instrument never records
   covertly. Export the log via <em>Research session log</em>; it also rides
   along inside the JSON export. Note the resolution caveat: these are
   click-level latencies in a browser, informative about deliberation and
   ordering, not a substitute for eye-tracking-grade timing.</p>
-  <h2>Sources and confidence</h2>
+  <h2>Sources and model fit</h2>
   <p>Each analysis is tagged with its source: the CMU Pronouncing Dictionary,
   a named fallback rule (for words not in the dictionary), or your own edit.
-  Confidence scores are heuristic indications, not calibrated probabilities.</p>
+  Model-fit scores are heuristic indications, not calibrated probabilities.</p>
   <h2>Running locally</h2>
   <p>This file is self-contained and runs offline. For full dictionary
   coverage (126,052 words), place <code>cmudict.js</code> in the same folder;
@@ -520,6 +535,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
 'use strict';
 const E = window.RhythmEngine;
 E.loadKnownReadings(window.PROSODY_KNOWN_READINGS || []);
+document.getElementById('buildChip').textContent = 'Build ' + E.build;
 
 /* ---------- dictionary: try full asset, fall back to embedded subset ----- */
 const chip = document.getElementById('dictChip');
@@ -569,6 +585,7 @@ function logEvent(e) {
   if (e.after !== undefined) hist.push(String(e.after));
   session.history.set(locus, hist);
   session.log.push({
+    engine_build: E.build,
     participant: session.participant || 'anonymous',
     study: session.study || '',
     passage_index: session.passageIndex,
@@ -589,7 +606,7 @@ function logEvent(e) {
   session.lastT = now;
 }
 function researchCSV() {
-  const cols = ['participant','study','passage_index',
+  const cols = ['engine_build','participant','study','passage_index',
     'timestamp','ms_since_analyze','latency_ms',
     'action','tier','word','word_index','syllable_index','before','after',
     'confidence_before','confidence_after','reversal'];
@@ -847,15 +864,15 @@ function renderMeterLine() {
       ? 'meter choice from a registered reading'
       : ms.meterChoiceStatus === 'unresolved'
         ? 'meter choice unresolved'
-        : 'meter-choice confidence ' + ms.meterChoiceConfidence;
-  conf.textContent = 'regularity confidence ' + regularity +
+        : 'meter-choice fit ' + ms.meterChoiceConfidence;
+  conf.textContent = 'regularity fit ' + regularity +
     ' · ' + choice;
   ml.appendChild(conf);
   if (ms.localRuns.length) {
     const r = document.createElement('span');
     r.className = 'runs';
     r.textContent = 'local runs: ' + ms.localRuns.map(x =>
-      x.type + ' (' + x.confidence + ')').join(', ');
+      x.type + ' (fit ' + x.confidence + ')').join(', ');
     ml.appendChild(r);
   }
   // feet gating [design §9]: drawn only above threshold, but inspectable.
@@ -913,7 +930,7 @@ function renderMeterLine() {
     notice.appendChild(actions);
   } else if (!ms.showFeet && !feetForced) {
     notice.hidden = false;
-    notice.textContent = 'Meter confidence is below the display threshold (' +
+    notice.textContent = 'Meter fit is below the display threshold (' +
       ms.displayThreshold + '), so feet are not drawn automatically. ' +
       'You can still turn on “show feet” to inspect the parse.';
   } else {
@@ -1025,12 +1042,12 @@ function renderDebug() {
   grid.innerHTML = '';
   const pdi = E.computePDI(doc);
   const stats = [
-    [pdi.pdi, 'prosodic divergence (PDI)'],
+    [pdi.pdi, 'distance from automatic model (PDI)'],
     [Math.round(st.cmuRate * 100) + '%', 'words found in CMU'],
     [Math.round(st.heuristicRate * 100) + '%', 'estimated by rule'],
     [Math.round(st.userEditRate * 100) + '%', 'edited by you'],
     [st.tierMismatchCount, 'stress ≠ beat syllables'],
-    [st.implicitProsodyProfile.rhythmicRegularityIndex, 'rhythmic regularity'],
+    [st.implicitProsodyProfile.rhythmicRegularityIndex, 'regularity fit score'],
     [st.implicitProsodyProfile.meanPhraseLength, 'mean phrase length (words)']
   ];
   for (const [n, l] of stats) {
@@ -1046,7 +1063,7 @@ function renderDebug() {
   const tbl = document.createElement('table');
   tbl.innerHTML = '<thead><tr><th>word</th><th>syllables</th>' +
     '<th>lexical</th><th>template</th><th>beats</th><th>source</th>' +
-    '<th>conf.</th><th>in CMU</th><th>edited</th><th></th></tr></thead>';
+    '<th>model fit</th><th>in CMU</th><th>edited</th><th></th></tr></thead>';
   const tb = document.createElement('tbody');
   doc.words.forEach((wd, wi) => {
     const tr = document.createElement('tr');
@@ -1156,7 +1173,7 @@ function renderLexicon() {
       row('realized here', Object.entries(realizations)
         .map(([p, n]) => p + ' ×' + n).join(', ')) +
       row('meaning parts', E.morphSegment(wd.normalized).join('·')) +
-      row('confidence', wd.lexicalConfidence) +
+      row('model fit', wd.lexicalConfidence) +
       row('source', wd.lexicalSource);
     card.querySelector('h3').textContent = wd.normalized;
     card.querySelector('.tname').textContent =
@@ -1212,7 +1229,7 @@ function openInspector(wi) {
   meta.className = 'meta';
   meta.textContent = 'source: ' + wd.lexicalSource +
     (wd.lexicalRule ? ' (' + wd.lexicalRule + ')' : '') +
-    ' · confidence ' + wd.lexicalConfidence +
+    ' · model fit ' + wd.lexicalConfidence +
     ' · meaning parts: ' + E.morphSegment(wd.word).join('·') + ' [heuristic]' +
     (wd.editHistory.length ? ' · ' + wd.editHistory.length + ' edit(s)' : '');
   dlg.appendChild(meta);
@@ -1250,12 +1267,22 @@ function openInspector(wi) {
         g.className = 'gap';
         g.title = 'Split syllable here';
         g.setAttribute('role', 'button');
-        g.addEventListener('click', () => {
+        g.tabIndex = 0;
+        g.setAttribute('aria-label', 'Split ' + wd.word + ' between ' +
+          sy.text[ci] + ' and ' + sy.text[ci + 1]);
+        const splitHere = () => {
           logEvent({ action: 'split', tier: 'lexical', wordIdx: wi,
             sylIdx: si, word: wd.word, before: sy.text,
             after: sy.text.slice(0, ci + 1) + '.' + sy.text.slice(ci + 1),
             confidenceBefore: wd.lexicalConfidence });
-          E.splitSyllable(doc, wi, si, ci + 1); renderAll(); openInspector(wi); });
+          E.splitSyllable(doc, wi, si, ci + 1); renderAll(); openInspector(wi);
+        };
+        g.addEventListener('click', splitHere);
+        g.addEventListener('keydown', (ev) => {
+          if (ev.key !== 'Enter' && ev.key !== ' ') return;
+          ev.preventDefault();
+          splitHere();
+        });
         t.appendChild(g);
       }
     });
@@ -1407,7 +1434,7 @@ function download(name, content, type) {
 function lexiconCSV() {
   const rows = [['word', 'syllables', 'lexical_stress', 'template_pattern',
                  'template_name', 'realizations', 'confidence', 'source',
-                 'instances']];
+                 'instances', 'engine_build']];
   for (const e of lexEntries()) {
     const wd = e.wd;
     const realizations = {};
@@ -1417,7 +1444,7 @@ function lexiconCSV() {
     rows.push([wd.normalized, wd.syllables.map(x => x.text).join('·'),
       wd.lexicalPattern, wd.template.pattern, wd.template.traditionalName,
       Object.entries(realizations).map(([p, n]) => p + 'x' + n).join(' '),
-      wd.lexicalConfidence, wd.lexicalSource, e.instances.length]);
+      wd.lexicalConfidence, wd.lexicalSource, e.instances.length, E.build]);
   }
   return rows.map(r => r.map(v => /[",\n]/.test(String(v))
     ? '"' + String(v).replace(/"/g, '""') + '"' : String(v)).join(',')).join('\n');
@@ -1426,7 +1453,9 @@ document.getElementById('exportSel').addEventListener('change', (ev) => {
   const v = ev.target.value;
   ev.target.value = '';
   if (!v || !doc) return;
-  if (v === 'txt') download('rhythm_annotated.txt', E.annotatedText(doc), 'text/plain');
+  if (v === 'txt') download('rhythm_annotated.txt',
+    'Rhythm Reader Pro build ' + E.build + '\n\n' + E.annotatedText(doc),
+    'text/plain');
   if (v === 'csv') download('rhythm_analysis.csv', E.toCSV(doc), 'text/csv');
   if (v === 'profile') download('implicit_prosody_profile.csv', E.profileCSV(doc), 'text/csv');
   if (v === 'lexicon') download('metrical_lexicon.csv', lexiconCSV(), 'text/csv');
@@ -1435,7 +1464,8 @@ document.getElementById('exportSel').addEventListener('change', (ev) => {
     download('stimulus_pair.txt',
       'CONGRUENT (' + p.congruentCount + ' marks):\n' + p.congruent +
       '\n\nINCONGRUENT (' + p.incongruentCount + ' marks):\n' + p.incongruent +
-      '\n\nGenerated by Rhythm Reader (deterministic; Gross et al., 2017 paradigm).\n',
+      '\n\nGenerated by Rhythm Reader Pro build ' + E.build +
+      ' (deterministic; Gross et al., 2017 paradigm).\n',
       'text/plain');
   }
   if (v === 'training') {
@@ -1448,7 +1478,8 @@ document.getElementById('exportSel').addEventListener('change', (ev) => {
       '\n\nCue-fading sequence per the training-to-transfer design of ' +
       'Gross, Roldan, Kiessel, Esselink, & Dunlap (2026, Reading and ' +
       'Writing). Selection rule: first beat per unit survives; relocate ' +
-      'any mark by tap-editing before export.\n', 'text/plain');
+      'any mark by tap-editing before export.\n' +
+      'Rhythm Reader Pro build ' + E.build + '.\n', 'text/plain');
   }
   if (v === 'research') download('research_session' +
     (session.participant ? '_' + session.participant : '') + '.csv',
@@ -1540,13 +1571,34 @@ document.getElementById('feetToggle').addEventListener('change', (ev) => {
   feetForced = showFeet;
   renderSurface();
 });
-document.querySelectorAll('.tabs [role="tab"]').forEach(t =>
-  t.addEventListener('click', () => {
-    document.querySelectorAll('.tabs [role="tab"]').forEach(x =>
-      x.setAttribute('aria-selected', String(x === t)));
-    document.querySelectorAll('.panel').forEach(p =>
-      p.classList.toggle('active', p.id === 'panel-' + t.dataset.tab));
-  }));
+const analysisTabs = Array.from(document.querySelectorAll('.tabs [role="tab"]'));
+function activateAnalysisTab(tab, moveFocus) {
+  analysisTabs.forEach(x => {
+    const selected = x === tab;
+    x.setAttribute('aria-selected', String(selected));
+    x.tabIndex = selected ? 0 : -1;
+  });
+  document.querySelectorAll('.panel').forEach(p => {
+    const selected = p.id === 'panel-' + tab.dataset.tab;
+    p.classList.toggle('active', selected);
+    p.hidden = !selected;
+  });
+  if (moveFocus) tab.focus();
+}
+analysisTabs.forEach((tab, index) => {
+  tab.addEventListener('click', () => activateAnalysisTab(tab, false));
+  tab.addEventListener('keydown', (ev) => {
+    let target = null;
+    if (ev.key === 'ArrowRight') target = analysisTabs[(index + 1) % analysisTabs.length];
+    if (ev.key === 'ArrowLeft')
+      target = analysisTabs[(index - 1 + analysisTabs.length) % analysisTabs.length];
+    if (ev.key === 'Home') target = analysisTabs[0];
+    if (ev.key === 'End') target = analysisTabs[analysisTabs.length - 1];
+    if (!target) return;
+    ev.preventDefault();
+    activateAnalysisTab(target, true);
+  });
+});
 document.getElementById('lexFilter').addEventListener('change', renderLexicon);
 document.getElementById('lexSort').addEventListener('change', renderLexicon);
 

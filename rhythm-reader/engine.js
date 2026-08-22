@@ -30,6 +30,11 @@
 (function (global) {
   'use strict';
 
+  // Human-readable release identifier. The numeric `version` field on an
+  // analysis remains the stable JSON schema version; this build identifies
+  // the exact engine release that produced an analysis or export.
+  const ENGINE_BUILD = '3.2.0';
+
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
    * ======================================================================== */
@@ -2931,6 +2936,7 @@
     return {
       version: 3,
       engineStage: 1,
+      engineBuild: ENGINE_BUILD,
       dictionary: DICT_SOURCE,
       config,
       originalText: text,
@@ -3450,7 +3456,7 @@
                    'template_pattern', 'template_name', 'rhythmic_stress',
                    'phrase_prominence',
                    'lexical_source', 'rhythmic_source', 'lexical_confidence',
-                   'rhythmic_confidence', 'user_edited']];
+                   'rhythmic_confidence', 'user_edited', 'engine_build']];
     doc.words.forEach(wd => {
       wd.syllables.forEach((sy, i) => {
         rows.push([wd.word, i, sy.text, sy.lexicalStress,
@@ -3459,7 +3465,7 @@
                    wd.lexicalSource, sy.rhythmicSource,
                    wd.lexicalConfidence, sy.rhythmicConfidence,
                    (wd.userEdited.lexical || wd.userEdited.rhythmic ||
-                    wd.userEdited.template)]);
+                    wd.userEdited.template), doc.engineBuild || ENGINE_BUILD]);
       });
     });
     return rows.map(r => r.map(csvEscape).join(',')).join('\n');
@@ -3469,6 +3475,8 @@
     const p = doc.stats.implicitProsodyProfile;
     const d = computePDI(doc);
     const rows = [['measure', 'value'],
+      ['engine_build', doc.engineBuild || ENGINE_BUILD],
+      ['pdi_reference', 'distance_from_automatic_model'],
       ['prosodic_divergence_index', d.pdi],
       ['pdi_lexical', d.components.lexical],
       ['pdi_template', d.components.template],
@@ -3620,6 +3628,7 @@
    * Public API
    * ======================================================================== */
   const RhythmEngine = {
+    build: ENGINE_BUILD,
     loadDictionary, loadKnownReadings, analyze, tokenize, analyzeWord,
     syllabifyPhonemes, orthoSyllabify, assignTemplate, fallbackAnalyze, vowelGroups,
     editRhythmicStress, editLexicalStress, resetWord, tagPOS, selectIPReading, clearIPReading,
