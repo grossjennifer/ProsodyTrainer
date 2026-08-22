@@ -1,3 +1,37 @@
+# Prosody Trainer rhythm engine — revision 4 (weak-boundary metre)
+
+Revision 4 adds passage-level metrical evidence across comma boundaries while
+preserving the separate intonational phrases used for phrase prominence.
+This fixes two lookup-free failures in the 40-item rhythm-measure diagnostic:
+
+- `On the fifteenth of May, in the jungle of Nool` now resolves as anapestic,
+  including the general Rhythm Rule reading `FIFteenth`, without consulting
+  the registered Seuss scansion.
+- `Half a league, half a league, half a league onward` now resolves as
+  dactylic rather than as unrelated short prose fragments.
+
+The aggregation is intentionally narrow. Only commas are weak boundaries;
+periods and other punctuation reset the grid. It requires at least eight
+syllables, and two short comma-separated phrases can establish a ternary but
+not a binary metre. The latter restriction preserves the hard prose negative
+`The sun arose, and the birds sang`, whose two clauses alternate by accident.
+
+Known readings now have explicit provenance. `analyze()` accepts
+`useKnownReadings: false`, reports `analysisSource`, and records whether an
+available registered reading was actually applied. Registered and general
+readings are labelled accordingly in both interfaces.
+
+Pure literal grid seeds remain in the internal ranked list for diagnostics but
+are filtered from the reader-facing alternatives. They are search probes, not
+independently motivated linguistic readings.
+
+The lookup-free candidate diagnostic improves from 36/40 to **37/40**, with no
+outright disagreements: M15 and M18 remain prose, and the deliberately minimal
+`Waltz two three` item remains underdetermined. New regression coverage lives
+in `test_ternary_boundaries.js`.
+
+---
+
 # Prosody Trainer rhythm engine — revision 3 (prose/verse regimes)
 
 Responds to `Rhythm_Fix_review_for_advanced_AI.md` (13 August 2026). Both

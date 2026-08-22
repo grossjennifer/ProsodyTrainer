@@ -109,7 +109,7 @@ async function setText(dom, text, goId) {
    * probe with no close rival would silently skip the very path being
    * tested. */
   const d = await setText(dom,
-    'The little puppy ran away before the children noticed.', 'go');
+    'With a heart for any fate', 'go');
 
   const wrap = $(d, 'phraseChoices');
   ok(wrap, 'basic tool has a region for inferred alternatives');
