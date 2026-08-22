@@ -90,13 +90,19 @@ console.log('Default verdicts:', counts);
 console.log('By contrast category:', byCategory);
 
 if (process.argv.includes('--assert')) {
-  assert.ok((counts.agree || 0) >= 36,
-    `expected at least 36 strict agreements, got ${counts.agree || 0}`);
+  assert.ok((counts.agree || 0) >= 39,
+    `expected at least 39 strict agreements, got ${counts.agree || 0}`);
+  assert.strictEqual(counts.disagree || 0, 0,
+    'a candidate key is directly contradicted');
+  assert.strictEqual(counts.neither || 0, 0,
+    'a candidate contrast receives no default beat');
+  assert.strictEqual(counts['lookup-failed'] || 0, 0,
+    'a candidate reference could not be located');
   assert.ok(byCategory['function/function'].agree >= 10,
     'function/function contrasts regressed');
-  assert.ok(byCategory['content/function'].agree >= 9,
+  assert.ok(byCategory['content/function'].agree >= 10,
     'content/function contrasts regressed');
-  assert.ok(byCategory['function/content'].agree >= 8,
+  assert.ok(byCategory['function/content'].agree >= 10,
     'metrical function-word promotion regressed');
   assert.strictEqual(byCategory['function/content'].disagree, 0,
     'a function/content key is directly contradicted');

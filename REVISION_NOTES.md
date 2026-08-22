@@ -25,10 +25,20 @@ Pure literal grid seeds remain in the internal ranked list for diagnostics but
 are filtered from the reader-facing alternatives. They are search probes, not
 independently motivated linguistic readings.
 
-The lookup-free candidate diagnostic improves from 36/40 to **37/40**, with no
-outright disagreements: M15 and M18 remain prose, and the deliberately minimal
-`Waltz two three` item remains underdetermined. New regression coverage lives
-in `test_ternary_boundaries.js`.
+The lookup-free candidate diagnostic first improved from 36/40 to 37/40. M15
+and M18 were then replaced because their intended initial-pronoun beats needed
+unsupported contrastive focus. Their replacements preserve the function-word/
+content-word balance while supplying sustained trochaic contexts:
+
+- M15: `WE plant GARdens IN the COURTyard AFTer SUNrise EACH day`
+- M18: `SHE checks PARcels IN the OFfice AFTer BREAKfast EACH day`
+
+The revised pool reaches **39/40 strict agreements**, with no disagreements or
+items on which neither critical location receives the default beat. The sole
+remaining non-strict result is the deliberately minimal `Waltz two three`
+item, which is genuinely underdetermined without musical context. New
+regression coverage lives in `test_ternary_boundaries.js` and the candidate
+diagnostic now enforces the stronger 39/40 floor.
 
 ---
 
