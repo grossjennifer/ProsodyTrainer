@@ -388,14 +388,17 @@ function renderPhraseChoices() {
   for (const { ip, i } of ambiguous) {
     const row = document.createElement('div');
     row.style.marginBottom = '.35rem';
-    const shown = ip.readings.slice(0, 3);
-    shown.forEach((cand, k) => {
+    const shown = (ip.userFacingReadings || ip.readings.filter(r => r.userFacing !== false))
+      .slice(0, 3);
+    shown.forEach(cand => {
       const b = document.createElement('button');
       b.textContent = candidateText(i, cand);
-      b.setAttribute('aria-pressed', String(ip.selectedReadingIndex === k));
+      b.setAttribute('aria-pressed', String(ip.selectedReadingIndex === cand.rank));
       b.setAttribute('aria-label',
         `Read phrase ${i + 1} as: ${candidateText(i, cand)}`);
-      b.addEventListener('click', () => { E.selectIPReading(doc, i, k); render(); });
+      b.addEventListener('click', () => {
+        E.selectIPReading(doc, i, cand.rank); render();
+      });
       row.appendChild(b);
     });
     if (ip.pinnedReadingKey) {

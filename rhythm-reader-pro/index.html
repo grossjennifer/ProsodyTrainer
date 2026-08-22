@@ -973,18 +973,20 @@ function renderPhraseChoices() {
 
   for (const { ip, i } of ambiguous) {
     const row = document.createElement('div');
-    ip.readings.slice(0, 3).forEach((cand, k) => {
+    const shown = (ip.userFacingReadings || ip.readings.filter(r => r.userFacing !== false))
+      .slice(0, 3);
+    shown.forEach(cand => {
       const b = document.createElement('button');
       b.textContent = candidateText(i, cand) +
         '  (' + (cand.template && cand.template.foot ? cand.template.foot
                                                      : cand.regime) +
         ', cost ' + cand.cost + ')';
-      b.setAttribute('aria-pressed', String(ip.selectedReadingIndex === k));
+      b.setAttribute('aria-pressed', String(ip.selectedReadingIndex === cand.rank));
       b.addEventListener('click', () => {
         logEvent({ action: 'phrase-reading-select', tier: 'rhythmic',
-          before: String(ip.selectedReadingIndex), after: String(k),
+          before: String(ip.selectedReadingIndex), after: String(cand.rank),
           word: 'phrase' + i });
-        E.selectIPReading(doc, i, k);
+        E.selectIPReading(doc, i, cand.rank);
         renderAll();
       });
       row.appendChild(b);
