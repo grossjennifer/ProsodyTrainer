@@ -1128,23 +1128,30 @@
    * ======================================================================== */
 
   const IP_PUNCT = new Set(['.', '!', '?', ';', ':', ',', '—', '–', '(', ')', '"', '“', '”']);
+  // A comma commonly marks an intonational phrase without resetting a poem's
+  // metrical grid. Keep the IP boundary (prominence still needs it), but mark
+  // it as weak so passage-level metre inference may look across it. Other
+  // punctuation remains a strong reset. This is deliberately conservative:
+  // only commas participate in weak-boundary aggregation.
+  const WEAK_IP_PUNCT = new Set([',']);
   const PHI_MAX_WORDS = 4; // [HEUR "phi-length-cap"]
 
   // wordTokenIdxs: indices into doc.words, in order; ipBreaksAfter: set of
   // word indices after which an IP boundary falls (from punctuation).
-  function chunk(words, ipBreaksAfter) {
+  function chunk(words, ipBreaksAfter, boundaryStrengthAfter) {
     const ips = [];
     let ipStart = 0;
     for (let w = 0; w < words.length; w++) {
       if (ipBreaksAfter.has(w) || w === words.length - 1) {
-        ips.push(buildIP(words, ipStart, w));
+        ips.push(buildIP(words, ipStart, w,
+          (boundaryStrengthAfter && boundaryStrengthAfter.get(w)) || 'strong'));
         ipStart = w + 1;
       }
     }
     return ips;
   }
 
-  function buildIP(words, start, end) {
+  function buildIP(words, start, end, boundaryAfter) {
     // φ chunking [HEUR "phi-chunk-starter"]: open a new φ at a chunk-starter
     // word that follows at least one content word in the current φ.
     // "Content" here = not a chunk starter (so "before the children" stays
@@ -1189,7 +1196,8 @@
       capped.push({ ...phi, span: [s, e] });
     }
     return { type: 'IP', span: [start, end], confidence: CONF.IP_PUNCT,
-             source: 'punctuation', children: capped, userEdited: false };
+             source: 'punctuation', boundaryAfter: boundaryAfter || 'strong',
+             children: capped, userEdited: false };
   }
 
   /* ==========================================================================
@@ -1521,6 +1529,7 @@
     PROSE:        1.80,  // flat cost of the unmetered-prose hypothesis
     METRE_PRIOR:  0.90,  // discount for matching the document's settled metre
     GRID_COHERENCE: 1.50,// bonus for a long, exact grid after metre is established
+    AGGREGATE_COHERENCE: 0.40, // extra support from a grid continuing across commas
     GIVEN:        0.45   // demotion-resistance multiplier for repeated content
   };
   /* Provenance of these values (see eval/sweep.js):
@@ -1740,7 +1749,86 @@
     return chosen;
   }
 
-  function classifyRegime(ips, textType) {
+  const AGGREGATE_GRID_MIN_SYLLABLES = 8;
+
+  /* A weak punctuation boundary may end an intonational phrase without
+   * ending the metrical line. Analyze each run of comma-separated IPs as one
+   * continuous stream FOR REGIME EVIDENCE ONLY. The phrases remain separate
+   * everywhere else, so each still receives its own nucleus and remains
+   * independently editable.
+   *
+   * Requiring at least eight syllables and an exact/near-exact named grid
+   * prevents a short prose list from manufacturing metre by chance. The
+   * resulting prior records the phase local to every IP, since a boundary
+   * need not fall exactly at a foot edge. */
+  function weakBoundaryGridEvidence(words, ips, config) {
+    const candidates = [];
+    let start = 0;
+    while (start < ips.length) {
+      let end = start;
+      while (end + 1 < ips.length && ips[end].boundaryAfter === 'weak') end++;
+      if (end > start) {
+        const wordStart = ips[start].span[0];
+        const wordEnd = ips[end].span[1];
+        const stream = [];
+        for (let w = wordStart; w <= wordEnd; w++) {
+          const wd = words[w];
+          wd.syllables.forEach((sy, i) => stream.push({
+            wd, sy, i, ref: [w, i], pref: rhythmPreference(wd, i)
+          }));
+        }
+        if (stream.length >= AGGREGATE_GRID_MIN_SYLLABLES) {
+          const fitted = fitPhraseRhythm(stream);
+          const freeBeats = new Array(stream.length).fill(null);
+          for (const unit of fitted.units) {
+            unit.span.forEach((ref, k) => {
+              const at = stream.findIndex(x =>
+                x.ref[0] === ref[0] && x.ref[1] === ref[1]);
+              if (at >= 0) freeBeats[at] =
+                unit.pattern[k] || stream[at].pref.value;
+            });
+          }
+          for (let i = 0; i < freeBeats.length; i++)
+            if (!freeBeats[i]) freeBeats[i] = stream[i].pref.value;
+          const clashWeight = config && config.strictAlternation ? W.CLASH * 1.6
+            : !config || config.clashSubordination !== false ? W.CLASH : 0;
+          const readings = candidateReadings(stream, freeBeats,
+            { nucleusIdx: -1, clashWeight, regime: 'metrical',
+              metrePrior: null, settledMeter: false });
+          const reading = readings[0];
+          if (reading && reading.template && reading.template.foot) {
+            const fit = reading.components.structure / stream.length;
+            const phraseCount = end - start + 1;
+            // Two short comma-separated prose clauses often alternate by
+            // accident. They cannot establish a binary metre on their own;
+            // ternary grids are more diagnostic, while binary aggregation
+            // requires at least three independently punctuated fragments.
+            const enoughBoundaryEvidence = reading.template.period === 3 ||
+              phraseCount >= REGIME_MIN_AGREEING_PHRASES;
+            if (fit <= REGIME_FIT_THRESHOLD && enoughBoundaryEvidence) {
+              const p = reading.template.period;
+              const globalPhase = reading.template.phase;
+              const phrasePhases = {};
+              let offset = 0;
+              for (let i = start; i <= end; i++) {
+                phrasePhases[ips[i].span[0]] =
+                  ((globalPhase - offset) % p + p) % p;
+                for (let w = ips[i].span[0]; w <= ips[i].span[1]; w++)
+                  offset += words[w].syllables.length;
+              }
+              candidates.push({ fit, syllables: stream.length, phraseCount,
+                template: reading.template,
+                aggregateSpan: [wordStart, wordEnd], phrasePhases });
+            }
+          }
+        }
+      }
+      start = end + 1;
+    }
+    return candidates.sort((a, b) => a.fit - b.fit)[0] || null;
+  }
+
+  function classifyRegime(words, ips, textType, config) {
     if (textType === 'prose') return { regime: 'prose', reason: 'user:prose' };
     if (textType === 'verse' || textType === 'song')
       return { regime: 'metrical', reason: 'user:' + textType };
@@ -1789,15 +1877,19 @@
     }
     const agreement = total > 0 ? top / total : 0;
 
+    const aggregate = weakBoundaryGridEvidence(words, ips, config);
+    const byAggregate = !!aggregate;
     const byLength = longSyll >= REGIME_MIN_EVIDENCE && fit <= REGIME_FIT_THRESHOLD;
     const byAgreement = phrases >= REGIME_MIN_AGREEING_PHRASES &&
                         agreement >= REGIME_AGREEMENT &&
                         fit <= REGIME_FIT_THRESHOLD * 2;
-    const metrical = byLength || byAgreement;
+    const metrical = byLength || byAgreement || byAggregate;
 
     let metrePrior = null;
     let priorKey = null;
-    if (metrical && phrases === 1) {
+    if (byAggregate) {
+      priorKey = `${aggregate.template.period}-${aggregate.template.phase}`;
+    } else if (metrical && phrases === 1) {
       const evidenceIP = ips.find(ip => {
         const r = regimeEvidenceReading(ip);
         return r && r.beats.length >= GRID_COHERENCE_MIN_SYLLABLES;
@@ -1811,12 +1903,23 @@
       const [period, phase] = priorKey.split('-').map(Number);
       metrePrior = { period, phase, support: top, of: total,
                      foot: PERIOD_FOOT[priorKey] || null };
+      if (byAggregate) Object.assign(metrePrior, {
+        support: aggregate.phraseCount, of: aggregate.phraseCount,
+        aggregate: true,
+        aggregateEvidenceSyllables: aggregate.syllables,
+        aggregateSpan: aggregate.aggregateSpan,
+        phrasePhases: aggregate.phrasePhases
+      });
     }
 
     return { regime: metrical ? 'metrical' : 'prose', reason: 'auto',
-             evidence: metrical ? (byLength ? 'length' : 'agreement') : 'none',
+             evidence: metrical
+               ? (byAggregate ? 'weak-boundary-grid'
+                 : byLength ? 'length' : 'agreement') : 'none',
              fit: round2(fit), agreement: round2(agreement),
-             evidenceSyllables: longSyll, phrases, metrePrior };
+             aggregateFit: aggregate ? round2(aggregate.fit) : null,
+             evidenceSyllables: byAggregate ? aggregate.syllables : longSyll,
+             phrases, metrePrior };
   }
 
   function eurhythmyCost(beats, ctx, regime) {
@@ -1866,9 +1969,11 @@
     const uncreditedStructureCost = structure.cost +
       (priorMatched ? W.METRE_PRIOR : 0);
     if (ctx.settledMeter && priorMatched && structure.regime === 'metrical' &&
-        stream.length >= GRID_COHERENCE_MIN_SYLLABLES &&
+        (stream.length >= GRID_COHERENCE_MIN_SYLLABLES ||
+         ctx.aggregateCoherence) &&
         uncreditedStructureCost <= exactGridCost + 1e-9)
-      cost -= W.GRID_COHERENCE;
+      cost -= W.GRID_COHERENCE +
+        (ctx.aggregateCoherence ? W.AGGREGATE_COHERENCE : 0);
     /* Keeping a beat on the nucleus is worth more in prose than in verse.
      * Prose rhythm is organised around phrase accents rather than a periodic
      * grid, so the nuclear accent is the main thing holding the phrase
@@ -2000,12 +2105,18 @@
                          licensed: ctx.nucleusIdx === i || ctx.nucleusIdx === i + 1 });
       const key = structure.period === null
         ? null : `${structure.period}-${structure.phase}`;
+      const literalGridOnly = c.from.split('+').every(source =>
+        /^grid-\d-\d:literal$/.test(source));
       return {
         beats: c.beats,
         cost: round2(c.cost),
         rank: idx,
         margin: round2(c.cost - list[0].cost),
         provenance: c.from,
+        // Pure grid seeds are useful search probes, not linguistic readings.
+        // Keep them in the research/debug list, but do not offer them to a
+        // reader unless one actually wins the analysis.
+        userFacing: idx === 0 || !literalGridOnly,
         // 'metrical' — the beats fit a periodic grid well enough to warrant a
         // foot label. 'prose' — they do not, and no foot is asserted.
         regime: structure.regime,
@@ -2121,9 +2232,19 @@
       // user can ask to see contrastively licensed adjacent prominence).
       const clashWeight = config.strictAlternation ? W.CLASH * 1.6
         : config.clashSubordination ? W.CLASH : 0;
+      let metrePrior = config.metrePrior || null;
+      let aggregateCoherence = false;
+      if (metrePrior && metrePrior.aggregate && metrePrior.aggregateSpan &&
+          s >= metrePrior.aggregateSpan[0] && e <= metrePrior.aggregateSpan[1]) {
+        aggregateCoherence = true;
+        const localPhase = metrePrior.phrasePhases && metrePrior.phrasePhases[s];
+        if (Number.isInteger(localPhase))
+          metrePrior = Object.assign({}, metrePrior, { phase: localPhase });
+      }
       const ctx = { nucleusIdx, clashWeight,
                     regime: config.regime || 'metrical',
-                    metrePrior: config.metrePrior || null,
+                    metrePrior,
+                    aggregateCoherence,
                     settledMeter: !!config.settledMeter };
 
       const freeFit = fitPhraseRhythm(stream);
@@ -2157,7 +2278,9 @@
       // ambiguity. This is deliberately narrow: the handoff asks that the
       // interface not label every alternating string a four-way ambiguity.
       ip.readingAmbiguity = ip.readings
-        .filter((r, i) => i > 0 && r.margin <= AMBIGUITY_BAND);
+        .filter(r => r.rank > 0 && r.userFacing &&
+                     r.margin <= AMBIGUITY_BAND);
+      ip.userFacingReadings = ip.readings.filter(r => r.userFacing);
 
       const chosen = ip.readings[ip.selectedReadingIndex] || readings[0];
       ip.children.forEach(child => { child.rhythmicFeet = []; child.rhythmicCost = 0; });
@@ -2210,7 +2333,7 @@
     if (config.forcedScansion)
       return { regime: 'metrical', reason: 'forced', metrePrior: null };
 
-    const verdict = classifyRegime(ips, config.textType);
+    const verdict = classifyRegime(words, ips, config.textType, config);
 
     // Pass 2 — commit to the regime. In verse, feed back any metre the
     // phrases agree on; a poem's established rhythm is exactly the context an
@@ -2687,13 +2810,15 @@
 
   function analyze(text, options) {
     const config = Object.assign({ strictAlternation: false,
-      clashSubordination: true, nuclearStress: true, textType: 'auto' },
+      clashSubordination: true, nuclearStress: true, textType: 'auto',
+      useKnownReadings: true },
       options || {});
     const tokens = tokenize(text);
 
     // Build word list + IP break map from punctuation.
     const words = [];
     const ipBreaksAfter = new Set();
+    const boundaryStrengthAfter = new Map();
     const rawWords = tokens.filter(t => t.type === 'word').map(t => t.text);
     const posTags = tagPOS(rawWords);
     tokens.forEach(tok => {
@@ -2704,23 +2829,35 @@
           posTags[words.length]));
       } else if ((tok.type === 'punct' && IP_PUNCT.has(tok.text)) ||
                  tok.type === 'parabreak') {
-        if (words.length) ipBreaksAfter.add(words.length - 1);
+        if (words.length) {
+          const at = words.length - 1;
+          ipBreaksAfter.add(at);
+          const strength = tok.type === 'punct' && WEAK_IP_PUNCT.has(tok.text)
+            ? 'weak' : 'strong';
+          // A strong mark wins when punctuation is stacked (for example ,”).
+          if (strength === 'strong' || !boundaryStrengthAfter.has(at))
+            boundaryStrengthAfter.set(at, strength);
+        }
       }
     });
 
     markGivenness(words);
-    const ips = words.length ? chunk(words, ipBreaksAfter) : [];
+    const ips = words.length ? chunk(words, ipBreaksAfter, boundaryStrengthAfter) : [];
     const regimeInfo = projectDocument(words, ips, config);
-    const inferred = readingSnapshot(words, 'inferred', 'Automatic reading');
-    const known = findKnownReading(text);
+    const inferred = readingSnapshot(words, 'inferred',
+      'General engine reading (no stored lookup)', null, 'general-inference');
+    const availableKnown = findKnownReading(text);
+    const known = config.useKnownReadings === false ? null : availableKnown;
     let selectedReading = 'inferred';
     const alternativeReadings = [inferred];
     if (known) {
       applyMarkedReading(words, known.marked, 'known:' + known.id);
       selectedReading = known.id;
       alternativeReadings.unshift(readingSnapshot(words, known.id,
-        known.kind === 'familiar-rhyme' ? 'Familiar rhyme reading'
-          : 'Conventional verse reading', known.meter));
+        known.kind === 'familiar-rhyme'
+          ? 'Registered familiar-rhyme reading (stored)'
+          : 'Registered conventional verse reading (stored)', known.meter,
+        'registered-known-reading'));
     }
     const meter = detectMeter(words, ips,
       config.forcedScansion || (known && known.meter) || null);
@@ -2743,8 +2880,11 @@
       textType: config.textType,
       alternativeReadings,
       selectedReading,
-      knownReading: known ? { id: known.id, kind: known.kind,
-                              meter: known.meter } : null,
+      analysisSource: known ? 'registered-known-reading' : 'general-inference',
+      knownReading: availableKnown
+        ? { id: availableKnown.id, kind: availableKnown.kind,
+            meter: availableKnown.meter, applied: !!known }
+        : null,
       stats
     };
   }
@@ -2759,8 +2899,9 @@
     return KNOWN_READINGS.find(r => normalizedPassage(r.text) === key) || null;
   }
 
-  function readingSnapshot(words, id, label, meter) {
+  function readingSnapshot(words, id, label, meter, source) {
     return { id, label, meter: meter || null,
+      source: source || 'general-inference',
       patterns: words.map(w => w.syllables.map(s => s.rhythmicStress).join('')) };
   }
 
@@ -3125,6 +3266,8 @@
       wd.rhythmicPattern = wd.syllables.map(s => s.rhythmicStress).join('');
     });
     doc.selectedReading = readingId;
+    doc.analysisSource = reading.source ||
+      (readingId === 'inferred' ? 'general-inference' : 'registered-known-reading');
     const meter = detectMeter(doc.words, doc.phrases, reading.meter || null);
     if (reading.meter) markConventionalMeter(meter, reading.meter);
     doc.feet = meter.feet;
