@@ -2928,9 +2928,11 @@
           : 'Registered conventional verse reading (stored)', known.meter,
         'registered-known-reading'));
     }
+    const registeredMeter = known && !known.preserveAmbiguity ? known.meter : null;
     const meter = detectMeter(words, ips,
-      config.forcedScansion || (known && known.meter) || null);
-    if (known && !config.forcedScansion) markConventionalMeter(meter, known.meter);
+      config.forcedScansion || registeredMeter || null);
+    if (known && !config.forcedScansion && !known.preserveAmbiguity)
+      markConventionalMeter(meter, known.meter);
     const stats = computeStats(words, ips, meter);
 
     return {
@@ -2953,7 +2955,9 @@
       analysisSource: known ? 'registered-known-reading' : 'general-inference',
       knownReading: availableKnown
         ? { id: availableKnown.id, kind: availableKnown.kind,
-            meter: availableKnown.meter, applied: !!known }
+            meter: availableKnown.meter, applied: !!known,
+            studyEvidence: availableKnown.studyEvidence || null,
+            preserveAmbiguity: !!availableKnown.preserveAmbiguity }
         : null,
       stats
     };

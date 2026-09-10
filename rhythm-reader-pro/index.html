@@ -83,6 +83,14 @@ body:not(.simple) #meterLine .gloss { color: var(--muted); font-size: .84rem; }
   border-radius: 10px; padding: 1.1rem 1.2rem; margin-top: 1.2rem; }
 .card h2 { font-family: var(--serif); font-size: 1.15rem; font-weight: 600;
   margin: 0 0 .7rem; }
+.study-card { margin-top: .85rem; border: 1px solid var(--line);
+  border-radius: 9px; padding: .65rem .8rem; background: #FAFBFA; }
+.study-card summary { cursor: pointer; font-weight: 650; color: var(--ink); }
+.study-card summary::marker { color: var(--phrase); }
+.study-note { color: var(--muted); font-size: .82rem; margin: .45rem 0 .55rem; }
+.study-buttons { display: flex; flex-wrap: wrap; gap: .4rem; }
+.study-buttons button { min-height: 36px; padding: .32rem .62rem;
+  font-size: .8rem; font-weight: 550; }
 
 /* Input */
 textarea { width: 100%; min-height: 7.5rem; padding: .8rem .9rem;
@@ -351,6 +359,14 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
       aria-label="Study and condition label">
     <button class="primary" id="analyzeBtn">Analyze rhythm</button>
   </div>
+  <details class="study-card">
+    <summary>Research examples from the earlier rhythm study</summary>
+    <p class="study-note">These passages were strong candidates in a prior
+    helpfulness-rating study. They are rhythm templates, not validated
+    correct answers for the new forced-choice measure. The upcoming measure
+    should use fresh matched foils and mostly natural prose.</p>
+    <div id="studyExamples" class="study-buttons"></div>
+  </details>
 </section>
 
 <section class="card" aria-labelledby="outH">
@@ -630,6 +646,26 @@ const EXAMPLES = {
   dactylic:  'Wonderful, beautiful, carefully moving.',
   mixed:     'The little puppy ran away before the children noticed.'
 };
+
+const STUDY_EXAMPLES = window.PROSODY_STUDY_EXAMPLES || [];
+
+function renderStudyExamples() {
+  const wrap = document.getElementById('studyExamples');
+  if (!wrap) return;
+  wrap.textContent = '';
+  STUDY_EXAMPLES.forEach(example => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = example.label + ' (' + example.meter + ')';
+    b.title = example.note;
+    b.addEventListener('click', () => {
+      document.getElementById('input').value = example.text;
+      document.getElementById('textType').value = 'verse';
+      analyze();
+    });
+    wrap.appendChild(b);
+  });
+}
 
 /* ---------- analysis ---------- */
 function analyze() {
@@ -945,7 +981,13 @@ function renderReadingChoices() {
   if (choices.length < 2) { wrap.hidden = true; }
   else {
     wrap.hidden = false;
-    wrap.append('Recognised passage — conventional vs inferred reading:');
+    const intro = document.createElement('p');
+    intro.style.margin = '0 0 .35rem';
+    intro.textContent = 'Recognised passage — conventional vs inferred reading:';
+    if (doc.knownReading && doc.knownReading.studyEvidence) {
+      intro.textContent += ' This is a research-derived template, not a scored accuracy item.';
+    }
+    wrap.appendChild(intro);
     choices.forEach(reading => {
       const b = document.createElement('button');
       b.textContent = reading.label;
@@ -1536,6 +1578,7 @@ document.querySelectorAll('[data-ex]').forEach(b =>
     document.getElementById('input').value = EXAMPLES[b.dataset.ex];
     analyze();
   }));
+renderStudyExamples();
 document.getElementById('strictAlt').addEventListener('change', () => {
   if (!doc) return;
   E.reanalyze(doc, { strictAlternation:

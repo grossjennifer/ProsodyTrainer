@@ -18,6 +18,9 @@ Interface changes
 7. Phrase-boundary insertion marks and heteronym flags no longer clutter the default reading surface; they appear only in the appropriate analysis views.
 8. “Open analysis tools” replaces the less direct disclosure label.
 9. The explanatory caveat is shorter.
+10. An optional research-example library exposes the strongest legacy
+    rhythm-study passages as templates, with an explicit warning that the old
+    helpfulness ratings were not forced-choice accuracy data.
 
 Engine and structure (this revision)
 -------------------------------------
@@ -37,6 +40,11 @@ Engine and structure (this revision)
   ("main beat, phrase nucleus"). The nucleus is never hidden by the density filter.
 - Contrast: a --beat-ink token (#6E2138) is used for beat-colored text on light
   backgrounds, raising those pairings from ~5.8:1 (WCAG AA) to ~9:1 (AAA).
+- Registered readings from the older Poetry Training subset carry provenance
+  metadata. The interface labels them as research-derived templates rather
+  than validated scored items.
+- The Horton study template preserves the engine's nearby anapestic/dactylic
+  ambiguity instead of forcing a single meter label.
 
 Installation
 ------------
@@ -61,3 +69,10 @@ Expected result:
 
     All four-foot rhythm tests passed.
     15 nuclear-stress checks passed.
+
+Research candidates
+-------------------
+`RHYTHM_MEASURE_LEGACY_CANDIDATES.md` records the strongest legacy candidates
+and the conditions for adapting them into the new forced-choice measure. Each
+candidate still needs a syllable-level key, a matched foil, and pilot evidence
+in the new response format.

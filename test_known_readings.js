@@ -7,6 +7,10 @@ const E = require('./rhythm-reader/engine.js');
 E.loadDictionary(window.CMUDICT_FULL, 'full');
 E.loadKnownReadings(window.PROSODY_KNOWN_READINGS);
 
+assert.ok(Array.isArray(window.PROSODY_STUDY_EXAMPLES));
+assert.ok(window.PROSODY_STUDY_EXAMPLES.length >= 5,
+  'research example library includes the strongest legacy candidates');
+
 function render(doc) {
   return doc.words.map(w => w.syllables.map(s =>
     s.rhythmicStress === 'S' ? s.text.toUpperCase() : s.text.toLowerCase()
@@ -61,6 +65,15 @@ const death = doc.words.find(w => w.normalized === 'death').syllables[0];
 assert.strictEqual(death.rhythmicStress, 'W', 'extrametrical Death is not a beat');
 assert.strictEqual(death.phraseProminence, 'nucleus',
   'phrase prominence remains visible independently of meter');
+
+doc = E.analyze('Lives of great men all remind us we can make our lives sublime and, departing, leave behind us footprints on the sands of time.');
+assert.strictEqual(doc.knownReading.studyEvidence.candidateId, 'QID54',
+  'legacy provenance is carried through the analysis document');
+
+doc = E.analyze('When Horton the elephant heard a small noise.');
+assert.strictEqual(doc.knownReading.preserveAmbiguity, true);
+assert.strictEqual(doc.meterSummary.ambiguous, true,
+  'the Horton template keeps its nearby alternative scansion visible');
 
 /* Ranked alternative readings per intonational phrase (handoff §1 and §4).
  * Each candidate must be a COMPLETE reading: its beats, its metrical template

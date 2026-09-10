@@ -92,17 +92,81 @@
     {
       id: 'seuss-horton-4', kind: 'familiar-verse', meter: 'anapest',
       text: 'when Horton the elephant heard a small noise.',
-      marked: 'when HORton the ELephant HEARD a small NOISE'
+      marked: 'when HORton the ELephant HEARD a small NOISE',
+      preserveAmbiguity: true,
+      studyEvidence: {
+        candidateId: 'QID67',
+        role: 'strong congruent candidate',
+        note: 'Prior Poetry Training helpfulness-rating study; the line has a conventional anapestic reading but also supports a nearby dactylic alternative.'
+      }
+    },
+    {
+      id: 'shakespeare-sonnet-141', kind: 'familiar-verse', meter: 'iamb',
+      text: 'In faith, I do not love thee with mine eyes,',
+      marked: 'in FAITH i DO not LOVE thee WITH mine EYES',
+      studyEvidence: {
+        candidateId: 'QID57',
+        role: 'strong congruent candidate',
+        note: 'Prior Poetry Training helpfulness-rating study; the new study should retain the passage only after matched foil annotation.'
+      }
     },
     {
       id: 'longfellow-lives', kind: 'familiar-verse', meter: 'trochee',
       text: 'Lives of great men all remind us we can make our lives sublime and, departing, leave behind us footprints on the sands of time.',
-      marked: 'LIVES of GREAT men ALL reMIND us WE can MAKE our LIVES subLIME AND dePARTing LEAVE beHIND us FOOTprints ON the SANDS of TIME'
+      marked: 'LIVES of GREAT men ALL reMIND us WE can MAKE our LIVES subLIME AND dePARTing LEAVE beHIND us FOOTprints ON the SANDS of TIME',
+      studyEvidence: {
+        candidateId: 'QID54',
+        role: 'strong congruent candidate',
+        note: 'Prior Poetry Training helpfulness-rating study; use as a metrical template, not as a validated forced-choice item.'
+      }
     },
     {
       id: 'poe-raven-full-opening', kind: 'familiar-verse', meter: 'trochee',
       text: 'once upon a midnight dreary, while I pondered, weak and weary, over many a quaint and curious volume of forgotten lore, while I nodded, nearly napping, suddenly there came a tapping, as of someone gently rapping, rapping at my chamber door.',
       marked: 'ONCE upON a MIDnight DREARy WHILE i PONdered WEAK and WEARy OVer MANy a QUAINT and CURious VOLume OF forGOTten LORE WHILE i NODded NEARly NAPping SUDdenly THERE came A TAPping AS of SOMEone GENTly RAPping RAPping AT my CHAMber DOOR'
+    }
+  ];
+
+  /* Research-facing seed passages are deliberately kept separate from the
+   * registered readings above. They are drawn from the strongest items in
+   * the older Poetry Training subset, but they are not treated as scored
+   * correct/incorrect stimuli. The upcoming measure needs fresh matched
+   * foils and a prose-heavy balance. */
+  global.PROSODY_STUDY_EXAMPLES = [
+    {
+      id: 'study-qid62', candidateId: 'QID62', meter: 'anapest',
+      label: 'They, with the gold to give…',
+      text: 'They, with the gold to give, doled him out silver,',
+      role: 'strong congruent candidate', status: 'template-only',
+      note: 'Strong prior discriminator; syllable-level marking should be verified before use in a scored item.'
+    },
+    {
+      id: 'study-qid54', candidateId: 'QID54', meter: 'trochee',
+      label: 'Lives of great men…',
+      text: 'Lives of great men all remind us,',
+      role: 'strong congruent candidate', status: 'template-only',
+      note: 'Strong prior discriminator; create a matched content-word foil rather than promoting a function word.'
+    },
+    {
+      id: 'study-qid67', candidateId: 'QID67', meter: 'anapest',
+      label: 'When Horton the elephant…',
+      text: 'When Horton the elephant heard a small noise.',
+      role: 'strong congruent candidate', status: 'template-only',
+      note: 'Strong prior discriminator; pilot the line with an explicit foil because the conventional line supports nearby scansions.'
+    },
+    {
+      id: 'study-qid57', candidateId: 'QID57', meter: 'iamb',
+      label: 'In faith, I do not love…',
+      text: 'In faith, I do not love thee with mine eyes,',
+      role: 'strong congruent candidate', status: 'template-only',
+      note: 'Strong prior discriminator; the final measure should avoid making function-word promotion the central contrast.'
+    },
+    {
+      id: 'study-qid66', candidateId: 'QID66', meter: 'iamb',
+      label: 'I sit back with this pack…',
+      text: 'I sit back with this pack of zigzags and this bag.',
+      role: 'strong but incomplete-sample candidate', status: 'template-only',
+      note: 'Promising prior item, but it was not administered in every sample and requires fresh annotation.'
     }
   ];
 })(typeof window !== 'undefined' ? window : globalThis);
