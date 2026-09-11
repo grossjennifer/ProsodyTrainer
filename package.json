@@ -7,6 +7,8 @@
     "start": "node server.js",
     "test:acceptance": "node eval/acceptance.js",
     "test:rhythm-candidates": "node eval/rhythm_measure_diagnostic.js --assert",
-    "test:ternary-boundaries": "node test_ternary_boundaries.js"
+    "test:ternary-boundaries": "node test_ternary_boundaries.js",
+    "test:diagnostics": "node test_diagnostic_battery.js && node test_export_provenance.js",
+    "stamp:dictionaries": "node stamp_dictionary_metadata.js"
   }
 }

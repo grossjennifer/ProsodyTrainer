@@ -125,9 +125,10 @@
         fall back to a small common-word subset, and an uncommon word then falls
         through to the rule-based fallback analysis rather than being looked up.
         The tool says so beneath the text when it is running on the subset. And
-        the exact dictionary release in use is not recorded anywhere in the code
-        or in the exports, which is a reproducibility gap rather than an
-        accuracy one &mdash; see the note for researchers below.</p>
+        each bundled dictionary now carries a content-derived identifier and
+        SHA-256 checksum, included in the exports. The original upstream CMU
+        release remains unknown; a snapshot fingerprint does not establish
+        that history. See the note for researchers below.</p>
 
         <p>The dictionary does not supply syllable <i>boundaries</i>. The tool
         estimates those with the Maximal Onset Principle, constrained by an
@@ -182,15 +183,12 @@
 
         <h3>Tier 3 &mdash; rhythm in context</h3>
 
-        <p>Only now does the sentence matter. Words are grouped into phrases,
-        and within each phrase the syllable stream is fitted to the four feet.
-        Lexical stress supplies weighted preferences at this stage; it does not
-        force every word to behave like a complete foot. A phrase may open or
-        close on an incomplete foot &mdash; a single weak pickup, or an
-        unmatched syllable at the end &mdash; because ordinary prose does not
-        arrive in tidy metrical parcels. At this tier feet never cross a phrase
-        boundary. These foot-fitting rules are modelling constraints used by the
-        analyser, not established properties of prose rhythm.</p>
+        <p>Only now does the sentence matter. Within each punctuation-bounded
+        phrase, lexical stress supplies weighted preferences for realized
+        beats. In prose, the engine weighs lexical faithfulness, function-word
+        demotion, clashes, and lapses without fitting a repeating foot. Verse
+        and song also favor a periodic metrical pattern. These are modelling
+        choices, not a claim that ordinary prose consists of regular feet.</p>
 
         <p>Phrase boundaries come in two kinds, and the distinction matters more
         than it looks. Punctuation sets the outer boundary. Inside it, a
@@ -240,7 +238,8 @@
         entirely &mdash; the quickest way to see what it was doing.</p>
 
         <p>Last, one beat in each phrase is marked as the strongest: the nuclear
-        accent, which in a neutral reading falls on the last content word. It is
+        accent. The implemented default selects the last content word in each
+        punctuation-bounded phrase. It is
         recorded on a layer of its own, separate from the beats, so a syllable
         can carry phrase prominence without sitting on a regular metrical beat.
         The nuclear stress tendency is <strong>reference-backed</strong>
@@ -248,22 +247,25 @@
         be applied at all to a sentence whose context is unknown is a
         <strong>heuristic</strong>, which is why the rule can be switched off.</p>
 
+        <p>This positional rule does not automatically de-accent a final
+        adjunct: <i>The researcher checked the final page before lunch</i>
+        receives the nuclear marker on <i>lunch</i>. A reading with the nucleus
+        on <i>page</i> requires a different contextual or phrasing analysis.
+        Lexical stress, realized beats, and the nuclear marker are separate
+        layers: a missing beat does not mean the dictionary stress changed.</p>
+
         <h3>After the tiers &mdash; meter, and texts the tools already know</h3>
 
         <p>Two further decisions sit on top of the three tiers.</p>
 
         <p>The first is a <strong>meter pass</strong>. Once the beats are
-        settled, the tool parses each punctuation-bounded phrase into feet a
-        second time, looking for a pattern that prevails across the passage, and
-        keeps near-equal alternative scansions rather than hiding them. This
-        second parse works to the coarser, punctuation-bounded unit, so its feet
-        can cross the inner boundaries the tool estimated at Tier 3. The two
-        layers are easy to confuse, because both draw feet. Before either, the
-        passage is classified as prose or as metrical verse &mdash; from the
-        regularity found in it, unless you say which &mdash; and that verdict
-        changes the costs used throughout. The same sentence can therefore be
-        analysed differently depending on the company it keeps. This layer is
-        <strong>exploratory</strong>.</p>
+        settled, the tool parses each punctuation-bounded phrase into feet,
+        looking for a prevailing pattern and retaining near-equal alternatives.
+        This diagnostic parse can cross the inner phrase boundaries. In prose,
+        it does not force the beats into a repeating foot or establish a regular
+        meter. The prose/verse classification changes the costs used to choose
+        beats; the same sentence can therefore be analysed differently depending
+        on the company it keeps. This layer is <strong>exploratory</strong>.</p>
 
         <p>The second is a table of <strong>known readings</strong>. A short
         list of familiar verse and of stimuli used in the 2026 study carries a
@@ -346,16 +348,15 @@
         schema. The prose above is deliberately readable; it is not sufficient
         to reproduce an output.</p>
 
-        <p>The dictionary is the sharpest instance. Both the full dictionary and
-        the common-word subset shipped alongside it are built from the CMU
-        Pronouncing Dictionary, but the build recipe points at an unpinned
-        branch, so two builds made on different days may not contain the same
-        entries. The JSON export records which of the two was loaded and the
-        analyser&rsquo;s document version, but no dictionary release identifier
-        and no analyser build identifier is written into the shipped files or
-        into any export. Until those are recorded in the exports themselves,
-        treat any figure taken from these tools as tied to the copy that
-        produced it, and archive that copy alongside your data.</p>
+        <p>Build 3.2.1 records an engine release identifier and the loaded
+        dictionary snapshot identifier and SHA-256 checksum in exports. The
+        checksum covers sorted word/pronunciation entries; it identifies the
+        exact bundled data, not an upstream CMU release. Custom dictionaries
+        without metadata are reported as unversioned. The source repository
+        includes a metadata-stamping script and a release note; rerun the script
+        whenever dictionary data changes and bump the engine build for every
+        engine release. Archive the source and exports with research data,
+        since the readable explanation is not a complete reproducibility package.</p>
 
         <p>What does not yet exist is a validation study of the tools
         themselves. The published work behind this site tested the effects of

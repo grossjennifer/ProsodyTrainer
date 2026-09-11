@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.2.0';
+  const ENGINE_BUILD = '3.2.1';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -107,7 +107,8 @@
   // general rules would produce a different (also defensible) division.
   // Affects hyphen DISPLAY only — never stress, templates, or rhythm.
   const HYPHEN_EXCEPTIONS = {
-    'photographer': ['pho', 'tog', 'ra', 'pher']
+    'photographer': ['pho', 'tog', 'ra', 'pher'],
+    'unopened': ['un', 'o', 'pened']
   };
 
   // Confidence table (design §10). [HEUR] Scores are heuristic, not
@@ -1276,9 +1277,13 @@
    * Without this the Rhythm Rule would retract a beat onto the nearest
    * syllable to the left regardless of what vowel was there, and
    * `Tennessee air` came out as `tenNESsee AIR`. */
+  // Unstressed r-coloured schwa (ER0) is reduced too: retracting perMIT
+  // onto its P ER0 syllable would display the noun-like PERmit JOHN even
+  // after lexical selection correctly chose the verb. Keep the full-vowel
+  // targets in TENnessee and THIRteen eligible.
   function isReducedSyllable(sy) {
     if (!sy.phonemes) return false;
-    return sy.phonemes.some(p => p === 'AH0');
+    return sy.phonemes.some(p => p === 'AH0' || p === 'ER0');
   }
 
   function rhythmPreference(wd, i) {
@@ -2940,6 +2945,8 @@
       engineStage: 1,
       engineBuild: ENGINE_BUILD,
       dictionary: DICT_SOURCE,
+      dictionaryMetadata: DICT && DICT.__prosodyMetadata
+        ? Object.assign({}, DICT.__prosodyMetadata) : null,
       config,
       originalText: text,
       tokens,
@@ -3460,7 +3467,7 @@
                    'template_pattern', 'template_name', 'rhythmic_stress',
                    'phrase_prominence',
                    'lexical_source', 'rhythmic_source', 'lexical_confidence',
-                   'rhythmic_confidence', 'user_edited', 'engine_build']];
+                   'rhythmic_confidence', 'user_edited', 'engine_build', 'dictionary_id', 'dictionary_sha256']];
     doc.words.forEach(wd => {
       wd.syllables.forEach((sy, i) => {
         rows.push([wd.word, i, sy.text, sy.lexicalStress,
@@ -3469,7 +3476,9 @@
                    wd.lexicalSource, sy.rhythmicSource,
                    wd.lexicalConfidence, sy.rhythmicConfidence,
                    (wd.userEdited.lexical || wd.userEdited.rhythmic ||
-                    wd.userEdited.template), doc.engineBuild || ENGINE_BUILD]);
+                    wd.userEdited.template), doc.engineBuild || ENGINE_BUILD,
+                   doc.dictionaryMetadata ? doc.dictionaryMetadata.id : '',
+                   doc.dictionaryMetadata ? doc.dictionaryMetadata.sha256 : '']);
       });
     });
     return rows.map(r => r.map(csvEscape).join(',')).join('\n');
@@ -3480,6 +3489,8 @@
     const d = computePDI(doc);
     const rows = [['measure', 'value'],
       ['engine_build', doc.engineBuild || ENGINE_BUILD],
+      ['dictionary_id', doc.dictionaryMetadata ? doc.dictionaryMetadata.id : ''],
+      ['dictionary_sha256', doc.dictionaryMetadata ? doc.dictionaryMetadata.sha256 : ''],
       ['pdi_reference', 'distance_from_automatic_model'],
       ['prosodic_divergence_index', d.pdi],
       ['pdi_lexical', d.components.lexical],

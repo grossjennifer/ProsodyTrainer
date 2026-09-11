@@ -15,7 +15,7 @@ const E = require('./rhythm-reader-pro/engine.js');
 
 assert.strictEqual(readerEngine, proEngine,
   'Reader and Pro must continue to ship the same engine');
-assert.strictEqual(E.build, '3.2.0');
+assert.strictEqual(E.build, '3.2.1');
 
 E.loadDictionary({
   HAPPY: 'HH AE1 P IY0', CHILDREN: 'CH IH1 L D R AH0 N',
@@ -27,9 +27,9 @@ assert.strictEqual(doc.engineBuild, E.build,
   'an analysis records the engine build');
 
 const syllableCSV = E.toCSV(doc).split('\n');
-assert(syllableCSV[0].endsWith(',engine_build'),
+assert(syllableCSV[0].endsWith(',engine_build,dictionary_id,dictionary_sha256'),
   'syllable CSV appends a build column without renaming existing fields');
-assert(syllableCSV.slice(1).every(row => row.endsWith(',' + E.build)),
+assert(syllableCSV.slice(1).every(row => row.endsWith(',' + E.build + ',,')),
   'every syllable row records the build');
 
 const profile = E.profileCSV(doc);
@@ -61,9 +61,9 @@ assert(html.includes("ev.key !== 'Enter' && ev.key !== ' '"),
 
 assert(html.includes("const cols = ['engine_build','participant'"),
   'research-session CSV starts with the build identifier');
-assert(html.includes("'instances', 'engine_build'"),
+assert(html.includes("'instances', 'engine_build', 'dictionary_id', 'dictionary_sha256'"),
   'metrical-lexicon CSV records the build');
-assert((html.match(/Rhythm Reader Pro build ' \+ E\.build/g) || []).length >= 3,
+assert((html.match(/exportProvenance\(\)/g) || []).length >= 4,
   'plain-text, stimulus-pair, and training exports identify the build');
 
 console.log('Rhythm Reader Pro polish checks passed.');
