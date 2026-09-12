@@ -32,7 +32,19 @@ const cases = [
   ['In the desert.', 'desert', 0],
   ['and desert the children.', 'desert', 1],
   ['a special present.', 'present', 0],
-  ['status as a convict.', 'convict', 0]
+  ['status as a convict.', 'convict', 0],
+  // Regressions: a preposition `to` further back is not an infinitive cue,
+  // and a determiner directly before the word names the noun reading.
+  ['She hopes to set a record.', 'record', 0],
+  ['They went to buy a record.', 'record', 0],
+  ['she wanted to quickly record it.', 'record', 1],
+  // `later` is tagged NOUN by its -er suffix; it must not make `minute` an
+  // adjective.
+  ['A minute later the door opened.', 'minute', 0],
+  ['a minute ago', 'minute', 0],
+  // Subject pronoun before a heteronym whose verb reading CMU does not list.
+  ['we export grain', 'export', 1],
+  ['the export market', 'export', 0]
 ];
 
 for (const [text, target, primary] of cases) {

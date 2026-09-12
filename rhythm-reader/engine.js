@@ -215,6 +215,21 @@
     return { prons, confidence, source: 'CMU' };
   }
 
+  // Copy of `phones` with primary stress moved to vowel number `idx`; the old
+  // primary is demoted to unstressed. Null when the word has no such vowel.
+  function shiftPrimary(phones, idx) {
+    let v = -1;
+    let hit = false;
+    const out = phones.map(p => {
+      if (!VOWELS.has(p.replace(/\d/, ''))) return p;
+      v++;
+      const base = p.replace(/\d/, '');
+      if (v === idx) { hit = true; return base + '1'; }
+      return /1/.test(p) ? base + '0' : p;
+    });
+    return hit ? out : null;
+  }
+
   function stressPatternOf(phones) {
     return phones
       .filter(p => VOWELS.has(p.replace(/\d/, '')))
@@ -667,6 +682,18 @@
           return pat.indexOf('1') === preferredPrimary;
         });
         if (found >= 0) chosen = found;
+        else if (SHIFTING_HETERONYMS.has(normalized)) {
+          // CMU lists a single reading for a few stress-shifting pairs
+          // (`export`, `entrance`, `relay`). The other member of the pair has
+          // the same segments with the primary moved, so derive it rather
+          // than silently falling back to the listed reading.
+          const derived = shiftPrimary(cmu.prons[0], preferredPrimary);
+          if (derived) {
+            cmu.prons.push(derived);
+            chosen = cmu.prons.length - 1;
+            cmu.confidence = CONF.CMU_VARIANTS_DIFF;
+          }
+        }
       }
       const phones = cmu.prons[chosen];
       const phonSylls = syllabifyPhonemes(phones);
@@ -1019,6 +1046,11 @@
   }
   const DETERMINERS = new Set(['a', 'an', 'the', 'this', 'that', 'my', 'your',
     'his', 'her', 'its', 'our', 'their', "learner's"]);
+  // Words that follow the noun `minute` but that morphology alone can mistake
+  // for a modified noun (`later` gets NOUN from its -er suffix).
+  const MINUTE_NOUN_FOLLOWERS = new Set(['later', 'earlier', 'ago', 'or',
+    'and', 'to', 'past', 'before', 'after', 'longer', 'away', 'left', 'hand',
+    'more', 'less']);
   const VERB_CUES = new Set(['to', 'will', 'would', 'shall', 'should', 'can',
     'could', 'may', 'might', 'must', 'do', 'does', 'did']);
 
@@ -1053,6 +1085,10 @@
       // `details`, not to `minute`. Testing the determiner first read that
       // stimulus as the noun.
       const nextTag = tags && tags[i + 1];
+      // `a minute later`, `a minute ago`, `a minute or two`: the follower is
+      // an adverb or a coordinator, not a modified noun, and the determiner
+      // belongs to `minute` itself.
+      if (MINUTE_NOUN_FOLLOWERS.has(next) || nextTag === 'ADV') return 0;
       if (nextTag === 'NOUN' || nextTag === 'NOUNS' || next === 'details') return 1;
       return 0;   // NP head: `a minute`, `every minute`, `down to the minute`
     }
@@ -1067,7 +1103,14 @@
     if (word === 'produce' && prev === 'of') return 0;
     if (word === 'perfect' && ['is', 'was', 'seems'].includes(prev)) return 0;
     if (word === 'desert' && prev === 'and') return 1;
-    if (VERB_CUES.has(prev) || before.includes('to')) return 1;
+    if (VERB_CUES.has(prev)) return 1;
+    // `to` one word back is still the infinitive marker across a single
+    // adverb or negator (`to quickly record`, `to not record`). Further back
+    // it is usually a preposition — `went to buy a record` — and a
+    // determiner directly before the word names the noun reading below.
+    if (before.length >= 2 && before[before.length - 2] === 'to' &&
+        !DETERMINERS.has(prev) &&
+        (prev === 'not' || (tags && tags[i - 1] === 'ADV'))) return 1;
     if (word === 'contract' && before.includes('expand')) return 1;
     if (word === 'project' && ['we', 'i', 'they', 'you'].includes(prev)) return 1;
     if (word === 'record' && before.includes('desired')) return 1;
@@ -2517,6 +2560,17 @@
     }
     if (ns === -1) ns = wd.syllables.length - 1;
     if (ns < 0) return;
+    // reflow() re-runs this pass after an edit; an earlier nucleus in the
+    // IP (e.g. the old primary of a re-stressed word) must not survive it.
+    for (let w = start; w <= end; w++) {
+      words[w].syllables.forEach(sy => {
+        if (!sy.nuclear) return;
+        delete sy.nuclear;
+        delete sy.phraseProminence;
+        delete sy.prominenceSource;
+        delete sy.prominenceConfidence;
+      });
+    }
     wd.syllables[ns].nuclear = true;
     wd.syllables[ns].phraseProminence = 'nucleus';
     wd.syllables[ns].prominenceSource = 'rule:nuclear-stress';
@@ -3053,10 +3107,17 @@
   }
 
   function resetWord(doc, wordIdx) {
-    const orig = analyzeWord(doc.words[wordIdx].word);
+    // Restore exactly the automatic analysis: the same context-aware pipeline
+    // analyze() ran (POS tag, heteronym context, givenness), not a bare
+    // dictionary lookup — which flipped `the record` from 10 to 01.
+    const rawWords = doc.tokens.filter(t => t.type === 'word').map(t => t.text);
+    const posTags = tagPOS(rawWords);
+    const orig = analyzeWord(rawWords[wordIdx],
+      contextualPrimaryIndex(rawWords, wordIdx, posTags), posTags[wordIdx]);
     orig.editHistory = doc.words[wordIdx].editHistory.concat(
       [{ tier: 'all', old: 'edited', new: 'reset-to-default', t: Date.now() }]);
     doc.words[wordIdx] = orig;
+    markGivenness(doc.words);
     reflow(doc);
     return doc;
   }
@@ -3281,6 +3342,45 @@
     return keep;
   }
 
+  /* Map a word's syllable texts back onto its original token. The analysis
+   * works on a normalized form (hyphens dropped for CMU lookup, curly
+   * apostrophes straightened), so slicing the token by syllable length
+   * truncated `mother-in-law` to `mother-in-l`. Characters the analysis
+   * dropped are re-attached to the syllable they precede; the token's case is
+   * preserved. Returns null if the syllables do not spell the token. */
+  function tokenSyllableTexts(tokText, syllables) {
+    const norm = c => c.toLowerCase().replace(/’/g, "'");
+    const out = [];
+    let pos = 0;
+    for (const sy of syllables) {
+      let t = '';
+      for (const ch of sy.text) {
+        let j = pos;
+        while (j < tokText.length && norm(tokText[j]) !== norm(ch) &&
+               !/[A-Za-z]/.test(tokText[j])) j++;
+        if (j >= tokText.length || norm(tokText[j]) !== norm(ch)) return null;
+        t += tokText.slice(pos, j + 1);
+        pos = j + 1;
+      }
+      out.push(t);
+    }
+    if (!out.length) return null;
+    if (pos < tokText.length) out[out.length - 1] += tokText.slice(pos);
+    return out;
+  }
+
+  // Syllable strings of one word token for plain-text rendering.
+  function tokenSyllables(tok, wd) {
+    const mapped = tokenSyllableTexts(tok.text, wd.syllables);
+    if (mapped) return mapped;
+    let start = 0;
+    return wd.syllables.map(sy => {
+      const t = tok.text.slice(start, start + sy.text.length) || sy.text;
+      start += sy.text.length;
+      return t;
+    });
+  }
+
   // Render one passage at descending cue densities (full -> phrase ->
   // sentence -> plain): a ready-made training-with-fading sequence.
   function trainingSet(doc) {
@@ -3290,12 +3390,8 @@
       for (const tok of doc.tokens) {
         if (tok.type !== 'word') { out += tok.text; continue; }
         const wd = doc.words[tok.wordIndex];
-        let start = 0;
-        out += wd.syllables.map((sy, i) => {
-          let t = tok.text.slice(start, start + sy.text.length) || sy.text;
-          start += sy.text.length;
-          return keep.has(tok.wordIndex + ':' + i) ? t.toUpperCase() : t;
-        }).join('');
+        out += tokenSyllables(tok, wd).map((t, i) =>
+          keep.has(tok.wordIndex + ':' + i) ? t.toUpperCase() : t).join('');
       }
       return out;
     };
@@ -3312,12 +3408,10 @@
       for (const tok of doc.tokens) {
         if (tok.type !== 'word') { out += tok.text; continue; }
         const wd = doc.words[tok.wordIndex];
-        let start = 0;
-        out += wd.syllables.map((sy, i) => {
-          let t = tok.text.slice(start, start + sy.text.length) || sy.text;
-          start += sy.text.length;
-          return isMarked(tok.wordIndex, i, sy) ? t.toUpperCase() : t;
-        }).join('');
+        const texts = tokenSyllables(tok, wd);
+        out += wd.syllables.map((sy, i) =>
+          isMarked(tok.wordIndex, i, sy) ? texts[i].toUpperCase() : texts[i]
+        ).join('');
       }
       return out;
     };

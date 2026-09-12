@@ -104,14 +104,14 @@
     }
     // "Play" rather than "Resume": this button controls automatic playback,
     // while "Continue" advances the tour. Two forward-sounding labels side by
-    // side left it unclear which one moved you onward.
+    // side left it unclear which one moved you onward. The visible text is the
+    // accessible name; it is not doubled with aria-pressed, which would make a
+    // screen reader say "Play, pressed" for a paused tour.
     playPauseButton.textContent = paused ? "Play" : "Pause";
-    playPauseButton.setAttribute("aria-pressed", paused ? "true" : "false");
-    playPauseButton.setAttribute("aria-label", paused ? "Play animation" : "Pause animation");
   }
 
   function pulseBeats(container, startDelay, step) {
-    if (!container || reducedMotion) return;
+    if (!container || reducedMotion || paused) return;
     const beats = Array.from(container.querySelectorAll(".beat"))
       .sort(function (a, b) { return Number(a.dataset.beat) - Number(b.dataset.beat); });
     beats.forEach(function (beat, index) {
@@ -135,14 +135,44 @@
     window.setTimeout(function () { button.classList.remove("is-sounding"); }, 1800);
   }
 
+  // What a screen reader hears for each panel: the counter, then the panel's
+  // title and takeaway lines. Sighted readers watch the same text arrive on
+  // its own timing; the announcement gives it to assistive technology at once.
+  function describePanel(panel) {
+    const parts = [];
+    panel.querySelectorAll(".display-line, .panel-title, .takeaway").forEach(function (element) {
+      const text = element.textContent.replace(/\s+/g, " ").trim();
+      if (text) parts.push(text);
+    });
+    return parts.join(" ");
+  }
+
+  // Keep keyboard focus on a live control when the one it was on is disabled
+  // or hidden by a panel change.
+  function moveFocusFrom(element, to) {
+    if (document.activeElement === element && to && !to.disabled && !to.hidden) {
+      try { to.focus(); } catch (error) {}
+    }
+  }
+
   function showPanel(index) {
     clearTimers();
     cancelAdvance();
 
+    // While paused (or with reduced motion), a panel is shown as a still: every
+    // line visible at once, nothing cleared away, no pulses, no audio. Stepping
+    // through a paused tour therefore never hides a sentence mid-thought.
+    const still = reducedMotion || paused;
+
     panels.forEach(function (panel) { panel.classList.remove("is-active"); });
     const panel = panels[index];
     panel.classList.add("is-active");
+    panel.classList.toggle("is-still", still);
     counter.textContent = (index + 1) + " of " + panels.length;
+    const spoken = document.createElement("span");
+    spoken.className = "visually-hidden";
+    spoken.textContent = ". " + describePanel(panel);
+    counter.appendChild(spoken);
 
     panel.querySelectorAll("[data-reveal]").forEach(function (element) {
       element.classList.remove("is-shown");
@@ -158,7 +188,7 @@
 
     panel.querySelectorAll("[data-clear]").forEach(function (element) {
       element.classList.remove("is-cleared");
-      if (!reducedMotion) {
+      if (!still) {
         const at = Number(element.getAttribute("data-clear") || 0);
         later(function () { element.classList.add("is-cleared"); }, at);
       }
@@ -172,7 +202,7 @@
     }
     // Keyed on the buttons themselves rather than a panel number, so the
     // audio panel keeps working if panels are added or reordered.
-    if (panel.querySelector(".audio-button") && !reducedMotion) {
+    if (panel.querySelector(".audio-button") && !still) {
       panel.querySelectorAll(".audio-button").forEach(function (button) {
         const at = Number(button.getAttribute("data-play-at") || 0);
         later(function () { playClip(button); }, at);
@@ -180,6 +210,12 @@
     }
 
     const isFinal = index === panels.length - 1;
+    if (index === 0) moveFocusFrom(backButton, forwardButton);
+    if (isFinal) {
+      moveFocusFrom(forwardButton, backButton);
+      moveFocusFrom(skipButton, beginButton);
+      moveFocusFrom(playPauseButton, backButton);
+    }
     backButton.disabled = index === 0;
     forwardButton.disabled = isFinal;
     beginButton.hidden = !isFinal;
@@ -211,10 +247,27 @@
     }
   }
 
+  // Keyboard shortcuts belong to the tour alone. The handler is removed when
+  // the tour ends, so Space scrolls the homepage and opens its disclosure
+  // widgets again, and the arrow keys stop driving a hidden exhibit.
+  function onKeydown(event) {
+    if (!document.body.classList.contains("exhibit-active")) return;
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.target instanceof HTMLElement &&
+        event.target.closest("button, a, summary, input, textarea, select")) return;
+    if (event.key === "ArrowRight") next();
+    else if (event.key === "ArrowLeft") previous();
+    else if (event.key === " ") {
+      event.preventDefault();
+      setPaused(!paused);
+    }
+  }
+
   function completeExhibit() {
     if (document.body.classList.contains("exhibit-complete")) return;
     clearTimers();
     cancelAdvance();
+    document.removeEventListener("keydown", onKeydown);
 
     const controls = document.querySelector(".exhibit-controls");
     document.body.classList.remove("exhibit-active");
@@ -249,16 +302,7 @@
   playPauseButton.addEventListener("click", function () { setPaused(!paused); });
   beginButton.addEventListener("click", completeExhibit);
   skipButton.addEventListener("click", completeExhibit);
-
-  document.addEventListener("keydown", function (event) {
-    if (event.target instanceof HTMLElement && event.target.closest("button")) return;
-    if (event.key === "ArrowRight") next();
-    else if (event.key === "ArrowLeft") previous();
-    else if (event.key === " ") {
-      event.preventDefault();
-      setPaused(!paused);
-    }
-  });
+  document.addEventListener("keydown", onKeydown);
 
   document.querySelectorAll(".audio-button").forEach(function (button) {
     button.addEventListener("click", function () {

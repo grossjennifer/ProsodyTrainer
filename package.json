@@ -5,10 +5,16 @@
   "description": "Local dev server for the ProsodyTrainer static site",
   "scripts": {
     "start": "node server.js",
+    "test": "npm run test:engine && npm run test:pages && npm run test:diagnostics && npm run test:rhythm-candidates && npm run test:acceptance",
+    "test:engine": "node test_known_readings.js && node test_contextual_heteronyms.js && node test_phrase_prominence.js && node test_ternary_boundaries.js && node test_engine_edits.js && node eval/novel_heteronyms.js",
+    "test:pages": "node test_asset_paths.js && node test_exhibit.js && node test_learn.js && node test_interface.js && node test_pro_polish.js && node sound-spelling/test_onset_rime.js",
     "test:acceptance": "node eval/acceptance.js",
     "test:rhythm-candidates": "node eval/rhythm_measure_diagnostic.js --assert",
     "test:ternary-boundaries": "node test_ternary_boundaries.js",
     "test:diagnostics": "node test_diagnostic_battery.js && node test_export_provenance.js",
     "stamp:dictionaries": "node stamp_dictionary_metadata.js"
+  },
+  "devDependencies": {
+    "jsdom": "^30.0.1"
   }
 }

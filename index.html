@@ -6,6 +6,16 @@
   <title>Prosody Trainer | The Inner Voice of Reading</title>
   <meta name="description" content="Prosody Trainer: research-based interactive tools for exploring stress, rhythm, phrasing, and intonation in reading, from the Applied Cognition Lab at Grand Valley State University.">
   <link rel="canonical" href="https://prosodytrainer.com/">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <meta name="theme-color" content="#FAF6EF">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Prosody Trainer">
+  <meta property="og:title" content="Prosody Trainer | The Inner Voice of Reading">
+  <meta property="og:description" content="Prosody Trainer: research-based interactive tools for exploring stress, rhythm, phrasing, and intonation in reading, from the Applied Cognition Lab at Grand Valley State University.">
+  <meta property="og:url" content="https://prosodytrainer.com/">
+  <meta property="og:image" content="https://prosodytrainer.com/sputnik.png">
+  <meta property="og:image:alt" content="Sputnik the Prosody Pup, a Siberian husky with blue eyes">
+  <meta name="twitter:card" content="summary">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -143,8 +153,9 @@
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
+<script>document.body.classList.add("exhibit-active");</script>
 
-<main id="opening-exhibit" class="opening-exhibit" aria-label="Opening exhibit">
+<div id="opening-exhibit" class="opening-exhibit" role="region" aria-label="Opening exhibit">
   <section class="exhibit-panel" data-panel="1" data-duration="7000">
     <p class="display-line invitation" data-reveal data-delay="0">Reading may look silent, but the mind often gives it a voice.</p>
     <p class="takeaway" data-reveal data-delay="2400">Let&rsquo;s listen a little closer.</p>
@@ -195,7 +206,7 @@
   </section>
 
   <section class="exhibit-panel" data-panel="7" data-duration="14500">
-    <h2 class="panel-title" data-reveal data-delay="0">The same words, a different focus.</h2>
+    <p class="panel-title" data-reveal data-delay="0">The same words, a different focus.</p>
     <p class="caption exhibit-note" data-reveal data-delay="900">Megan knows her hamster is safe &mdash; but not where Charlie put it.</p>
     <p class="demo-sentence" data-reveal data-delay="2400" aria-hidden="true"><span class="stress">WHERE</span> is my hamster?</p>
     <p class="visually-hidden" data-reveal data-delay="2400">Where is my hamster? &mdash; with the emphasis on <i>where</i>.</p>
@@ -206,7 +217,7 @@
   </section>
 
   <section class="exhibit-panel" data-panel="8" data-duration="15500">
-    <h2 class="panel-title" data-reveal data-delay="0">One word, three voices.</h2>
+    <p class="panel-title" data-reveal data-delay="0">One word, three voices.</p>
     <p class="caption exhibit-note" data-reveal data-delay="900">Listen to each one.</p>
     <div class="audio-row" data-reveal data-delay="1600">
       <button class="audio-button" type="button" data-audio="really-statement.mp3" data-play-at="2800" aria-label="Play Really as a statement, spoken with a settling, falling voice">
@@ -233,7 +244,7 @@
   </section>
 
   <section class="exhibit-panel" data-panel="9" data-duration="13000">
-    <h2 class="panel-title" data-reveal data-delay="0">The inner voice takes shape between page and reader</h2>
+    <p class="panel-title" data-reveal data-delay="0">The inner voice takes shape between page and reader</p>
     <!-- Announced as a single figure, the way the pitch contours on the
          intonation page are. The label carries the diagram as a sentence, in
          the order the parts make sense spoken; the closing line is left to the
@@ -266,11 +277,11 @@
   <section class="exhibit-panel final-panel" data-panel="10" data-duration="0">
     <div class="final-scene">
       <div class="final-brand">
-        <h1 class="brand" data-reveal data-delay="0">Prosody Trainer</h1>
+        <p class="brand" data-reveal data-delay="0">Prosody Trainer</p>
         <p class="brand-subtitle" data-reveal data-delay="1100">An interactive laboratory where people discover how the mind brings written language to life.</p>
       </div>
       <div class="sputnik-scene">
-        <img class="sputnik" src="sputnik.png" data-reveal data-delay="2100" alt="Sputnik the Prosody Pup, a Siberian husky with blue eyes, sitting and looking up attentively.">
+        <img class="sputnik" src="sputnik.png" width="696" height="1422" loading="lazy" decoding="async" data-reveal data-delay="2100" alt="Sputnik the Prosody Pup, a Siberian husky with blue eyes, sitting and looking up attentively.">
         <div class="sputnik-speech" data-reveal data-delay="3100">
           <div class="sputnik-bubble">
             <p>I&rsquo;ve been listening all along.</p>
@@ -284,17 +295,17 @@
       </div>
     </div>
   </section>
-</main>
+</div>
 
 <div class="exhibit-controls">
+  <button id="skip-intro" class="skip-link" type="button">Skip intro</button>
   <p class="caption panel-counter" id="panel-counter" aria-live="polite">1 of 10</p>
   <div class="transport" role="group" aria-label="Exhibit playback controls">
     <button id="back-button" class="transport-button" type="button">Back</button>
-    <button id="play-pause-button" class="transport-button" type="button" aria-pressed="false" aria-label="Pause animation">Pause</button>
+    <button id="play-pause-button" class="transport-button" type="button">Pause</button>
     <button id="forward-button" class="transport-button" type="button">Continue</button>
   </div>
   <button id="begin-button" class="continue-button" type="button" hidden>Explore the full site</button>
-  <button id="skip-intro" class="skip-link" type="button">Skip intro</button>
 </div>
 
 <div id="site-content">
@@ -315,7 +326,7 @@
         <div class="site-kicker">Making the prosody of written language visible</div>
         <h1 id="site-heading" tabindex="-1">Reading may look silent, but the mind often gives it a voice<span class="dot">.</span></h1>
         <p>Not aloud, but in the mind. Prosody Trainer makes that inner voice visible.</p>
-        <div class="site-reveal" aria-label="Features of the inner voice">
+        <div class="site-reveal" role="group" aria-label="Features of the inner voice">
           <span>That voice has stress.</span>
           <span>It has rhythm.</span>
           <span>It has phrasing.</span>
@@ -435,7 +446,7 @@
         <div class="site-about-panel">
           <p>Prosody Trainer was created by <strong>Jennifer Gross, Ph.D.</strong>, Professor of Psychology at Grand Valley State University. Her research examines how readers represent the sound structure of written language and whether stress and rhythm can be made more visible through instruction and digital tools.</p>
           <p>Developed at the intersection of cognitive psychology, psycholinguistics, literacy research, and educational technology, the project supports classroom demonstration, reading research, and the development of evidence-based interventions.</p>
-          <address class="site-inline-links" aria-label="Professional contact information">
+          <address class="site-inline-links">
             <a href="https://www.gvsu.edu/psychology/gross-jennifer-209">University profile</a>
             <a href="mailto:grossj@gvsu.edu">grossj@gvsu.edu</a>
           </address>
@@ -446,7 +457,7 @@
     <footer>
       <div class="site-footer-top">
         <p class="site-footer-title"><strong>Prosody Trainer</strong> — making the prosody of written language visible.</p>
-        <div class="site-footer-links" aria-label="Footer navigation">
+        <div class="site-footer-links" role="navigation" aria-label="Footer navigation">
           <a href="#tools">Tools</a>
           <a href="learn/">Learn</a>
           <a href="#science">Science</a>

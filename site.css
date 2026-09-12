@@ -196,7 +196,6 @@ a.site-card:focus-visible {
   letter-spacing: .09em;
   text-transform: uppercase;
 }
-.site-tag-pending,
 .site-card-upcoming .site-tag { color: var(--ink-soft); }
 .site-coming { color: var(--ink-soft); }
 .site-card-upcoming { background: rgba(255,255,255,.55); }
@@ -439,56 +438,6 @@ a.site-card:focus-visible {
   margin: 0 0 1rem;
 }
 
-.learn-map ul {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 0 1.1rem;
-  border-left: 2px solid var(--line);
-}
-
-.learn-map li {
-  padding: .42rem 0 .42rem .9rem;
-  position: relative;
-  line-height: 1.5;
-}
-
-.learn-map li::before {
-  content: "";
-  position: absolute;
-  left: -1.1rem;
-  top: 1.15rem;
-  width: .9rem;
-  height: 2px;
-  background: var(--line);
-}
-
-.learn-map .learn-map-name {
-  font-family: var(--serif);
-  font-size: 1.1rem;
-  font-weight: 700;
-}
-
-.learn-map .learn-map-gloss {
-  font-size: .95rem;
-  color: var(--ink-soft);
-}
-
-.learn-map .learn-map-pending {
-  font-size: .8rem;
-  letter-spacing: .04em;
-  text-transform: uppercase;
-  color: var(--ink-soft);
-  margin-left: .4rem;
-}
-
-.learn-map-frame {
-  margin: 1.2rem 0 0;
-  padding-top: 1rem;
-  border-top: 1px solid var(--line);
-  font-size: .95rem;
-  line-height: 1.6;
-  color: var(--ink);
-}
 
 
 /* --------------------------------------------------------------------------
@@ -503,8 +452,6 @@ a.site-card:focus-visible {
   gap: .9rem;
   margin: -.4rem 0 1.6rem;
 }
-
-.learn-swap-controls[hidden] { display: none; }
 
 .learn-swap-controls button {
   font-family: var(--sans);
@@ -648,8 +595,6 @@ a.site-card:focus-visible {
   transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
 }
 
-.learn-audio[hidden] { display: none; }
-
 .learn-audio:hover,
 .learn-audio:focus-visible {
   border-color: var(--glow);
@@ -663,7 +608,6 @@ a.site-card:focus-visible {
 
 .learn-contours li.is-sounding .contour-line { stroke: var(--glow-deep); }
 .learn-contours li.is-sounding .contour-dot { fill: var(--glow-deep); }
-.learn-contours li.was-played .contour-line { stroke: var(--glow-deep); }
 
 @media (prefers-reduced-motion: reduce) {
   .learn-audio { transition: none; }
@@ -683,8 +627,8 @@ a.site-card:focus-visible {
   font-weight: 600;
 }
 
-/* Keeps the DOI and "Open access" from breaking apart mid-pair. */
-.site-nowrap { white-space: nowrap; }
+/* A gloss that opens an example block sits flush under its heading. */
+.learn-example .learn-gloss.is-lead { margin-top: 0; }
 
 /* Available to assistive technology, not shown on screen. Used to describe
    examples whose meaning is carried by capitalisation alone, since a screen

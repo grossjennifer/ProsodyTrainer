@@ -77,7 +77,8 @@ check(4, 'contextual heteronym suite still passes', () => {
   const { execFileSync } = require('child_process');
   const out = execFileSync(process.execPath, ['test_contextual_heteronyms.js'],
     { cwd: ROOT, encoding: 'utf8' });
-  assert.ok(/27 contextual heteronym checks passed/.test(out), out);
+  const m = /(\d+) contextual heteronym checks passed/.exec(out);
+  assert.ok(m && Number(m[1]) >= 27, out);
 });
 
 /* 5 — does not erase phrase prominence when a syllable is extrametrical. */

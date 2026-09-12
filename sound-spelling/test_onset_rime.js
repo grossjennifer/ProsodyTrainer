@@ -88,7 +88,20 @@ eq('rabbit is multisyllabic', rabbit.multisyllabic, true);
 eq('rabbit has 2 syllables', rabbit.syllableCount, 2);
 eq('rabbit syllable 1 onset /r/', rabbit.syllables[0].onsetIPA, 'r');
 eq('rabbit syllable 1 rime /\u00E6b/', rabbit.syllables[0].rimeIPA, '\u00E6b');
-eq('rabbit syllable 2 has no onset', rabbit.syllables[1].onsetIPA, '');
+// The intervocalic /b/ after a stressed lax vowel is ambisyllabic (Kahn, 1976): it
+// closes syllable 1 (coda) AND is shared as syllable 2's onset in the sound view.
+eq('rabbit syllable 2 onset is the shared /b/', rabbit.syllables[1].onsetIPA, 'b');
+eq('rabbit syllable 2 is flagged ambisyllabicOnset', rabbit.syllables[1].ambisyllabicOnset, true);
+eq('rabbit syllable 1 is not flagged ambisyllabicOnset', !!rabbit.syllables[0].ambisyllabicOnset, false);
+const rabbitSy = ORR.syllabify(ORR.LEX['rabbit'].split(' '));
+eq('syllabify rabbit: syllable 2 carries sharedOnset /B/', (rabbitSy[1].sharedOnset||[]).join(''), 'B');
+eq('syllabify rabbit: syllable 2 .onset itself stays empty (letters split conventionally)', rabbitSy[1].onset.length, 0);
+// a coda that cannot begin a syllable (/ŋ/) is never shared
+const singer = ORR.analyze('singer');
+eq('singer is in the lexicon', singer.source, 'lexicon');
+eq('singer syllable 2 has no onset (/\u014B/ cannot be shared)', singer.syllables[1].onsetIPA, '');
+eq('singer syllable 2 not flagged ambisyllabicOnset', !!singer.syllables[1].ambisyllabicOnset, false);
+eq('singer spells as sing\u00B7er', singer.syllables.map(s => s.text).join('\u00B7'), 'sing\u00B7er');
 eq('rabbit syllable 2 rime /\u0259t/ (schwa)', rabbit.syllables[1].rimeIPA, '\u0259t');
 eq('rabbit stress on first syllable', rabbit.syllables[0].stress, 1);
 eq('rabbit spells as rab\u00B7bit', rabbit.syllables.map(s => s.text).join('\u00B7'), 'rab\u00B7bit');
@@ -129,6 +142,47 @@ ok('oov syllables carry letter onset/rime', oov.syllables[0].text==='splonk' && 
 ok('oov syllable 1 onset letters "spl"', oov.syllables[0].onsetL==='spl');
 // silent-e words are still one syllable (flake stays monosyllabic / estimated)
 eq('flake stays one syllable (silent e)', ORR.analyze('flake').syllableCount, 1);
+
+/* ---------- orthographic syllables: vowel runs, intervocalic y, silent e, fallbacks ---------- */
+function spelled(w){ return ORR.analyze(w).syllables.map(s => s.text).join('\u00B7'); }
+function noBlank(w){ const a=ORR.analyze(w); return a.syllables.every(s => typeof s.text==='string' && s.text.length>0); }
+['quiet','myriad','our','beyond','usually','area','being','dvd','going','hours','january','media','previous','usa','video']
+  .forEach(w => ok(w+': every syllable has letters', noBlank(w)));
+eq('quiet -> qui\u00B7et (vowel run split by phone count)', spelled('quiet'), 'qui\u00B7et');
+eq('area -> ar\u00B7e\u00B7a', spelled('area'), 'ar\u00B7e\u00B7a');
+eq('being -> be\u00B7ing', spelled('being'), 'be\u00B7ing');
+eq('going -> go\u00B7ing', spelled('going'), 'go\u00B7ing');
+eq('media -> me\u00B7di\u00B7a', spelled('media'), 'me\u00B7di\u00B7a');
+eq('video -> vid\u00B7e\u00B7o', spelled('video'), 'vid\u00B7e\u00B7o');
+eq('previous -> pre\u00B7vi\u00B7ous', spelled('previous'), 'pre\u00B7vi\u00B7ous');
+eq('usually -> u\u00B7su\u00B7al\u00B7ly', spelled('usually'), 'u\u00B7su\u00B7al\u00B7ly');
+eq('beyond -> be\u00B7yond (y opens the next syllable)', spelled('beyond'), 'be\u00B7yond');
+eq('dvd -> d\u00B7v\u00B7d (proportional fallback, no blank)', spelled('dvd'), 'd\u00B7v\u00B7d');
+eq('science -> sci\u00B7ence (silent final e)', spelled('science'), 'sci\u00B7ence');
+eq('player -> play\u00B7er (intervocalic y, two syllables)', spelled('player'), 'play\u00B7er');
+eq('royal -> roy\u00B7al', spelled('royal'), 'roy\u00B7al');
+eq('lion -> li\u00B7on', spelled('lion'), 'li\u00B7on');
+eq('poem -> po\u00B7em', spelled('poem'), 'po\u00B7em');
+eq('create -> cre\u00B7ate', spelled('create'), 'cre\u00B7ate');
+eq('rabbit still rab\u00B7bit', spelled('rabbit'), 'rab\u00B7bit');
+eq('elephant still el\u00B7e\u00B7phant', spelled('elephant'), 'el\u00B7e\u00B7phant');
+eq('computer still com\u00B7pu\u00B7ter', spelled('computer'), 'com\u00B7pu\u00B7ter');
+eq('crayon (oov path) -> cray\u00B7on', ORR.analyze('crayon').syllableCount, 2);
+
+/* ---------- input sanitising: apostrophes, hyphens, diacritics, junk ---------- */
+const dont = ORR.analyze("don't");
+eq("don't keeps its apostrophe", dont.word, "don't");
+eq("don't is looked up in the lexicon", dont.source, 'lexicon');
+eq("curly apostrophe folds to straight", ORR.analyze('don\u2019t').word, "don't");
+eq('DON\'T folds case', ORR.analyze("DON'T").word, "don't");
+const ice = ORR.analyze('ice-cream');
+eq('ice-cream keeps its hyphen', ice.word, 'ice-cream');
+eq('ice-cream splits at the hyphen', ice.syllables.map(s => s.text).join('\u00B7'), 'ice\u00B7cream');
+eq('caf\u00E9 strips the accent, keeps the letter', ORR.analyze('caf\u00E9').word, 'cafe');
+eq('empty input -> null', ORR.analyze('   '), null);
+eq('digits-only input -> null', ORR.analyze('123'), null);
+eq('trailing punctuation is dropped', ORR.analyze('rabbit!').word, 'rabbit');
+eq('normalised input is reported separately', ORR.analyze('Rabbit').input, 'rabbit');
 
 // the pure syllabifier is exposed and applies the stressed-lax-vowel-keeps-coda rule
 const sy = ORR.syllabify(['B','AE1','S','K','IH0','T']);   // basket

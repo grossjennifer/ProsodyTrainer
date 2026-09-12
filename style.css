@@ -10,7 +10,7 @@
   --glow:         #C98A2E;
   --glow-deep:    #8C5A12;
   --glow-halo:    rgba(214, 158, 74, 0.38);
-  --boundary:     #A89C8C;
+  --boundary:     #8A7D6D; /* 3.7:1 on paper, so control borders clear WCAG 1.4.11 */
   --line:         #D9D0C2;
   --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
   --sans: system-ui, -apple-system, "Segoe UI", Helvetica, Arial, sans-serif;
@@ -18,6 +18,9 @@
 }
 
 * { box-sizing: border-box; }
+
+/* One rule for the hidden attribute, site-wide, instead of per-component patches. */
+[hidden] { display: none !important; }
 
 html, body {
   margin: 0;
@@ -28,6 +31,7 @@ html, body {
 }
 
 .opening-exhibit {
+  min-height: 100vh;
   min-height: 100dvh;
   display: grid;
   place-items: center;
@@ -103,7 +107,6 @@ body.exhibit-active .exhibit-controls { z-index: 61; }
   text-wrap: balance;
 }
 
-.display-line.small { font-size: clamp(1.3rem, 3.5vw, 1.9rem); }
 .invitation { color: var(--ink); }
 
 .demo-word {
@@ -541,6 +544,9 @@ body.exhibit-active .exhibit-controls { z-index: 61; }
   text-decoration: underline;
   text-underline-offset: 3px;
   padding: 0.2em 0.5em;
+  /* First in the tab order (a skip control should be reachable before the
+     transport), last in the visual stack. */
+  order: 10;
 }
 
 .skip-link:hover,
@@ -550,6 +556,12 @@ body.exhibit-active .exhibit-controls { z-index: 61; }
   outline: 2px solid var(--glow-deep);
   outline-offset: 3px;
 }
+
+/* A panel shown as a still (paused, or reduced motion): both rhythm steps
+   are laid out one under the other instead of taking turns in one cell. */
+.exhibit-panel.is-still .rhythm-steps { display: block; }
+.exhibit-panel.is-still .rhythm-step { transition: none; }
+.exhibit-panel.is-still [data-reveal] { transition: none; }
 
 @media (prefers-reduced-motion: reduce) {
   .exhibit-panel.is-active { animation: none; }
@@ -565,6 +577,8 @@ body.exhibit-active .exhibit-controls { z-index: 61; }
 body.exhibit-complete #opening-exhibit,
 body.exhibit-complete .exhibit-controls { display: none; }
 
+/* Kept alongside the global [hidden] rule: the inline no-script fallback in
+   index.html relies on this selector by name. */
 #site-content[hidden] { display: none; }
 
 .transport {
@@ -603,8 +617,6 @@ body.exhibit-complete .exhibit-controls { display: none; }
   border-color: var(--boundary);
   box-shadow: none;
 }
-
-.transport-button[hidden] { display: none; }
 
 .site-replay {
   font: inherit;

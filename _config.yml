@@ -1,0 +1,24 @@
+# GitHub Pages builds this site with Jekyll. Nothing here needs Jekyll's
+# processing; the file exists so that development files stay out of the
+# published site. Everything listed below is still tracked in git and used by
+# `npm test` locally, but is not served from prosodytrainer.com.
+exclude:
+  - README.md
+  - REVISION_NOTES.md
+  - RHYTHM_MEASURE_CANDIDATE_REVIEW.md
+  - RHYTHM_MEASURE_LEGACY_CANDIDATES.md
+  - package.json
+  - package-lock.json
+  - server.js
+  - stamp_dictionary_metadata.js
+  - eval/
+  - test_*.js
+  - rhythm-reader/test_*.js
+  - rhythm-reader-pro/test_*.js
+  - rhythm-reader-pro/READMEpro.txt
+  - sound-spelling/test_*.js
+  - sound-spelling/build_cmudict_subset.js
+  - sound-spelling/cmudict-subset.sample.js
+  - node_modules/
+  - "*.docx"
+  - "*.zip"

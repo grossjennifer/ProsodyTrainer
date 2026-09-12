@@ -98,7 +98,9 @@ check("JSON-LD parses as an Article", (function () {
   if (!match) return false;
   try {
     const node = JSON.parse(match[1]);
-    return node["@type"] === "Article" &&
+    return [].concat(node["@type"]).includes("Article") &&
+           [].concat(node["@type"]).includes("LearningResource") &&
+           node.author.name === "Jennifer Gross" &&
            node.isPartOf["@id"] === "https://prosodytrainer.com/#website" &&
            node.author["@id"] === "https://prosodytrainer.com/#jennifer-gross";
   } catch (error) { return false; }
@@ -202,7 +204,9 @@ check("stress page JSON-LD parses and joins the site graph", (function () {
   if (!match) return false;
   try {
     const node = JSON.parse(match[1]);
-    return node["@type"] === "Article" &&
+    return [].concat(node["@type"]).includes("Article") &&
+           [].concat(node["@type"]).includes("LearningResource") &&
+           node.author.name === "Jennifer Gross" &&
            node.isPartOf["@id"] === "https://prosodytrainer.com/#website" &&
            node.author["@id"] === "https://prosodytrainer.com/#jennifer-gross";
   } catch (error) { return false; }
@@ -355,7 +359,9 @@ check("rhythm page JSON-LD parses and joins the site graph", (function () {
   if (!match) return false;
   try {
     const node = JSON.parse(match[1]);
-    return node["@type"] === "Article" &&
+    return [].concat(node["@type"]).includes("Article") &&
+           [].concat(node["@type"]).includes("LearningResource") &&
+           node.author.name === "Jennifer Gross" &&
            node.isPartOf["@id"] === "https://prosodytrainer.com/#website" &&
            node.author["@id"] === "https://prosodytrainer.com/#jennifer-gross";
   } catch (error) { return false; }
@@ -406,8 +412,7 @@ check("feet-cross-words point made with the banana case",
   flatRhythm.includes("an anapest followed by an iamb") &&
   flatRhythm.includes("still weak&ndash;strong&ndash;weak"));
 check("feet fitted within phrases, never across a boundary",
-  flatRhythm.includes("never drawn across a phrase") ||
-  flatRhythm.includes("never drawn across a phrase boundary"));
+  /(never|not) drawn across a phrase/.test(flatRhythm));
 check("rhythm not described as even timing",
   flatRhythm.includes("Not a metronome") &&
   flatRhythm.includes("does not divide into equal intervals"));
@@ -483,7 +488,9 @@ check("focus page JSON-LD parses and joins the site graph", (function () {
   if (!match) return false;
   try {
     const node = JSON.parse(match[1]);
-    return node["@type"] === "Article" &&
+    return [].concat(node["@type"]).includes("Article") &&
+           [].concat(node["@type"]).includes("LearningResource") &&
+           node.author.name === "Jennifer Gross" &&
            node.isPartOf["@id"] === "https://prosodytrainer.com/#website" &&
            node.author["@id"] === "https://prosodytrainer.com/#jennifer-gross";
   } catch (error) { return false; }
@@ -578,24 +585,24 @@ check("page-title references capitalised; phenomenon links left lowercase", (fun
     !/>stress page<|>rhythm page<|>phrasing page</.test(rhythm + stress + focus + phrasing + hub) &&
     focus.includes('<a href="../stress/">stress</a>');
 })());
-check("hub status note reads 'added', and drops the future tense",
-  hub.replace(/\s+/g, " ").includes("being added one at a time") &&
-  !/being written one at a time/.test(hub));
+check("hub status note describes the pages without promising future ones",
+  hub.replace(/\s+/g, " ").includes("Each page sets out what the component is") &&
+  !/being (written|added) one at a time/.test(hub));
 
 // --- the taxonomy map ------------------------------------------------------
+// The map is a heading ("Prosody") over five component cards; every component
+// now has a live page, so all five link.
 check("hub carries a prosody map with all five components",
   hub.includes('class="learn-map"') &&
-  ["Stress", "Rhythm", "Phrasing", "Emphasis and\n            focus", "Intonation"]
-    .every(n => hub.includes(n)));
-check("map links the four live components and leaves intonation unlinked",
-  ["stress/", "rhythm/", "phrasing/", "focus/"].every(
-    h => new RegExp('learn-map-name"><a href="' + h.replace("/", "\\/") + '"').test(hub)) &&
-  !/learn-map-name"><a href="intonation/.test(hub));
+  (hub.match(/<h3>(Stress|Rhythm|Phrasing|Emphasis and\s+focus|Intonation)<\/h3>/g) || []).length === 5);
+check("map links all five live components",
+  ["stress/", "rhythm/", "phrasing/", "focus/", "intonation/"].every(
+    h => new RegExp('<a class="site-card" href="' + h.replace("/", "\\/") + '"').test(hub)));
 check("implicit prosody framed as the claim, not a sixth component",
-  hub.replace(/\s+/g, " ").includes("is not a sixth item on that list") &&
-  hub.replace(/\s+/g, " ").includes("construct all of the above while reading silently"));
+  hub.replace(/\s+/g, " ").includes("is not a sixth component") &&
+  hub.replace(/\s+/g, " ").includes("construct all five while reading silently"));
 check("map styles live in the shared sheet, not inline",
-  shared.includes(".learn-map") && shared.includes(".learn-map-frame") &&
+  shared.includes(".learn-map") && shared.includes(".learn-map-root") &&
   !hub.includes("<style>"));
 check("only the focus page carries script; the rest are static", (function () {
   const bare = page => (page.match(/<script(?![^>]*ld\+json)/g) || []).length;
