@@ -190,6 +190,17 @@ async function setText(dom, text, goId) {
     'Pro discloses that the reader chose the text type');
 
   dom.window.close();
+
+  // Every tool page carries the site navigation with a way back to the
+  // homepage — a reader who opens a tool must never be stranded there.
+  for (const page of ['rhythm-reader', 'rhythm-reader-pro', 'sound-spelling']) {
+    const html = require('fs').readFileSync(path.join(ROOT, page, 'index.html'), 'utf8');
+    const nav = new JSDOM(html).window.document.querySelector('nav[aria-label="Site navigation"]');
+    ok(nav, `${page}: has site navigation`);
+    const hrefs = Array.from(nav.querySelectorAll('a')).map(a => a.getAttribute('href'));
+    ok(hrefs.includes('../'), `${page}: nav links back to the homepage`);
+    ok(hrefs.includes('../#tools') && hrefs.includes('../learn/'), `${page}: nav links to Tools and Learn`);
+  }
 }
 
 console.log(`Interface suite passed (${checks} checks).`);

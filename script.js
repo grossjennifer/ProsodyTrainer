@@ -281,6 +281,7 @@
     }
 
     document.body.classList.add("exhibit-complete");
+    try { window.sessionStorage.setItem("pt-tour-seen", "1"); } catch (error) {}
     const replay = document.getElementById("replay-intro");
     if (replay) replay.hidden = false;
     try { window.scrollTo({ top: 0, left: 0, behavior: "auto" }); }
@@ -311,18 +312,35 @@
     });
   });
 
-  // Replay just restarts the exhibit; since it plays on every visit, a reload
-  // is enough (and still works after the reader has entered the site).
+  // Replay restarts the exhibit: forget that this tab has seen it, drop any
+  // section hash (a hash also skips the tour), and reload.
   function requestReplay() {
-    try { window.location.reload(); }
-    catch (error) { window.location.href = window.location.href; }
+    try { window.sessionStorage.removeItem("pt-tour-seen"); } catch (error) {}
+    const plain = window.location.pathname + window.location.search;
+    try {
+      if (window.location.hash) window.location.replace(plain);
+      else window.location.reload();
+    }
+    catch (error) { window.location.href = plain; }
   }
   Array.prototype.forEach.call(
     document.querySelectorAll(".js-replay-intro"),
     function (button) { button.addEventListener("click", requestReplay); }
   );
 
-  // Always play the welcome; the reader can skip at any time.
-  raiseExhibit();
-  next();
+  // Play the welcome on a first visit; the reader can skip at any time.
+  // The inline bootstrap in index.html marks the body .exhibit-skip when this
+  // tab has already seen the tour or the URL carries a section hash — then go
+  // straight to the site, and honour the hash instead of scrolling to the top.
+  if (document.body.classList.contains("exhibit-skip")) {
+    const hash = window.location.hash;
+    completeExhibit();
+    const section = hash && document.getElementById(hash.slice(1));
+    if (section) {
+      try { section.scrollIntoView(); } catch (error) {}
+    }
+  } else {
+    raiseExhibit();
+    next();
+  }
 })();

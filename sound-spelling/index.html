@@ -56,6 +56,11 @@
   .wordline:focus{outline:none}
   .wordline:focus-visible{outline:2px solid var(--glow-deep);outline-offset:4px}
   .vh{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap;border:0}
+  .tool-nav{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:.6rem 1.5rem}
+  .tool-nav .kicker{margin:0}
+  .tool-nav-links{display:flex;flex-wrap:wrap;align-items:center;gap:.55rem 1.1rem;font-size:1rem}
+  .tool-nav-links a{color:var(--ink-soft);text-decoration:none}
+  .tool-nav-links a:hover,.tool-nav-links a:focus-visible{color:var(--glow-deep);text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:.22em}
   .kicker a{color:inherit;text-decoration:none}
   .kicker a:hover,.kicker a:focus-visible{text-decoration:underline}
   .seg-onset{color:var(--onset)}
@@ -165,7 +170,16 @@
 </head>
 <body>
 <div class="wrap">
-  <nav aria-label="Site navigation"><p class="kicker"><a href="../">Prosody Trainer</a></p></nav>
+  <nav class="tool-nav" aria-label="Site navigation">
+    <p class="kicker"><a href="../">Prosody Trainer</a></p>
+    <div class="tool-nav-links">
+      <a href="../#tools">Tools</a>
+      <a href="../learn/">Learn</a>
+      <a href="../#science">Science</a>
+      <a href="../#research">Research</a>
+      <a href="../#about">About and contact</a>
+    </div>
+  </nav>
   <main>
   <h1>Sound &amp; Spelling</h1>
   <p class="lede">The letter&ndash;sound map runs both ways. <strong style="color:var(--onset)">Read</strong> a word into its sounds by onset and rime &mdash; or take a <strong style="color:var(--rime)">sound</strong> and see the many ways English spells it.</p>

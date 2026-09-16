@@ -29,6 +29,15 @@ html { font-size: 18px; }
 body { margin: 0; background: var(--paper); color: var(--ink);
   font-family: var(--sans); line-height: 1.6; }
 main { max-width: 780px; margin: 0 auto; padding: 1rem 1rem 4rem; }
+/* Site navigation (shared markup with the Learn pages; styled locally) */
+.tool-nav { display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: .6rem 1.5rem; padding: 1.2rem 0 .2rem; font-size: 1rem; }
+.tool-nav a { color: var(--muted); text-decoration: none; }
+.tool-nav a:hover, .tool-nav a:focus-visible { color: var(--ink); text-decoration: underline;
+  text-decoration-thickness: 1px; text-underline-offset: .22em; }
+.tool-nav .brand-link { font-weight: 750; color: var(--ink); }
+.tool-nav .brand-link .dot { color: var(--beat); }
+.tool-nav-links { display: flex; flex-wrap: wrap; align-items: center; gap: .55rem 1.1rem; }
 header { padding: 1.6rem 0 .6rem; }
 h1 { font-family: var(--serif); font-size: 2rem; margin: 0; }
 h1 .dot { color: var(--beat); font-size: .55em; vertical-align: .5em;
@@ -127,6 +136,16 @@ footer a { color: var(--phrase); }
 </head>
 <body>
 <main>
+<nav class="tool-nav" aria-label="Site navigation">
+  <a class="brand-link" href="../">Prosody Trainer<span class="dot">&#9679;</span></a>
+  <div class="tool-nav-links">
+    <a href="../#tools">Tools</a>
+    <a href="../learn/">Learn</a>
+    <a href="../#science">Science</a>
+    <a href="../#research">Research</a>
+    <a href="../#about">About and contact</a>
+  </div>
+</nav>
 <header>
   <h1>Rhythm Reader<span class="dot">●</span></h1>
   <p class="lede">Paste any English text and explore one possible rhythm

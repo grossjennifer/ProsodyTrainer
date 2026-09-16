@@ -153,7 +153,17 @@
   <link rel="stylesheet" href="site.css">
 </head>
 <body>
-<script>document.body.classList.add("exhibit-active");</script>
+<script>
+  // Raise the welcome tour before first paint, unless this tab has already
+  // seen it (sessionStorage) or the URL points at a section (#tools etc.).
+  // Storage can be blocked (private browsing); on any error, play the tour.
+  (function () {
+    var seen = false;
+    try { seen = window.sessionStorage.getItem("pt-tour-seen") === "1"; } catch (e) {}
+    if (seen || window.location.hash) document.body.classList.add("exhibit-skip");
+    else document.body.classList.add("exhibit-active");
+  })();
+</script>
 
 <div id="opening-exhibit" class="opening-exhibit" role="region" aria-label="Opening exhibit">
   <section class="exhibit-panel" data-panel="1" data-duration="7000">
