@@ -337,7 +337,15 @@ const PROMOTION_PROBES = [
     targets: [{ word: 'had', beat: 'S' }] },
   { id: 'probe-thomas-not', split: 'held',
     text: 'Do not go gentle into that good night',
-    targets: [{ word: 'not', beat: 'S' }, { word: 'that', beat: 'S' }] }
+    targets: [{ word: 'not', beat: 'S' }, { word: 'that', beat: 'S' }] },
+  /* Line-final beats. Two seven-syllable catalectic lines: the grid restarts
+   * at the comma, and the second line must run to its last syllable rather
+   * than stopping at `WONder` (reported 24 Sept 2026 from the live site). */
+  { id: 'probe-twinkle-are', split: 'dev',
+    text: 'Twinkle, twinkle, little star, how I wonder what you are.',
+    targets: [{ word: 'little', beat: 'S' }, { word: 'how', beat: 'S' },
+              { word: 'what', beat: 'S' }, { word: 'are', beat: 'S' },
+              { word: 'you', beat: 'W' }] }
 ];
 
 /* --------------------------------------------------------------------------

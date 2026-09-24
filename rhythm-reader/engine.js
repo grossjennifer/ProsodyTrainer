@@ -1573,6 +1573,7 @@
     LAPSE:        0.80,  // per weak syllable beyond 2 in an interior run
     TRAIL_LAPSE:  0.30,  // ... in a phrase-final run (feminine endings)
     GRID_MISS:    0.75,  // grid position before the last beat, unbeaten
+    GRID_TAIL_MISS: 1.00,// ... after the last beat, on a syllable that COULD beat
     GRID_EXTRA:   0.70,  // beat off the grid
     TERNARY:      0.40,  // surcharge for a period-3 grid over a period-2 grid
     SHIFT:        1.90,  // Rhythm Rule: beat relocated leftward inside a word
@@ -1661,7 +1662,47 @@
    * the rest of the passage has already settled on; matching it earns a
    * discount. That is how a poem's established metre informs an individual
    * line — context a single line cannot supply on its own. */
-  function gridFit(beats, prior) {
+  /* A syllable can take a beat unless its own preference says the opposite
+   * at an anchor's weight: unstressed syllables of polysyllables (3.2),
+   * reduced vowels (9.0) and user-pinned weak syllables (1000). Function
+   * words and secondary stresses are weak by preference but promotable. */
+  function beatableSyllables(stream) {
+    return stream.map(x => x.pref.value === 'S' || x.pref.weight < 3.0);
+  }
+
+  /* The phase (0..p-1) that best fits a slice of an aggregate reading, used
+   * to give each comma-bounded phrase its own local prior. `fallback` is the
+   * phase implied by syllable counting and breaks exact ties, so runs that
+   * really do continue through the comma keep their old prior. */
+  function slicePhase(beats, p, fallback) {
+    let best = fallback, bestCost = Infinity;
+    for (let ph = 0; ph < p; ph++) {
+      let miss = 0, extra = 0;
+      for (let i = 0; i < beats.length; i++) {
+        const onGrid = i >= ph && (i - ph) % p === 0;
+        if (onGrid && beats[i] !== 'S') miss++;
+        else if (!onGrid && beats[i] === 'S') extra++;
+      }
+      const cost = W.GRID_MISS * miss + W.GRID_EXTRA * extra;
+      if (cost < bestCost - 1e-9 ||
+          (Math.abs(cost - bestCost) < 1e-9 && ph === fallback)) {
+        bestCost = cost; best = ph;
+      }
+    }
+    return best;
+  }
+
+  /* `beatable[i]` says whether syllable i could carry a beat at all (a full
+   * vowel, not the unstressed syllable of a polysyllable). Grid positions
+   * AFTER the last beat were formerly free without exception, so a reading
+   * that simply stopped beating partway through a line paid nothing for it:
+   * `HOW i WONder what you are` scored the same grid as `HOW i WONder WHAT
+   * you ARE`, and the two function-word promotions then lost to a cheap
+   * trailing lapse. A tail position is now charged when its syllable could
+   * have taken the beat; a tail of reduced or unstressed syllables (`...
+   * WONdering`) stays free, which is what keeps catalectic and feminine
+   * endings costless. Without `beatable` the old behaviour is kept. */
+  function gridFit(beats, prior, beatable) {
     const n = beats.length;
     let last = -1;
     for (let i = n - 1; i >= 0; i--) if (beats[i] === 'S') { last = i; break; }
@@ -1669,16 +1710,20 @@
     let best = { cost: Infinity, period: null, phase: null };
     for (const p of GRID_PERIODS) {
       for (let ph = 0; ph < p; ph++) {
-        let miss = 0, extra = 0;
+        let miss = 0, tailMiss = 0, extra = 0;
         for (let i = 0; i < n; i++) {
           const onGrid = i >= ph && (i - ph) % p === 0;
-          if (onGrid && beats[i] !== 'S' && i < last) miss++;
+          if (onGrid && beats[i] !== 'S') {
+            if (i < last) miss++;
+            else if (beatable && beatable[i]) tailMiss++;
+          }
           else if (!onGrid && beats[i] === 'S') extra++;
         }
         // English default alternation is binary; a ternary grid is a marked
         // choice and carries a small surcharge so that a period-3 reading
         // must be positively supported by the words rather than merely tie.
-        let cost = W.GRID_MISS * miss + W.GRID_EXTRA * extra +
+        let cost = W.GRID_MISS * miss + W.GRID_TAIL_MISS * tailMiss +
+                   W.GRID_EXTRA * extra +
                    (p === 3 ? W.TERNARY : 0);
         /* NOT DONE: a flat surcharge on phase > 0, to break the exact tie
          * between `ONE fish TWO fish` and `one FISH two FISH` (both are
@@ -1736,7 +1781,7 @@
     if (ctx && ctx.regime === 'prose') {
       return { cost: 0, regime: 'prose', period: null, phase: null };
     }
-    const grid = gridFit(beats, ctx && ctx.metrePrior);
+    const grid = gridFit(beats, ctx && ctx.metrePrior, ctx && ctx.beatable);
     if (grid.period === null)
       return { cost: grid.cost, regime: 'prose', period: null, phase: null };
     return { cost: grid.cost, regime: 'metrical',
@@ -1847,7 +1892,8 @@
             : !config || config.clashSubordination !== false ? W.CLASH : 0;
           const readings = candidateReadings(stream, freeBeats,
             { nucleusIdx: -1, clashWeight, regime: 'metrical',
-              metrePrior: null, settledMeter: false });
+              metrePrior: null, settledMeter: false,
+              beatable: beatableSyllables(stream) });
           const reading = readings[0];
           if (reading && reading.template && reading.template.foot) {
             const fit = reading.components.structure / stream.length;
@@ -1860,14 +1906,25 @@
               phraseCount >= REGIME_MIN_AGREEING_PHRASES;
             if (fit <= REGIME_FIT_THRESHOLD && enoughBoundaryEvidence) {
               const p = reading.template.period;
-              const globalPhase = reading.template.phase;
+              /* Each phrase's local phase is read off the aggregate reading's
+               * beats WITHIN that phrase, not by counting syllables from the
+               * start of the run. Counting assumes the grid runs unbroken
+               * through every comma, which is false whenever a comma marks a
+               * line end and the lines are catalectic: `TWINkle TWINkle LITtle
+               * STAR, HOW i WONder WHAT you ARE` is two seven-syllable lines
+               * that each begin on a beat, and the syllable count handed the
+               * second line phase 1 — a prior that no trochaic reading of it
+               * could ever match. */
               const phrasePhases = {};
               let offset = 0;
               for (let i = start; i <= end; i++) {
-                phrasePhases[ips[i].span[0]] =
-                  ((globalPhase - offset) % p + p) % p;
+                let len = 0;
                 for (let w = ips[i].span[0]; w <= ips[i].span[1]; w++)
-                  offset += words[w].syllables.length;
+                  len += words[w].syllables.length;
+                phrasePhases[ips[i].span[0]] =
+                  slicePhase(reading.beats.slice(offset, offset + len), p,
+                             ((reading.template.phase - offset) % p + p) % p);
+                offset += len;
               }
               candidates.push({ fit, syllables: stream.length, phraseCount,
                 template: reading.template,
@@ -2345,7 +2402,8 @@
                     regime: config.regime || 'metrical',
                     metrePrior,
                     aggregateCoherence,
-                    settledMeter: !!config.settledMeter };
+                    settledMeter: !!config.settledMeter,
+                    beatable: beatableSyllables(stream) };
 
       const freeFit = fitPhraseRhythm(stream);
       const freeBeats = new Array(stream.length).fill(null);
