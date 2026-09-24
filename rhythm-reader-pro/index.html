@@ -1154,7 +1154,16 @@ function renderPhraseChoices() {
 
   for (const { ip, i } of ambiguous) {
     const row = document.createElement('div');
-    const shown = (ip.userFacingReadings || ip.readings.filter(r => r.userFacing !== false))
+    /* Offer only the readings the intro text describes: the selected one
+     * and those that actually score closely (readingAmbiguity). Taking the
+     * top three user-facing candidates instead let a clashing reading with
+     * a wide margin (`sam FELL OUT of the caNOE`) appear under "they score
+     * closely" — and the engine keeps such readings in the list on purpose,
+     * for the research tools, not as everyday alternatives. */
+    const close = new Set((ip.readingAmbiguity || []).map(r => r.rank));
+    const shown = ip.readings
+      .filter(r => r.rank === 0 || r.rank === ip.selectedReadingIndex ||
+                   close.has(r.rank))
       .slice(0, 3);
     shown.forEach(cand => {
       const b = document.createElement('button');
