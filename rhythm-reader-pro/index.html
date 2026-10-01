@@ -366,6 +366,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <button class="chip" data-ex="iambic">Iambic — weak-STRONG</button>
     <button class="chip" data-ex="anapestic">Anapestic — weak-weak-STRONG</button>
     <button class="chip" data-ex="dactylic">Dactylic — STRONG-weak-weak</button>
+    <button class="chip" data-ex="amphibrachic">Amphibrachic — weak-STRONG-weak</button>
     <button class="chip" data-ex="mixed">Mixed prose</button>
     <span class="spacer"></span>
     <label class="opt" for="textType" style="font-weight:600">text type</label>
@@ -524,9 +525,11 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   <p><strong>Phrase prominence</strong> is shown separately with ▲. A phrase
   nucleus may be prominent without occupying a regular metrical beat, so the
   triangle and beat styling can appear independently.</p>
-  <p>Feet group syllables across words using only four English patterns:
+  <p>Feet group syllables across words using only five English patterns:
   trochee <code>SW</code>, iamb <code>WS</code>, anapest <code>WWS</code>,
-  and dactyl <code>SWW</code>. A phrase may begin with a one-syllable pickup
+  dactyl <code>SWW</code>, and amphibrach <code>WSW</code>. The amphibrach is
+  a phrase rhythm only: a single word such as <em>banana</em> is never given
+  an amphibrach template of its own. A phrase may begin with a one-syllable pickup
   or end with one unmatched syllable when the available text does not form a
   complete foot. Feet never cross punctuation-bounded intonational phrases;
   they may cross automatically estimated inner phrase boundaries. Some regular
@@ -586,7 +589,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
 
 <script src="../cmudict-subset.js"></script>
 <script src="../known-rhythms.js"></script>
-<!-- Four-foot linguistic engine — single source of truth, shared with test_rhythm_feet.js / test_nuclear_stress.js -->
+<!-- Five-foot linguistic engine — single source of truth, shared with test_rhythm_feet.js / test_nuclear_stress.js -->
 <script src="engine.js"></script>
 <script>
 (function () {
@@ -688,6 +691,7 @@ const EXAMPLES = {
   iambic:    'The sun arose above the quiet hill.',
   anapestic: 'In the dark of the night we could hear the wind rise.',
   dactylic:  'Wonderful, beautiful, carefully moving.',
+  amphibrachic: 'There once was a man from Nantucket.',
   mixed:     'The little puppy ran away before the children noticed.'
 };
 
@@ -754,7 +758,8 @@ function footIndexMap() {
   const map = {};
   let ord = 0;
   for (const f of doc.feet) {
-    const classical = ['iamb','trochee','anapest','dactyl'].includes(f.type);
+    const classical = ['iamb','trochee','anapest','dactyl','amphibrach']
+      .includes(f.type);
     if (classical) {
       for (const [w, i] of f.span) map[w + ':' + i] = ord;
       ord++;
@@ -984,6 +989,7 @@ function renderMeterLine() {
     ['iambic',     'a weak-STRONG, da-DUM beat'],
     ['anapestic',  'a galloping, weak-weak-STRONG beat'],
     ['dactylic',   'a falling, STRONG-weak-weak beat'],
+    ['amphibrachic', 'a rocking, weak-STRONG-weak beat'],
     ['alternating','trochaic and iambic interpretations are both plausible'],
     ['mixed',      'a mixed, everyday-prose rhythm']
   ];
@@ -1064,7 +1070,8 @@ function renderMeterLine() {
       const b = document.createElement('button');
       b.textContent = 'Choose ' + (t === 'iamb' ? 'iambic'
         : t === 'trochee' ? 'trochaic'
-        : t === 'anapest' ? 'anapestic' : 'dactylic');
+        : t === 'anapest' ? 'anapestic'
+        : t === 'amphibrach' ? 'amphibrachic' : 'dactylic');
       b.addEventListener('click', () => {
         logEvent({ action: 'scansion-resolve', tier: 'meter',
           before: 'ambiguous', after: t });

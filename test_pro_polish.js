@@ -15,7 +15,7 @@ const E = require('./rhythm-reader-pro/engine.js');
 
 assert.strictEqual(readerEngine, proEngine,
   'Reader and Pro must continue to ship the same engine');
-assert.strictEqual(E.build, '3.2.1');
+assert.strictEqual(E.build, '3.3.0');
 
 E.loadDictionary({
   HAPPY: 'HH AE1 P IY0', CHILDREN: 'CH IH1 L D R AH0 N',

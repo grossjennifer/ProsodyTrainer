@@ -64,7 +64,7 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
     assert(E.toCSV(d).includes(hash));
     assert(E.profileCSV(d).includes(hash));
     assert.strictEqual(JSON.parse(JSON.stringify(d)).dictionaryMetadata.sha256, hash);
-    assert.strictEqual(d.engineBuild, '3.2.1');
+    assert.strictEqual(d.engineBuild, '3.3.0');
   }
   E.loadDictionary({ MACHINE: 'M AH0 SH IY1 N' }, 'custom');
   assert.strictEqual(analyze('machine').dictionaryMetadata, null, 'custom dictionaries must not inherit bundled provenance');

@@ -3,8 +3,8 @@ RHYTHM READER PRO — INTERFACE REFINEMENT
 Files
 -----
 index.html            Rhythm Reader Pro interface (loads engine.js)
-engine.js             Four-foot linguistic engine — single source of truth
-test_rhythm_feet.js   Node regression checks (four-foot rhythm model)
+engine.js             Five-foot linguistic engine — single source of truth
+test_rhythm_feet.js   Node regression checks (five-foot rhythm model)
 test_nuclear_stress.js  Node regression checks (Nuclear Stress Rule)
 
 Interface changes
@@ -67,7 +67,7 @@ From this folder, run:
 
 Expected result:
 
-    All four-foot rhythm tests passed.
+    All five-foot rhythm tests passed.
     15 nuclear-stress checks passed.
 
 Research candidates

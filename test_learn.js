@@ -370,11 +370,19 @@ check("rhythm page reuses shared stylesheets, defines none of its own",
   rhythm.includes('href="../../style.css"') && rhythm.includes('href="../../site.css"') &&
   !rhythm.includes("<style>"));
 
-// The four feet must match the engine's actual inventory, names included.
-check("all four feet present with their traditional names",
-  ["trochee", "iamb", "anapest", "dactyl"].every(n => flatRhythm.includes("<i>" + n + "</i>")));
+// The five feet must match the engine's actual inventory, names included.
+check("all five feet present with their traditional names",
+  ["trochee", "iamb", "anapest", "dactyl", "amphibrach"].every(n => flatRhythm.includes("<i>" + n + "</i>")));
+// The 2026 training taught four patterns, not five. The page must not imply
+// participants learned the amphibrach.
+check("amphibrach marked as outside the 2026 training materials",
+  flatRhythm.includes("The fifth was not part of the training materials") &&
+  flatRhythm.includes("Participants learned the first four patterns above") &&
+  !flatRhythm.includes("Participants learned all four patterns above"));
+check("amphibrach exemplar is the limerick opening",
+  flatRhythm.includes("from nan<span class=\"learn-stress\">TUCK</span>et"));
 check("foot inventory framed as a modelling choice, not a fact",
-  flatRhythm.includes("a modelling decision, not a fact about English"));
+  flatRhythm.includes("Five is a modelling decision, not a fact about English"));
 check("exclusions named in traditional terms: spondee and amphibrach",
   flatRhythm.includes("traditionally called a <i>spondee</i>") &&
   flatRhythm.includes("<i>amphibrachic</i> in traditional metrics") &&

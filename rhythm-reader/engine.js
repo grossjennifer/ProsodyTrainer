@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.2.1';
+  const ENGINE_BUILD = '3.3.0';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -509,10 +509,12 @@
    * the traditional foot name is an educational label (design final rev).
    * ======================================================================== */
 
-  // The rhythmic inventory is deliberately limited to the four recurring
-  // English feet used by this application. A surface string such as WSW is
-  // parsed across a foot boundary (for example, W + SW or WS + W); it is not
-  // assigned a fifth, word-sized "amphibrach" template.
+  // WORD-LEVEL templates are limited to the four recurring English feet. A
+  // word such as banana (WSW) is parsed across a foot boundary (W + SW or
+  // WS + W); it is not given a word-sized "amphibrach" template. The
+  // amphibrach exists only as a PHRASE-level rhythm (see RHYTHM_FEET), where
+  // it is the third phase of the ternary grid: dactyl SWW, amphibrach WSW,
+  // anapest WWS.
   const FOOT_NAMES = {
     'SW': 'trochee', 'WS': 'iamb', 'WWS': 'anapest', 'SWW': 'dactyl'
   };
@@ -1263,7 +1265,18 @@
     { pattern: 'SW', name: 'trochee' },
     { pattern: 'WS', name: 'iamb' },
     { pattern: 'WWS', name: 'anapest' },
-    { pattern: 'SWW', name: 'dactyl' }
+    { pattern: 'SWW', name: 'dactyl' },
+    // weak-STRONG-weak: "there ONCE was a MAN from NanTUCKet". A ternary
+    // rhythm whose lines open one weak syllable before the beat.
+    //
+    // tieCost: WSW is the only foot that both starts and ends weak, so it
+    // can re-bracket almost any stretch the other four already cover at
+    // equal cost (SWW+SW = SW+WSW for `HALF a league ONward`). The surcharge
+    // is far below any mismatch or residue cost, so it never changes beats;
+    // it only makes an exact tie go to the established reading, and lets the
+    // amphibrach win where it genuinely fits better (a limerick line, where
+    // the alternative needs a stray syllable).
+    { pattern: 'WSW', name: 'amphibrach', tieCost: 0.01 }
   ];
   const LEADING_RESIDUE_COST = 0.55;
   const TRAILING_RESIDUE_COST = 0.65;
@@ -1465,6 +1478,7 @@
       for (const foot of RHYTHM_FEET) {
         if (i + foot.pattern.length > n) continue;
         const local = unitMismatch(stream, i, foot.pattern);
+        local.cost += foot.tieCost || 0;
         const boundary = prevLast && prevLast === foot.pattern[0]
           ? SAME_BOUNDARY_COST : 0;
         const switched = prevFoot && prevFoot !== foot.name ? 1 : 0;
@@ -2224,7 +2238,8 @@
   }
 
   const PERIOD_FOOT = {
-    '2-0': 'trochee', '2-1': 'iamb', '3-0': 'dactyl', '3-2': 'anapest'
+    '2-0': 'trochee', '2-1': 'iamb', '3-0': 'dactyl', '3-1': 'amphibrach',
+    '3-2': 'anapest'
   };
 
   /* Build the ranked list of complete readings for one intonational phrase. */
@@ -2645,6 +2660,7 @@
    * ======================================================================== */
 
   const METRICAL_FEET = RHYTHM_FEET;
+  const METRICAL_FOOT_TYPES = METRICAL_FEET.map(f => f.name);
   const SINGLETON_COST = 0.55;
   const AMBIGUITY_MARGIN = 0.6;
 
@@ -2657,7 +2673,7 @@
       let best = null;
       for (const f of METRICAL_FEET) {
         if (i + f.pattern.length > n) continue;
-        let cost = 0;
+        let cost = f.tieCost || 0;
         for (let k = 0; k < f.pattern.length; k++) {
           if (stream[i + k].sw !== f.pattern[k]) cost += stream[i + k].conf;
         }
@@ -2698,6 +2714,7 @@
         let cost = off * SINGLETON_COST;
         let i = off;
         while (i + f.pattern.length <= stream.length) {
+          cost += f.tieCost || 0;
           for (let k = 0; k < f.pattern.length; k++) {
             if (stream[i + k].sw !== f.pattern[k]) cost += stream[i + k].conf;
           }
@@ -2751,7 +2768,7 @@
   }
 
   const FOOT_ADJ = { iamb: 'iambic', trochee: 'trochaic',
-                     anapest: 'anapestic', dactyl: 'dactylic' };
+                     anapest: 'anapestic', dactyl: 'dactylic', amphibrach: 'amphibrachic' };
 
   // Resolve a scansion ambiguity: re-derive feet as the chosen type's pure
   // scansion (per IP; feet still never cross IPs). The DP analysis and grid
@@ -2797,7 +2814,7 @@
 
     // Local runs: >=3 consecutive feet of one classical type.
     const RUN_NAMES = { iamb: 'iambic', trochee: 'trochaic',
-                        anapest: 'anapestic', dactyl: 'dactylic' };
+                        anapest: 'anapestic', dactyl: 'dactylic', amphibrach: 'amphibrachic' };
     const localRuns = [];
     let runType = null, runStart = 0;
     const flush = (endIdx) => {
@@ -2809,7 +2826,7 @@
       }
     };
     allFeet.forEach((f, idx) => {
-      const t = ['iamb', 'trochee', 'anapest', 'dactyl'].includes(f.type) ? f.type : null;
+      const t = METRICAL_FOOT_TYPES.includes(f.type) ? f.type : null;
       if (t !== runType) { flush(idx); runType = t; runStart = idx; }
     });
     flush(allFeet.length);
@@ -2819,7 +2836,7 @@
     // honestly; else mixed, with local runs named when present.
     const counts = {};
     for (const f of allFeet)
-      if (['iamb', 'trochee', 'anapest', 'dactyl'].includes(f.type))
+      if (METRICAL_FOOT_TYPES.includes(f.type))
         counts[f.type] = (counts[f.type] || 0) + 1;
     const totalFeet = allFeet.length || 1;
     let label = 'mixed';
@@ -2852,14 +2869,12 @@
         : 'prose rhythm (with some regular stretches)';
     } else if (ambiguousIPs.length) {
       const ADJ = { iamb: 'iambic', trochee: 'trochaic',
-                    anapest: 'anapestic', dactyl: 'dactylic' };
+                    anapest: 'anapestic', dactyl: 'dactylic', amphibrach: 'amphibrachic' };
       const types = Array.from(new Set(
         ambiguousIPs.flatMap(r => r.alternates.map(a => ADJ[a.type] || a.type))));
       label = `alternating (${types.join('/')} scansions near-equivalent)`;
     } else if (dom && dom[1] / totalFeet >= 0.7) {
-      label = `predominantly ${dom[0] === 'iamb' ? 'iambic'
-        : dom[0] === 'trochee' ? 'trochaic'
-        : dom[0] === 'anapest' ? 'anapestic' : 'dactylic'}`;
+      label = `predominantly ${FOOT_ADJ[dom[0]]}`;
     } else if (localRuns.length) {
       label = 'mixed with local ' +
         Array.from(new Set(localRuns.map(r => r.type))).join(' and ') + ' sequences';
@@ -2975,8 +2990,10 @@
         proportionIambic: prop('iamb'),
         proportionAnapestic: prop('anapest'),
         proportionDactylic: prop('dactyl'),
-        // Retained as a zero-valued compatibility field for older exports.
-        // WSW is now analyzed across boundaries, never as a fifth foot.
+        // Word-level template share, like the four fields above. No WORD is
+        // given an amphibrach template (banana is parsed across a boundary),
+        // so this stays 0; the amphibrach is a phrase-level rhythm only and
+        // is reported through meterSummary.footCounts.
         proportionAmphibrachic: 0,
         phraseLengthDistribution: phiLengths,
         meanPhraseLength: round2(phiLengths.reduce((a, b) => a + b, 0) /

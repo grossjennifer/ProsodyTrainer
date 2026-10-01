@@ -233,7 +233,7 @@ footer a { color: var(--phrase); }
 
 <script src="../cmudict-subset.js"></script>
 <script src="../known-rhythms.js"></script>
-<!-- Four-foot linguistic engine — single source of truth, shared with test_rhythm_feet.js / test_nuclear_stress.js -->
+<!-- Five-foot linguistic engine — single source of truth, shared with test_rhythm_feet.js / test_nuclear_stress.js -->
 <script src="engine.js"></script>
 <script>
 (function () {
@@ -566,8 +566,8 @@ function renderRegimeNote() {
     note.textContent = 'Read as having a regular beat' +
       (chosen ? ' (your choice)' : '') + (label ? ' — ' + label : '') + '.';
     rhythmNote.textContent = 'Here the tool fits a repeating beat across each ' +
-      'phrase using strong–weak, weak–strong, weak–weak–strong ' +
-      'and strong–weak–weak feet. That is a deliberately small set, not ' +
+      'phrase using strong–weak, weak–strong, weak–weak–strong, ' +
+      'strong–weak–weak and weak–strong–weak feet. That is a deliberately small set, not ' +
       'the whole of English metre. A teal ▲ marks the phrase’s strongest ' +
       'point, which need not sit on a beat.';
   }
