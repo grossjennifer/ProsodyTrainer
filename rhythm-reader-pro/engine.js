@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.3.0';
+  const ENGINE_BUILD = '3.3.1';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -1318,6 +1318,10 @@
   };
   const DEFAULT_DEMOTE = 1.60;
   const DEFAULT_PROMOTE = 1.00;
+  // Cost of demoting the stressed syllable of a polysyllabic function word
+  // (before, about, along, until...). Low on purpose: the beat is a default
+  // that yields to any adjacent beat or metrical template.
+  const POLY_FN_DEMOTE = 0.50;
 
   /* A syllable whose vowel is reduced to schwa cannot carry a metrical beat.
    * This is a hard phonological fact, not a preference: you cannot stress the
@@ -1394,12 +1398,23 @@
      * nucleus, because the beat on `about` was free and the beat on `school`
      * had to be paid for. Charging promotion at the function-word rate makes
      * the two comparable, and `about SCHOOL` wins on its merits. */
+    /* Revised Nov 2026: the stressed syllable of a polysyllabic function
+     * word now defaults to a beat, but one it gives up cheaply. Defaulting
+     * it to WEAK (the rule above) fixed `about SCHOOL` but overcorrected:
+     * in prose, where no meter promotes it back, `ran aWAY before the
+     * CHILdren` came out with a three-syllable lapse over a full-vowel,
+     * primary-stressed `fore` that nothing competed with. With the beat as
+     * a cheap default, the word still yields wherever a beat beside it or
+     * the meter needs the slot (`about SCHOOL`, `arRIVED before LUNCH`,
+     * `twas the NIGHT before CHRISTmas`, verse `although`), and keeps it
+     * otherwise (`aWAY beFORE the`, `LEFT beFORE the`). */
     if (behavesAsFunctionWord(wd)) {
-      const isPrimary = sy.lexicalStress === '1';
-      return { value: 'W',
-               weight: isPrimary
-                 ? ((tag && FN_PROMOTE[tag]) || DEFAULT_PROMOTE)
-                 : 3.2,                       // never beat an unstressed syllable
+      if (sy.lexicalStress === '1') {
+        return { value: 'S', weight: POLY_FN_DEMOTE,
+                 confidence: CONF.FUNCTION_WORD,
+                 source: 'rule:polysyllabic-function-word' };
+      }
+      return { value: 'W', weight: 3.2,       // never beat an unstressed syllable
                confidence: CONF.FUNCTION_WORD,
                source: 'rule:function-word-demotion' };
     }

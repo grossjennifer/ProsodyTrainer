@@ -14,8 +14,10 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
   E.loadKnownReadings(window.PROSODY_KNOWN_READINGS);
   const analyze = (text, textType = 'prose', extra = {}) => E.analyze(text, { textType, ...extra });
   // A: dictionary information and realized beats are different assertions.
+  // `before` alone was WW until Nov 2026; a two-syllable function word with
+  // nothing competing now keeps its stressed syllable as a beat (see F below).
   for (const [text, lexical, beats] of [
-    ['before', '01', 'WW'], ['unopened', '010', 'WSW'],
+    ['before', '01', 'WS'], ['unopened', '010', 'WSW'],
     ['machine', '01', 'WS'], ['afternoon', '201', 'WWS'], ['banana', '010', 'WSW']
   ]) {
     const w = word(analyze(text), text);
@@ -23,6 +25,25 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
     assert.strictEqual(w.rhythmicPattern, beats, text + ' beats');
   }
   assert.deepStrictEqual(word(analyze('unopened'), 'unopened').syllables.map(s => s.text), ['un', 'o', 'pened']);
+  // F: polysyllabic function words keep their stressed syllable as a beat
+  // when nothing competes for it, and give it up when an adjacent beat or the
+  // meter needs the slot. Owner's report: in prose, `ran away before the
+  // children` came out `aWAY before the` — a lapse over a full-vowel `fore`.
+  for (const [text, type, target, beats] of [
+    ['The little puppy ran away before the children noticed.', 'prose', 'before', 'WS'],
+    ['The little puppy ran away before the children noticed.', 'auto', 'before', 'WS'],
+    ['She left before the party ended.', 'prose', 'before', 'WS'],
+    ['He walked along the river until dark.', 'prose', 'along', 'WS'],
+    // ...and still yields where it must:
+    ['Twas the night before Christmas when all through the house', 'verse', 'before', 'WW'],
+    ['The girls conversed about school.', 'prose', 'about', 'WW'],
+    ['I told him that the parcel had arrived before lunch.', 'prose', 'before', 'WW'],
+    ['He walked along the river until dark.', 'prose', 'until', 'WW'],
+    ['Wondering, wandering, amateur science is fun, although answers are tricky to find', 'verse', 'although', 'WW']
+  ]) {
+    assert.strictEqual(word(analyze(text, type), target).rhythmicPattern, beats,
+      `${target} in "${text}" (${type})`);
+  }
   // B: preserve licensed retraction and content-word demotion.
   for (const [text, target, beats] of [
     ['Tennessee air', 'tennessee', 'SWW'], ['thirteen men', 'thirteen', 'SW'],
@@ -64,7 +85,7 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
     assert(E.toCSV(d).includes(hash));
     assert(E.profileCSV(d).includes(hash));
     assert.strictEqual(JSON.parse(JSON.stringify(d)).dictionaryMetadata.sha256, hash);
-    assert.strictEqual(d.engineBuild, '3.3.0');
+    assert.strictEqual(d.engineBuild, '3.3.1');
   }
   E.loadDictionary({ MACHINE: 'M AH0 SH IY1 N' }, 'custom');
   assert.strictEqual(analyze('machine').dictionaryMetadata, null, 'custom dictionaries must not inherit bundled provenance');
