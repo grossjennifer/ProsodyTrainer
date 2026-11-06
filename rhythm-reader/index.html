@@ -94,6 +94,20 @@ button.chip { border-radius: 999px; font-weight: 500; font-size: .85rem;
   transform: translateX(-50%); top: -1.15em; font-size: .48em;
   color: var(--beat); }
 .mode-beats .syl.S.nodot::before { content: none; }
+/* The syllable sounding right now in the tap track. Background plus outline
+   so it reads at every display mode, including CAPS where weight is taken. */
+.syl.now { background: var(--beat-soft); box-shadow: 0 0 0 2px var(--beat);
+  transition: background .08s ease, box-shadow .08s ease; }
+.play-row { gap: .6rem 1rem; }
+.play-row label { display: inline-flex; align-items: center; gap: .45rem;
+  font-size: .9rem; color: var(--muted); }
+.play-row label { white-space: nowrap; }
+.play-row abbr { text-decoration: none; }
+.play-row input[type="range"] { width: 9rem; accent-color: var(--beat); }
+.play-row output { min-width: 4.5ch; font-variant-numeric: tabular-nums;
+  color: var(--ink); }
+#playBtn[aria-pressed="true"] { background: var(--ink); color: #fff;
+  border-color: var(--ink); }
 .syl.prominent { text-decoration: underline; text-decoration-color: var(--phrase);
   text-decoration-thickness: .1em; text-underline-offset: .18em; }
 .syl.prominent::after { content: "▲"; position: absolute; left: 50%;
@@ -210,6 +224,17 @@ footer a { color: var(--phrase); }
   <div id="out" class="mode-bold"></div>
   <div id="readingChoices" class="reading-choices" hidden></div>
   <div id="phraseChoices" class="reading-choices" hidden></div>
+  <div class="row play-row" id="playRow">
+    <button id="playBtn" aria-pressed="false"
+      aria-describedby="playHelp">&#9654; Hear the beat</button>
+    <label for="tempo">Tempo
+      <input type="range" id="tempo" min="60" max="180" step="5" value="120">
+      <output id="tempoVal" for="tempo">120</output><abbr title="beats per minute">bpm</abbr></label>
+    <span id="playHelp" class="sr-only">Plays a tap track: a click on every
+      beat and a softer tick on every weak syllable, highlighting each
+      syllable as it sounds. It follows the beats shown, including any you
+      have moved.</span>
+  </div>
   <p class="hint" id="tapHint">Tap any syllable to move a beat — you know how you read
   better than any computer does.</p>
   <p id="rhythmNote" class="hint"></p>
@@ -233,12 +258,15 @@ footer a { color: var(--phrase); }
 
 <script src="../cmudict-subset.js"></script>
 <script src="../known-rhythms.js"></script>
+<!-- Tap-track playback (shared with Rhythm Reader Pro and test_rhythm_audio.js) -->
+<script src="../rhythm-audio.js"></script>
 <!-- Five-foot linguistic engine — single source of truth, shared with test_rhythm_feet.js / test_nuclear_stress.js -->
 <script src="engine.js"></script>
 <script>
 (function () {
 'use strict';
 const E = window.RhythmEngine;
+const A = window.RhythmAudio;
 E.loadKnownReadings(window.PROSODY_KNOWN_READINGS || []);
 let doc = null;
 let mode = 'bold';
@@ -310,6 +338,7 @@ function beatCount() {
 }
 
 function analyze(prefix) {
+  stopPlayback();
   doc = E.analyze(document.getElementById('input').value, { textType });
   render();
   announce((typeof prefix === 'string' ? prefix : '') +
@@ -412,9 +441,12 @@ function render() {
       b.textContent = tok.text.slice(s, e);
       b.dataset.w = String(tok.wordIndex);
       b.dataset.k = String(k);
+      // which syllables this part covers — the tap track highlights by these
+      b.dataset.syls = inSpan.join(',');
       b.setAttribute('aria-label', wd.word + ' part, ' +
         (strong ? 'has a beat' : 'no beat') + '. Tap to change.');
       b.addEventListener('click', () => {
+        stopPlayback();
         const next = wd.syllables[si].rhythmicStress === 'S' ? 'W' : 'S';
         const part = tok.text.slice(s, e);
         E.editRhythmicStress(doc, tok.wordIndex, si, next);
@@ -460,7 +492,7 @@ function renderReadingChoices() {
       const b = document.createElement('button');
       b.textContent = reading.label;
       b.setAttribute('aria-pressed', String(doc.selectedReading === reading.id));
-      b.addEventListener('click', () => { E.selectReading(doc, reading.id); render(); });
+      b.addEventListener('click', () => { stopPlayback(); E.selectReading(doc, reading.id); render(); });
       wrap.appendChild(b);
     });
   }
@@ -529,14 +561,14 @@ function renderPhraseChoices() {
       b.setAttribute('aria-label',
         `Read phrase ${i + 1} as: ${candidateText(i, cand)}`);
       b.addEventListener('click', () => {
-        E.selectIPReading(doc, i, cand.rank); render();
+        stopPlayback(); E.selectIPReading(doc, i, cand.rank); render();
       });
       row.appendChild(b);
     });
     if (ip.pinnedReadingKey) {
       const clear = document.createElement('button');
       clear.textContent = 'let the tool choose';
-      clear.addEventListener('click', () => { E.clearIPReading(doc, i); render(); });
+      clear.addEventListener('click', () => { stopPlayback(); E.clearIPReading(doc, i); render(); });
       row.appendChild(clear);
     }
     wrap.appendChild(row);
@@ -593,6 +625,62 @@ function rendition() {
   }
   return out;
 }
+
+/* Tap track. The schedule is rebuilt from `doc` on every Play, so it always
+ * follows the beats on screen, including any the reader has moved. Anything
+ * that replaces or edits the document stops playback first, because the
+ * timetable already queued would no longer match what is displayed. */
+const playBtn = document.getElementById('playBtn');
+const tempo = document.getElementById('tempo');
+const tempoVal = document.getElementById('tempoVal');
+
+function clearNow() {
+  document.querySelectorAll('#out .syl.now').forEach(el => el.classList.remove('now'));
+}
+function highlight(ev) {
+  clearNow();
+  const parts = document.querySelectorAll('#out .syl[data-w="' + ev.w + '"]');
+  for (const el of parts) {
+    const syls = (el.dataset.syls || '').split(',');
+    if (syls.includes(String(ev.s))) { el.classList.add('now'); return; }
+  }
+}
+const player = A ? A.player({
+  onSyllable: highlight,
+  onEnd: () => {
+    clearNow();
+    playBtn.setAttribute('aria-pressed', 'false');
+    playBtn.innerHTML = '&#9654; Hear the beat';
+  }
+}) : null;
+
+function stopPlayback() {
+  if (player && player.playing) player.stop();
+}
+
+if (!player || !player.supported) {
+  // No Web Audio (very old browser): the control would do nothing audible.
+  document.getElementById('playRow').hidden = true;
+}
+
+tempo.addEventListener('input', () => {
+  tempoVal.value = tempo.value;
+  tempo.setAttribute('aria-valuetext', tempo.value + ' beats per minute');
+});
+tempo.setAttribute('aria-valuetext', tempo.value + ' beats per minute');
+
+playBtn.addEventListener('click', () => {
+  if (!doc || !player) return;
+  if (player.playing) {
+    player.stop();
+    announce('Stopped.');
+    return;
+  }
+  const sch = player.play(doc, { bpm: +tempo.value });
+  playBtn.setAttribute('aria-pressed', 'true');
+  playBtn.innerHTML = '&#9632; Stop';
+  announce('Playing ' + sch.beats + ' beats at ' + tempo.value + ' per minute.');
+});
 
 document.getElementById('go').addEventListener('click', analyze);
 document.getElementById('textType').addEventListener('click', (ev) => {

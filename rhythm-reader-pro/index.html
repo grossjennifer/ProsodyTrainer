@@ -172,6 +172,20 @@ label.opt { font-size: .85rem; color: var(--muted); display: inline-flex;
   padding: 0 .02em; }
 .syl:hover { background: var(--beat-soft); }
 .syl:focus-visible { outline: 2px solid var(--phrase); outline-offset: 1px; }
+/* The syllable sounding right now in the tap track. Background plus outline
+   so it reads in every display mode, including CAPS where weight is taken. */
+.syl.now { background: var(--beat-soft); box-shadow: 0 0 0 2px var(--beat);
+  transition: background .08s ease, box-shadow .08s ease; }
+.play-row { gap: .6rem 1rem; margin-top: .4rem; }
+.play-row label { display: inline-flex; align-items: center; gap: .45rem;
+  font-size: .86rem; color: var(--muted); }
+.play-row label { white-space: nowrap; }
+.play-row abbr { text-decoration: none; }
+.play-row input[type="range"] { width: 9rem; accent-color: var(--beat); }
+.play-row output { min-width: 4.5ch; font-variant-numeric: tabular-nums;
+  color: var(--ink); }
+#playBtn[aria-pressed="true"] { background: var(--ink); color: #fff;
+  border-color: var(--ink); }
 .joint { color: #6F7975; font-size: .8em; padding: 0 .04em; user-select: none; } /* 4.5:1 on white */
 .syl.edited { text-decoration: underline dotted var(--edit) 2px;
   text-underline-offset: .3em; }
@@ -458,6 +472,17 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   <div id="ambigNotice" class="notice" hidden></div>
   <div id="live" class="sr-only" role="status" aria-live="polite"></div>
   <div id="surface" class="mode-bold"></div>
+  <div class="row play-row" id="playRow">
+    <button id="playBtn" aria-pressed="false"
+      aria-describedby="playHelp">&#9654; Hear the beat</button>
+    <label for="tempo">Tempo
+      <input type="range" id="tempo" min="60" max="180" step="5" value="120">
+      <output id="tempoVal" for="tempo">120</output><abbr title="beats per minute">bpm</abbr></label>
+    <span id="playHelp" class="sr-only">Plays a tap track: a click on every
+      beat and a softer tick on every weak syllable, highlighting each
+      syllable as it sounds. It always plays the rhythmic beats, including
+      any you have edited, whichever tier or cue density is displayed.</span>
+  </div>
   <p class="hint" id="hintLine"></p>
   <div id="discloseRow">
     <button id="toolsBtn">Open analysis tools</button>
@@ -589,12 +614,15 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
 
 <script src="../cmudict-subset.js"></script>
 <script src="../known-rhythms.js"></script>
+<!-- Tap-track playback (shared with Rhythm Reader and test_rhythm_audio.js) -->
+<script src="../rhythm-audio.js"></script>
 <!-- Five-foot linguistic engine — single source of truth, shared with test_rhythm_feet.js / test_nuclear_stress.js -->
 <script src="engine.js"></script>
 <script>
 (function () {
 'use strict';
 const E = window.RhythmEngine;
+const A = window.RhythmAudio;
 E.loadKnownReadings(window.PROSODY_KNOWN_READINGS || []);
 document.getElementById('buildChip').textContent = 'Build ' + E.build;
 
@@ -1876,8 +1904,73 @@ analysisTabs.forEach((tab, index) => {
 document.getElementById('lexFilter').addEventListener('change', renderLexicon);
 document.getElementById('lexSort').addEventListener('change', renderLexicon);
 
+/* Tap track. The schedule is rebuilt from `doc` on every Play, so it always
+ * follows the rhythmic beats, including the reader's edits. Pro has many edit
+ * paths (beat toggles, the inspector, phrase joints, reading choices, forced
+ * scansion), so rather than stopping playback at each one, renderAll stops
+ * it whenever the document or its beat pattern no longer matches what is
+ * being played. Display-only changes (mode, tier, feet, cues) leave it
+ * running. */
+const playBtn = document.getElementById('playBtn');
+const tempo = document.getElementById('tempo');
+const tempoVal = document.getElementById('tempoVal');
+let playing = null;   // { doc, sig } while a tap track is sounding
+
+function beatSignature(d) {
+  return d.words.map(wd =>
+    wd.syllables.map(sy => sy.rhythmicStress).join('')).join('|') +
+    '#' + (d.phrases || []).map(ip => ip.span.join('-') + ip.boundaryAfter).join(',');
+}
+function clearNow() {
+  document.querySelectorAll('#surface .syl.now')
+    .forEach(el => el.classList.remove('now'));
+}
+function highlight(ev) {
+  clearNow();
+  const el = document.querySelector(
+    '#surface .syl[data-w="' + ev.w + '"][data-s="' + ev.s + '"]');
+  if (el) el.classList.add('now');
+}
+const player = A ? A.player({
+  onSyllable: highlight,
+  onEnd: () => {
+    clearNow();
+    playing = null;
+    playBtn.setAttribute('aria-pressed', 'false');
+    playBtn.innerHTML = '&#9654; Hear the beat';
+  }
+}) : null;
+
+function stopPlayback() {
+  if (player && player.playing) player.stop();
+}
+if (!player || !player.supported) {
+  // No Web Audio (very old browser): the control would do nothing audible.
+  document.getElementById('playRow').hidden = true;
+}
+tempo.addEventListener('input', () => {
+  tempoVal.value = tempo.value;
+  tempo.setAttribute('aria-valuetext', tempo.value + ' beats per minute');
+});
+tempo.setAttribute('aria-valuetext', tempo.value + ' beats per minute');
+playBtn.addEventListener('click', () => {
+  if (!doc || !player) return;
+  if (player.playing) { player.stop(); announce('Stopped.'); return; }
+  const sch = player.play(doc, { bpm: +tempo.value });
+  playing = { doc, sig: beatSignature(doc) };
+  playBtn.setAttribute('aria-pressed', 'true');
+  playBtn.innerHTML = '&#9632; Stop';
+  // Logged with the existing columns (no schema change): the tempo rides in
+  // the action name, and no before/after is given, so a replay is never
+  // counted as a reversal.
+  logEvent({ action: 'play-beat@' + tempo.value + 'bpm', locus: 'play-beat' });
+  announce('Playing ' + sch.beats + ' beats at ' + tempo.value + ' per minute.');
+});
+
 function renderAll() {
   if (!doc) return;   // dictionary still loading
+  if (playing && (playing.doc !== doc || playing.sig !== beatSignature(doc)))
+    stopPlayback();
   renderMeterLine();
   renderReadingChoices();
   renderSurface();
