@@ -1,0 +1,60 @@
+/* ============================================================================
+ * test_prose_pending.js — known prose errors, tracked but not yet fixed.
+ * ----------------------------------------------------------------------------
+ * Each case is a single beat that is clearly wrong in Ordinary prose, taken
+ * from the Nov 2026 prose set. They share one cause: prose mode charges an
+ * interior run of three weak syllables (LAPSE 0.80) more than promoting a
+ * function word (0.55–0.90), so it beats `to` / `it's` instead of leaving a
+ * short lapse. Fixing that means retuning prose weights, which waits for the
+ * owner's hand-marked prose sentences; tuning to these few by feel would
+ * risk the verse corpus.
+ *
+ * Only the undisputed part of each line is checked. Neighbouring beats that
+ * the source marking also claimed (STUCK REcord, THINK CLEARly) put two beats
+ * side by side and are disputed, so they are not asserted here.
+ *
+ * Behaviour: prints each case. Exits 0 while cases are still pending, so the
+ * suite stays green. If a case STARTS passing, it says so loudly: move it
+ * into test_diagnostic_battery.js so it is protected from then on.
+ * Run with --strict to exit non-zero while any case is still pending.
+ * ========================================================================== */
+'use strict';
+
+global.window = global.window || {};
+require('./cmudict.js');
+require('./known-rhythms.js');
+const E = require('./rhythm-reader/engine.js');
+E.loadDictionary(window.CMUDICT_FULL, 'full');
+E.loadKnownReadings(window.PROSODY_KNOWN_READINGS);
+
+const show = d => d.words.map(w => w.syllables.map(s =>
+  s.rhythmicStress === 'S' ? s.text.toUpperCase() : s.text.toLowerCase()).join('')).join(' ');
+
+// [text, word, which occurrence (0-based), expected rhythmic pattern, why]
+const CASES = [
+  ['Listen to what is happening.', 'to', 0, 'W',
+    '`to` takes the beat in LISten TO what'],
+  ['It’s like a stuck record.', "it's", 0, 'W',
+    'the contraction `it’s` takes the beat; `like` loses it'],
+  ['To think clearly is to live deeply.', 'to', 1, 'W',
+    'the second `to` takes the beat in is TO live'],
+];
+
+let pending = 0, fixed = 0;
+for (const [text, target, nth, beats, why] of CASES) {
+  const d = E.analyze(text, { textType: 'prose' });
+  const hits = d.words.filter(w => w.normalized.replace(/’/g, "'") === target);
+  const w = hits[nth];
+  const got = w ? w.rhythmicPattern : '(word not found)';
+  if (got === beats) {
+    fixed++;
+    console.log(`  NOW PASSES  ${text}  →  ${show(d)}`);
+    console.log('              Move this case into test_diagnostic_battery.js.');
+  } else {
+    pending++;
+    console.log(`  pending     ${text}  →  ${show(d)}   (${why})`);
+  }
+}
+console.log(`test_prose_pending.js: ${pending} pending, ${fixed} now passing ` +
+  `(of ${CASES.length}). Informational unless --strict.`);
+if (process.argv.includes('--strict') && pending) process.exit(1);

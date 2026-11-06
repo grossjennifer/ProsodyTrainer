@@ -44,6 +44,51 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
     assert.strictEqual(word(analyze(text, type), target).rhythmicPattern, beats,
       `${target} in "${text}" (${type})`);
   }
+  // G: stranded function words. A phrase-final auxiliary, copula,
+  // preposition or particle cannot reduce (`what you ARE`, not *what you're),
+  // so it takes a beat unless a neighbouring beat needs the slot. Owner's
+  // report: Twinkle under Ordinary prose ended `WONder what you are`.
+  // Object pronouns are excluded and stay weak.
+  for (const [text, type, target, beats] of [
+    ['Twinkle, twinkle, little star, how I wonder what you are.', 'prose', 'are', 'S'],
+    ['Twinkle, twinkle, little star, how I wonder what you are.', 'auto', 'are', 'S'],
+    ['I know where he is.', 'prose', 'is', 'S'],
+    ['What are you looking at?', 'prose', 'at', 'S'],
+    ['Where are you from?', 'prose', 'from', 'S'],
+    // ...yields to an adjacent beat, and pronouns stay weak:
+    ['Who did you go with?', 'prose', 'with', 'W'],
+    ['I want to.', 'prose', 'to', 'W'],
+    ['I saw him.', 'prose', 'him', 'W'],
+    ['He gave it to her.', 'prose', 'her', 'W'],
+    // ...and a phrase-INTERNAL function word is untouched:
+    ['What are you looking at?', 'prose', 'are', 'W']
+  ]) {
+    const d = analyze(text, type);
+    const w = d.words.filter(x => x.normalized === target).pop();
+    assert.strictEqual(w.rhythmicPattern, beats, `${target} in "${text}" (${type})`);
+  }
+  // H: inflected forms missing from CMU take the base word's pronunciation
+  // plus the regular ending, so stress stays where the base has it. Before
+  // this, `exhales` fell to the spelling heuristic as EX·ha·les (three
+  // syllables, wrong stress). Only the word-level fix is asserted for the
+  // kettle line; whether `clicks` also beats is a disputed reading.
+  for (const [w, lexical, nSyl] of [
+    ['exhales', '01', 2], ['inhales', '21', 2], ['reshapes', '01', 2],
+    ['fringed', '1', 1], ['unicorns', '102', 3]
+  ]) {
+    const a = E.analyzeWord(w);
+    assert.strictEqual(a.lexicalPattern, lexical, w + ' lexical (inflection of base)');
+    assert.strictEqual(a.syllables.length, nSyl, w + ' syllable count');
+    assert.strictEqual(a.lexicalSource, 'CMU', w + ' derived from the dictionary, not guessed');
+  }
+  for (const w of ['bus', 'yes', 'species', 'Texas'])   // listed words: untouched
+    assert.notStrictEqual(E.analyzeWord(w).lexicalRule, 'inflection-of-base', w);
+  {
+    const d = analyze('The kettle clicks off and the kitchen exhales.', 'prose');
+    assert.strictEqual(d.words.reduce((n, x) => n + x.syllables.length, 0), 11,
+      'kettle line has eleven syllables');
+    assert.strictEqual(word(d, 'exhales').rhythmicPattern, 'WS', 'kettle line ends exHALES');
+  }
   // B: preserve licensed retraction and content-word demotion.
   for (const [text, target, beats] of [
     ['Tennessee air', 'tennessee', 'SWW'], ['thirteen men', 'thirteen', 'SW'],
@@ -85,7 +130,7 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
     assert(E.toCSV(d).includes(hash));
     assert(E.profileCSV(d).includes(hash));
     assert.strictEqual(JSON.parse(JSON.stringify(d)).dictionaryMetadata.sha256, hash);
-    assert.strictEqual(d.engineBuild, '3.3.1');
+    assert.strictEqual(d.engineBuild, '3.3.2');
   }
   E.loadDictionary({ MACHINE: 'M AH0 SH IY1 N' }, 'custom');
   assert.strictEqual(analyze('machine').dictionaryMetadata, null, 'custom dictionaries must not inherit bundled provenance');

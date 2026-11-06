@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.3.1';
+  const ENGINE_BUILD = '3.3.2';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -203,6 +203,18 @@
       usedKey = key.slice(0, -2);
       raw = DICT[usedKey].split('|').map(p => p + ' Z').join('|');
     }
+    // Inflection fallback: a regular -s/-es or -ed form missing from CMU
+    // (`exhales`, `inhales`, `reshapes`) is its base word plus the ending's
+    // sound. Without it these fell to the spelling heuristic, which read the
+    // silent-e plural as an extra syllable and stressed the prefix:
+    // `EX·ha·les` for ex·HALES. The ending's sound follows the regular rule
+    // (a new syllable after a sibilant, or after t/d for -ed; voiceless after
+    // a voiceless consonant; voiced otherwise), so stress never moves.
+    let inflected = false;
+    if (!raw) {
+      const hit = inflectionBase(key);
+      if (hit) { raw = hit; inflected = true; }
+    }
     if (!raw) return null;
     const prons = raw.split('|').map(p => p.trim().split(/\s+/));
     // Variant handling (design §4): all stored; first is default;
@@ -212,7 +224,41 @@
       const patterns = new Set(prons.map(p => stressPatternOf(p)));
       confidence = patterns.size > 1 ? CONF.CMU_VARIANTS_DIFF : CONF.CMU_VARIANTS_SAME;
     }
-    return { prons, confidence, source: 'CMU' };
+    if (inflected) confidence = Math.min(confidence, CONF.CMU_VARIANTS_SAME);
+    return { prons, confidence, source: 'CMU', inflected };
+  }
+
+  const SIBILANTS = new Set(['S', 'Z', 'SH', 'ZH', 'CH', 'JH']);
+  const VOICELESS = new Set(['P', 'T', 'K', 'F', 'TH', 'S', 'SH', 'CH']);
+  function inflectionEnding(phones, suffix) {
+    const last = phones[phones.length - 1].replace(/\d/, '');
+    if (suffix === 'S') {
+      if (SIBILANTS.has(last)) return ['IH0', 'Z'];
+      return [VOICELESS.has(last) ? 'S' : 'Z'];
+    }
+    // -ED
+    if (last === 'T' || last === 'D') return ['IH0', 'D'];
+    return [VOICELESS.has(last) ? 'T' : 'D'];
+  }
+  function inflectionBase(key) {
+    // Candidate bases, most specific first. Bases shorter than three letters
+    // are never used, so `bus`, `gas`, `bed` cannot be read as inflections.
+    const tries = [];
+    if (/[A-Z]{3,}ES$/.test(key)) tries.push([key.slice(0, -1), 'S'], [key.slice(0, -2), 'S']);
+    else if (/[A-Z]{3,}[^S']S$/.test(key)) tries.push([key.slice(0, -1), 'S']);
+    if (/[A-Z]{3,}ED$/.test(key)) {
+      tries.push([key.slice(0, -1), 'ED'], [key.slice(0, -2), 'ED']);
+      const stem = key.slice(0, -2);
+      if (/([B-DF-HJ-NP-TV-Z])\1$/.test(stem)) tries.push([stem.slice(0, -1), 'ED']);
+    }
+    for (const [base, suffix] of tries) {
+      if (base.length < 3 || !DICT[base]) continue;
+      return DICT[base].split('|').map(p => {
+        const ph = p.trim().split(/\s+/);
+        return ph.concat(inflectionEnding(ph, suffix)).join(' ');
+      }).join('|');
+    }
+    return null;
   }
 
   // Copy of `phones` with primary stress moved to vowel number `idx`; the old
@@ -715,6 +761,7 @@
           phonemes: p, pattern: stressPatternOf(p)
         }));
         if (chosen > 0) rule = 'contextual-heteronym';
+        else if (cmu.inflected) rule = 'inflection-of-base';
       }
     }
     // Hyphenated compounds: analyze each component separately (design §4),
@@ -1363,6 +1410,11 @@
       // content word's demotion resistance — which is how an earlier version
       // produced `DO not go...`. The tag is used only to grade how readily
       // the function word accepts a beat.
+      if (behavesAsFunctionWord(wd) && wd.stranded) {
+        return { value: 'S', weight: POLY_FN_DEMOTE,
+                 confidence: CONF.FUNCTION_WORD,
+                 source: 'rule:stranded-function-word' };
+      }
       if (behavesAsFunctionWord(wd)) {
         return { value: 'W',
                  weight: (tag && FN_PROMOTE[tag]) || DEFAULT_PROMOTE,
@@ -2503,6 +2555,23 @@
   /* Mark repeated content words as given information. First occurrence is
    * new; later ones are given. Function words are excluded — they are weak
    * regardless — as are polysyllables, whose lexical stress anchors them. */
+  /* Stranded function words. An auxiliary, copula, modal, preposition or
+   * particle whose complement has moved away or been left unsaid cannot take
+   * its reduced form: `I wonder what you ARE` (not *what you're), `I know where
+   * he IS`, `what are you LOOKing AT`, `taller than I AM`, `turn it OFF`. The
+   * clearest signature available without a parser is position: the word ends
+   * its intonation phrase. Such a word defaults to a beat, cheaply given up
+   * when a neighbouring beat needs the slot (same cost as a polysyllabic
+   * function word). Pronouns are deliberately excluded — `i SAW him` keeps
+   * the object pronoun weak at the end of a phrase. */
+  const STRANDABLE_TAGS = new Set(['AUX', 'MODAL', 'PREP', 'INF', 'PART']);
+  function markStranded(words, ipEnds) {
+    words.forEach((wd, i) => {
+      wd.stranded = ipEnds.has(i) && wd.syllables.length === 1 &&
+        behavesAsFunctionWord(wd) && STRANDABLE_TAGS.has(wd.posTag);
+    });
+  }
+
   function markGivenness(words) {
     const seen = new Set();
     for (const wd of words) {
@@ -3060,6 +3129,8 @@
     });
 
     markGivenness(words);
+    if (words.length)
+      markStranded(words, new Set([...ipBreaksAfter, words.length - 1]));
     const ips = words.length ? chunk(words, ipBreaksAfter, boundaryStrengthAfter) : [];
     const regimeInfo = projectDocument(words, ips, config);
     const inferred = readingSnapshot(words, 'inferred',
@@ -3208,6 +3279,7 @@
       [{ tier: 'all', old: 'edited', new: 'reset-to-default', t: Date.now() }]);
     doc.words[wordIdx] = orig;
     markGivenness(doc.words);
+    markStranded(doc.words, new Set((doc.phrases || []).map(ip => ip.span[1])));
     reflow(doc);
     return doc;
   }
