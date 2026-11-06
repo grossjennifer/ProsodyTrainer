@@ -89,6 +89,41 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
       'kettle line has eleven syllables');
     assert.strictEqual(word(d, 'exhales').rhythmicPattern, 'WS', 'kettle line ends exHALES');
   }
+  // I: regime detection on deliberately metrical prose (A. J. Hartley's
+  // iambic paragraph): Let it decide finds the beat, Ordinary prose does not
+  // impose one, and the three regular lines scan as clean iambs.
+  {
+    const hartley = 'The finest writing seems to have a way of catching both the ' +
+      'reader’s eyes and ears, so that the natural resonance of words ' +
+      'constructs a rhythm in the reader’s mind.';
+    assert.strictEqual(analyze(hartley, 'auto').regime.regime, 'metrical', 'Hartley: auto finds a beat');
+    assert.strictEqual(analyze(hartley, 'prose').regime.regime, 'prose', 'Hartley: prose stays prose');
+    const iambs = d => d.words.map(w => w.syllables.map(s => s.rhythmicStress).join('')).join('');
+    for (const line of ['The finest writing seems to have a way',
+                        'Of catching both the reader’s eyes and ears,',
+                        'Constructs a rhythm in the reader’s mind.'])
+      assert.strictEqual(iambs(analyze(line, 'auto')), 'WSWSWSWSWS', 'Hartley iambic: ' + line);
+  }
+  // J: metrical syncope. In verse the dictionary's contracted variant is
+  // used when it fits the beat (ev'ry), displayed with the stressed
+  // syllable's spelling intact (EV·ery); prose and prose-like text keep the
+  // full form, and contraction never turns prose into verse.
+  {
+    const hia = 'Then the little Hiawatha learned of every bird its language.';
+    const v = analyze(hia, 'verse');
+    assert.strictEqual(v.words.map(w => w.syllables.map(s => s.rhythmicStress).join('')).join(''),
+      'SWSWSWSWSWSWSWSW', 'Hiawatha (verse) is trochaic');
+    assert.deepStrictEqual(word(v, 'every').syllables.map(s => s.text), ['ev', 'ery'], 'ev·ery display');
+    assert.strictEqual(word(v, 'every').lexicalRule, 'metrical-syncope');
+    assert.strictEqual(word(analyze(hia, 'prose'), 'every').syllables.length, 3, 'prose keeps ev·er·y');
+    const cam = analyze('I bought a camera and some chocolate for the general.', 'auto');
+    assert.strictEqual(cam.regime.regime, 'prose', 'contraction cannot turn prose into verse');
+    assert.strictEqual(word(cam, 'camera').syllables.length, 3, 'camera keeps three syllables in prose');
+  }
+  // K: Horton (Seuss), line 1 — anapestic, matches the owner's marking.
+  assert.strictEqual(analyze('I meant what I said and I said what I meant.', 'auto').words
+    .map(w => w.syllables.map(s => s.rhythmicStress).join('')).join(''),
+    'WSWWSWWSWWS', 'Horton line 1 anapestic (headless first foot: i MEANT)');
   // B: preserve licensed retraction and content-word demotion.
   for (const [text, target, beats] of [
     ['Tennessee air', 'tennessee', 'SWW'], ['thirteen men', 'thirteen', 'SW'],
@@ -130,7 +165,7 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
     assert(E.toCSV(d).includes(hash));
     assert(E.profileCSV(d).includes(hash));
     assert.strictEqual(JSON.parse(JSON.stringify(d)).dictionaryMetadata.sha256, hash);
-    assert.strictEqual(d.engineBuild, '3.3.2');
+    assert.strictEqual(d.engineBuild, '3.3.3');
   }
   E.loadDictionary({ MACHINE: 'M AH0 SH IY1 N' }, 'custom');
   assert.strictEqual(analyze('machine').dictionaryMetadata, null, 'custom dictionaries must not inherit bundled provenance');

@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.3.2';
+  const ENGINE_BUILD = '3.3.3';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -3132,7 +3132,8 @@
     if (words.length)
       markStranded(words, new Set([...ipBreaksAfter, words.length - 1]));
     const ips = words.length ? chunk(words, ipBreaksAfter, boundaryStrengthAfter) : [];
-    const regimeInfo = projectDocument(words, ips, config);
+    let regimeInfo = projectDocument(words, ips, config);
+    regimeInfo = applyMetricalSyncope(words, ips, config, regimeInfo);
     const inferred = readingSnapshot(words, 'inferred',
       'General engine reading (no stored lookup)', null, 'general-inference');
     const availableKnown = findKnownReading(text);
@@ -3370,6 +3371,131 @@
   // workflow: PROduce/proDUCE — Gross et al., 2017, Exp. 2). A Tier-1
   // choice among dictionary entries: full CMU confidence, logged as a
   // user selection; the previous default joins the alternates.
+  /* Metrical syncope. Verse relies on contracted pronunciations the
+   * dictionary already lists as variants — `ev'ry` (EH1 V R IY0) beside
+   * `every` (EH1 V ER0 IY0), `nat'ral`, `fam'ly` — but the engine always used
+   * the full form, so `Then the little Hiawatha learned of every bird its
+   * language` got an extra weak syllable, lost its trochaic grid and was read
+   * as prose. Here a contracted variant is tried, and kept only when:
+   *   - it drops exactly one UNSTRESSED syllable and changes nothing else
+   *     (same consonants, same stress on every remaining syllable);
+   *   - the text is ALREADY read as metrical with the full forms (Verse,
+   *     Song, or Let it decide having found a beat). Contraction is a poet's
+   *     licence, applied once a text is known to be verse; it is never what
+   *     turns prose into verse. Measured: the contraction gain cannot tell a
+   *     poem from an accidental iamb (`I bought a cam'ra and some choc'late
+   *     for the gen'ral` gains more than Hiawatha does), so it does not get a
+   *     vote on the regime;
+   *   - the document's reading cost falls by more than the ambiguity band,
+   *     so a near tie keeps the full form.
+   * The full form stays in `alternates`, so Pro's word inspector can switch
+   * it back. Words the reader has edited are never touched. */
+  const SYNCOPE_MARGIN = AMBIGUITY_BAND;
+  function consonantSkeleton(phones) {
+    return phones.map(p => p.replace(/\d/, ''))
+      .map(p => (p === 'ER' ? 'R' : p))
+      .filter(p => p === 'R' || !VOWELS.has(p)).join(' ');
+  }
+  function syncopeVariant(wd) {
+    if (wd.userEdited.lexical || !wd.alternates.length) return -1;
+    if (wd.syllables.some(s => !s.phonemes)) return -1;
+    const cur = wd.syllables.map(s => s.phonemes).flat();
+    const pat = wd.lexicalPattern;
+    return wd.alternates.findIndex(alt => {
+      const ph = Array.isArray(alt.phonemes) ? alt.phonemes : alt.phonemes.split(/\s+/);
+      const ap = stressPatternOf(ph);
+      if (ap.length !== pat.length - 1) return false;
+      let dropped = false;
+      for (let i = 0; i < pat.length; i++) {   // ap = pat minus one '0'
+        if (!dropped && pat[i] === '0' && ap === pat.slice(0, i) + pat.slice(i + 1)) dropped = true;
+      }
+      return dropped && consonantSkeleton(ph) === consonantSkeleton(cur);
+    });
+  }
+  // Index of the syllable a syncope variant drops (first '0' whose removal
+  // yields the variant's pattern).
+  function droppedSyllable(pat, ap) {
+    for (let i = 0; i < pat.length; i++)
+      if (pat[i] === '0' && ap === pat.slice(0, i) + pat.slice(i + 1)) return i;
+    return -1;
+  }
+  function setWordPhones(wd, phones) {
+    const phonSylls = syllabifyPhonemes(phones);
+    if (!phonSylls) return false;
+    const lexPattern = stressPatternOf(phones);
+    /* Display: keep the full form's spelling division and fold the dropped
+     * syllable's letters into the one after it, so the stressed syllable
+     * keeps its own spelling — EV·ery, CAM·era, NAT·ural — rather than the
+     * EVE·ry / CAME·ra a fresh spelling split produces. */
+    const drop = droppedSyllable(wd.lexicalPattern, lexPattern);
+    if (drop >= 0 && wd.syllables.length === phonSylls.length + 1) {
+      const texts = wd.syllables.map(s => s.text);
+      const into = drop + 1 < texts.length ? drop + 1 : drop - 1;
+      if (into > drop) texts[into] = texts[drop] + texts[into];
+      else texts[into] = texts[into] + texts[drop];
+      texts.splice(drop, 1);
+      wd.syllables = texts.map((t, i) => ({
+        text: t, phonemes: phonSylls[i], lexicalStress: lexPattern[i] || '0',
+        rhythmicStress: null, rhythmicSource: null, rhythmicConfidence: null
+      }));
+      wd.lexicalPattern = lexPattern;
+      wd.template = assignTemplate(lexPattern, wd.isFunctionWord);
+      return true;
+    }
+    const sylInfo = phonSylls.map(ph => {
+      const v = ph.find(p => VOWELS.has(p.replace(/\d/, '')));
+      return { stressed: /[12]/.test(v || ''),
+               lax: v ? LAX_VOWELS.has(v.replace(/\d/, '')) : false };
+    });
+    const ortho = orthoSyllabify(
+      wd.normalized.replace(/[^a-z']/g, ''), phonSylls.length, sylInfo);
+    wd.syllables = ortho.sylls.map((t, i) => ({
+      text: t, phonemes: phonSylls[i], lexicalStress: lexPattern[i] || '0',
+      rhythmicStress: null, rhythmicSource: null, rhythmicConfidence: null
+    }));
+    wd.lexicalPattern = lexPattern;
+    wd.template = assignTemplate(lexPattern, wd.isFunctionWord);
+    return true;
+  }
+  function documentCost(ips) {
+    return ips.reduce((sum, ip) => {
+      const r = ip.readings && ip.readings[ip.selectedReadingIndex || 0];
+      return sum + (r ? r.cost : 0);
+    }, 0);
+  }
+  function applyMetricalSyncope(words, ips, config, regimeInfo) {
+    if (config.textType === 'prose' || config.forcedScansion ||
+        regimeInfo.regime !== 'metrical') return regimeInfo;
+    const candidates = words.map((wd, i) => [i, syncopeVariant(wd)])
+      .filter(([, a]) => a >= 0);
+    if (!candidates.length) return regimeInfo;
+    let best = documentCost(ips), tried = false;
+    for (const [wi, ai] of candidates) {
+      const wd = words[wi];
+      const saved = { syllables: wd.syllables, lexicalPattern: wd.lexicalPattern,
+                      template: wd.template, alternates: wd.alternates,
+                      lexicalRule: wd.lexicalRule };
+      const alt = wd.alternates[ai];
+      const ph = Array.isArray(alt.phonemes) ? alt.phonemes : alt.phonemes.split(/\s+/);
+      if (!setWordPhones(wd, ph)) continue;
+      tried = true;
+      const info = projectDocument(words, ips, config);
+      const cost = documentCost(ips);
+      if (info.regime === 'metrical' && cost < best - SYNCOPE_MARGIN) {
+        best = cost;
+        regimeInfo = info;
+        wd.alternates = [{ phonemes: saved.syllables.map(s => s.phonemes).flat(),
+                           pattern: saved.lexicalPattern },
+                         ...saved.alternates.filter((_, k) => k !== ai)];
+        wd.lexicalRule = 'metrical-syncope';
+      } else {
+        Object.assign(wd, saved);
+      }
+    }
+    // Leave every word's beats consistent with the pronunciations kept.
+    return tried ? projectDocument(words, ips, config) : regimeInfo;
+  }
+
   function selectPronunciation(doc, wordIdx, altIndex) {
     const wd = doc.words[wordIdx];
     const alt = wd.alternates[altIndex];

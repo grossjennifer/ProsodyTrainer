@@ -1,5 +1,5 @@
 /* ============================================================================
- * test_prose_pending.js — known prose errors, tracked but not yet fixed.
+ * test_prose_pending.js — known errors, tracked but not yet fixed.
  * ----------------------------------------------------------------------------
  * Each case is a single beat that is clearly wrong in Ordinary prose, taken
  * from the Nov 2026 prose set. They share one cause: prose mode charges an
@@ -8,6 +8,12 @@
  * short lapse. Fixing that means retuning prose weights, which waits for the
  * owner's hand-marked prose sentences; tuning to these few by feel would
  * risk the verse corpus.
+ *
+ * One verse case is also tracked: Hiawatha on Let it decide is still read as
+ * prose. On Verse it is fixed by metrical syncope (ev'ry), but contraction is
+ * deliberately not allowed to turn prose into verse, because its gain cannot
+ * tell a poem from an accidental iamb. Fixing it needs better regime
+ * evidence, not looser contraction.
  *
  * Only the undisputed part of each line is checked. Neighbouring beats that
  * the source marking also claimed (STUCK REcord, THINK CLEARly) put two beats
@@ -30,7 +36,7 @@ E.loadKnownReadings(window.PROSODY_KNOWN_READINGS);
 const show = d => d.words.map(w => w.syllables.map(s =>
   s.rhythmicStress === 'S' ? s.text.toUpperCase() : s.text.toLowerCase()).join('')).join(' ');
 
-// [text, word, which occurrence (0-based), expected rhythmic pattern, why]
+// [text, word, which occurrence (0-based), expected rhythmic pattern, why, mode]
 const CASES = [
   ['Listen to what is happening.', 'to', 0, 'W',
     '`to` takes the beat in LISten TO what'],
@@ -38,11 +44,13 @@ const CASES = [
     'the contraction `it’s` takes the beat; `like` loses it'],
   ['To think clearly is to live deeply.', 'to', 1, 'W',
     'the second `to` takes the beat in is TO live'],
+  ['Then the little Hiawatha learned of every bird its language.', 'then', 0, 'S',
+    'Let it decide reads the trochaic line as prose (THEN loses its beat)', 'auto'],
 ];
 
 let pending = 0, fixed = 0;
-for (const [text, target, nth, beats, why] of CASES) {
-  const d = E.analyze(text, { textType: 'prose' });
+for (const [text, target, nth, beats, why, mode = 'prose'] of CASES) {
+  const d = E.analyze(text, { textType: mode });
   const hits = d.words.filter(w => w.normalized.replace(/’/g, "'") === target);
   const w = hits[nth];
   const got = w ? w.rhythmicPattern : '(word not found)';
