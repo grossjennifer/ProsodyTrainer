@@ -124,6 +124,16 @@ for (const engine of ['./rhythm-reader/engine.js', './rhythm-reader-pro/engine.j
   assert.strictEqual(analyze('I meant what I said and I said what I meant.', 'auto').words
     .map(w => w.syllables.map(s => s.rhythmicStress).join('')).join(''),
     'WSWWSWWSWWS', 'Horton line 1 anapestic (headless first foot: i MEANT)');
+  // L: Yertle (Seuss), the owner's own marking, as one couplet:
+  //   and toDAY the great YERtle, that MARvelous HE
+  //   is KING of the MUD. That is ALL he can SEE.
+  // Must hold in every mode.
+  for (const mode of ['auto', 'verse', 'prose']) {
+    const d = analyze('And today the Great Yertle, that marvelous he\n' +
+      'Is King of the Mud. That is all he can see.', mode);
+    assert.strictEqual(d.words.map(w => w.syllables.map(s => s.rhythmicStress).join('')).join(''),
+      'WWSWWSWWSWWS' + 'WSWWSWWSWWS', 'Yertle couplet, owner marking (' + mode + ')');
+  }
   // B: preserve licensed retraction and content-word demotion.
   for (const [text, target, beats] of [
     ['Tennessee air', 'tennessee', 'SWW'], ['thirteen men', 'thirteen', 'SW'],

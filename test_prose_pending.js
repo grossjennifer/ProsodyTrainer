@@ -46,6 +46,14 @@ const CASES = [
     'the second `to` takes the beat in is TO live'],
   ['Then the little Hiawatha learned of every bird its language.', 'then', 0, 'S',
     'Let it decide reads the trochaic line as prose (THEN loses its beat)', 'auto'],
+  ['And today the Great Yertle, that marvelous he', 'he', 0, 'S',
+    'line alone on Verse: noun use of `he` (that marvelous HE) stays weak', 'verse'],
+];
+// Regime cases: the passage should be read as having a regular beat.
+const REGIME_CASES = [
+  ['And today the Great Yertle, that marvelous he\nIs King of the Mud. That is all he can see.',
+    'Let it decide calls the anapestic couplet prose, though every beat is right; ' +
+    'the line break is not used as evidence of verse'],
 ];
 
 let pending = 0, fixed = 0;
@@ -63,6 +71,18 @@ for (const [text, target, nth, beats, why, mode = 'prose'] of CASES) {
     console.log(`  pending     ${text}  →  ${show(d)}   (${why})`);
   }
 }
+for (const [text, why] of REGIME_CASES) {
+  const d = E.analyze(text, { textType: 'auto' });
+  const label = text.replace(/\n/g, ' / ');
+  if (d.regime.regime === 'metrical') {
+    fixed++;
+    console.log(`  NOW PASSES  ${label}  →  metrical`);
+    console.log('              Move this case into test_diagnostic_battery.js.');
+  } else {
+    pending++;
+    console.log(`  pending     ${label}  →  ${d.regime.regime}   (${why})`);
+  }
+}
 console.log(`test_prose_pending.js: ${pending} pending, ${fixed} now passing ` +
-  `(of ${CASES.length}). Informational unless --strict.`);
+  `(of ${CASES.length + REGIME_CASES.length}). Informational unless --strict.`);
 if (process.argv.includes('--strict') && pending) process.exit(1);
