@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+title: "ProsodyTrainer: tools for research, teaching, and intervention in English prosody and reading"
+authors:
+  - family-names: Gross
+    given-names: Jennifer
+    affiliation: "Grand Valley State University"
+version: "3.5.0"
+license: Apache-2.0
+url: "https://prosodytrainer.com"
+repository-code: "https://github.com/grossjennifer/ProsodyTrainer"
