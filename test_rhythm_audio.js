@@ -12,7 +12,7 @@
  *
  * Part 2 loads both real pages in jsdom with a recording fake AudioContext
  * and drives them the way a person would: press Play, check that clicks were
- * scheduled with beats louder than weak ticks, that the highlighted syllable
+ * scheduled with beats louder and longer than weak ticks (one pitch), that the highlighted syllable
  * advances, that Stop works, and that editing a beat stops playback.
  * ========================================================================== */
 'use strict';
@@ -63,6 +63,20 @@ const marked = sch => sch.events.map(e =>
   ok(bt.length >= 6, `Twinkle has its beats (${marked(sch)})`);
   ok(gaps.every(g => g === 500),
     `commas do not break the beat grid in metrical text — gaps ${gaps.join(',')}`);
+}
+
+// 2b. A stressed syllable takes a longer share of its foot than a weak one,
+//     while beats stay isochronous.
+{
+  const d = E.analyze('Twinkle, twinkle, little star', {});
+  const sch = A.schedule(d, { bpm: 120 });
+  const ev = sch.events;
+  const twin = ev[0], kle = ev[1];
+  ok(twin.stress === 'S' && kle.stress === 'W', `TWINkle: ${marked(sch)}`);
+  ok(kle.t - twin.t === 300 && twin.dur === 300 && kle.dur === 200,
+    `the beat syllable is longer than the weak one (${kle.t - twin.t} / ${kle.dur} ms)`);
+  const flat = A.schedule(d, { bpm: 120, stressWeight: 1 }).events;
+  ok(flat[1].t - flat[0].t === 250, 'stressWeight 1 restores equal shares');
 }
 
 // 3. Upbeat placement and sentence rest.
@@ -186,15 +200,20 @@ async function exercise(relPath, goId, surfaceSel) {
   ok(/Stop/.test(btn.textContent), `${label}: button becomes Stop while playing`);
   const nSyl = 6;   // the mouse ran up the clock: six monosyllables
   ok(audioLog.length === nSyl, `${label}: one click per syllable (${audioLog.length})`);
-  const hi = audioLog.filter(c => c.freq === 880).length;
-  ok(hi === 3, `${label}: three beats sound as beats (${hi})`);
-
-  // Beats are louder than weak ticks (gain peak, in schedule order).
+  // Stress is louder and longer, not higher: one pitch for every syllable.
+  ok(new Set(audioLog.map(c => c.freq)).size === 1,
+    `${label}: beats and weak ticks share one pitch`);
   const peaks = audioLog.gains.map(g => Math.max(...g.events.map(e => e[2])));
-  const strongPeaks = peaks.filter((p, i) => audioLog[i].freq === 880);
-  const weakPeaks = peaks.filter((p, i) => audioLog[i].freq !== 880);
-  ok(Math.min(...strongPeaks) > 2 * Math.max(...weakPeaks),
+  const durs = audioLog.gains.map(g => {
+    const ts = g.events.map(e => e[3]); return Math.max(...ts) - Math.min(...ts);
+  });
+  const strongIdx = peaks.map((p, i) => i).filter(i => peaks[i] > 0.5);
+  const weakIdx = peaks.map((p, i) => i).filter(i => peaks[i] <= 0.5);
+  ok(strongIdx.length === 3, `${label}: three beats sound as beats (${strongIdx.length})`);
+  ok(Math.min(...strongIdx.map(i => peaks[i])) > 2 * Math.max(...weakIdx.map(i => peaks[i])),
     `${label}: beats are much louder than weak ticks`);
+  ok(Math.min(...strongIdx.map(i => durs[i])) > 2 * Math.max(...weakIdx.map(i => durs[i])),
+    `${label}: beats are much longer than weak ticks`);
 
   await sleep(260);
   const now1 = d.querySelectorAll(surfaceSel + ' .syl.now');

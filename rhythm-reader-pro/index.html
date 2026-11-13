@@ -278,6 +278,11 @@ th { font-size: .75rem; text-transform: uppercase; letter-spacing: .06em;
 td.mono, .mono { font-family: var(--mono); font-size: .82rem; }
 .src-CMU { color: var(--phrase); } .src-heuristic { color: #8A6D1F; }
 .src-user { color: var(--edit); }
+.src-learned { color: var(--edit); }
+.remembered-list { list-style: none; padding: 0; margin: .6rem 0 0; }
+.remembered-list li { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center;
+  padding: .3rem 0; border-bottom: 1px solid var(--line, #ddd); }
+.remembered-list .w { font-weight: 600; min-width: 8rem; }
 .conf-hi { color: var(--phrase); } .conf-mid { color: #8A6D1F; } .conf-lo { color: var(--beat); }
 .statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
   gap: .8rem; margin-top: .8rem; }
@@ -478,8 +483,8 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <label for="tempo">Tempo
       <input type="range" id="tempo" min="60" max="180" step="5" value="120">
       <output id="tempoVal" for="tempo">120</output><abbr title="beats per minute">bpm</abbr></label>
-    <span id="playHelp" class="sr-only">Plays a tap track: a click on every
-      beat and a softer tick on every weak syllable, highlighting each
+    <span id="playHelp" class="sr-only">Plays a tap track: a louder, longer tone on
+      every beat and a short, soft tick on every weak syllable, highlighting each
       syllable as it sounds. It always plays the rhythmic beats, including
       any you have edited, whichever tier or cue density is displayed.</span>
   </div>
@@ -522,6 +527,19 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
       </select></label>
   </div>
   <div class="lexgrid" id="lexGrid"></div>
+  <h2 style="margin-top:1.2rem">Remembered words</h2>
+  <p class="hint">Word stress or syllable division you corrected and chose
+  to remember, applied to every new analysis. Kept in this browser only.
+  Not applied while research mode is on, so every participant starts from
+  the same automatic analysis.</p>
+  <div class="lexctl">
+    <button id="rememberedExport">Export remembered words</button>
+    <label class="opt">Import
+      <input type="file" id="rememberedImport" accept=".json,application/json"></label>
+    <button id="rememberedClear">Forget all</button>
+  </div>
+  <p class="hint" id="rememberedStatus"></p>
+  <ul class="remembered-list" id="rememberedList"></ul>
 </section>
 
 <section class="card panel about" id="panel-about" role="tabpanel"
@@ -568,7 +586,13 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   inspector,
   where you can choose template variants, split or merge syllables, and reset
   the word to its dictionary analysis. Edited syllables are marked with a
-  dotted underline; every edit is recorded and exported.</p>
+  dotted underline; every edit is recorded and exported.
+  After correcting a word's stress or syllables, <em>Remember this word
+  stress</em> in the inspector keeps the correction for future analyses in
+  this browser (see <em>Remembered words</em> under the Metrical lexicon
+  tab). Function words and noun/verb stress pairs such as
+  <code>REcord</code>/<code>reCORD</code> are not remembered, because
+  context decides them.</p>
   <h2>The divergence measure</h2>
   <p>The analysis table reports a <strong>Prosodic Divergence Index</strong>
   (PDI): how far the current annotation, after your edits, sits from the fully
@@ -625,6 +649,40 @@ const E = window.RhythmEngine;
 const A = window.RhythmAudio;
 E.loadKnownReadings(window.PROSODY_KNOWN_READINGS || []);
 document.getElementById('buildChip').textContent = 'Build ' + E.build;
+
+/* ---------- remembered words (engine 3.4.0) ----------
+   Word-stress corrections the reader chose to remember. Kept in this
+   browser's localStorage only; never sent anywhere. Suspended in research
+   mode so that every participant starts from the same automatic analysis
+   (and PDI keeps the same reference). */
+const REMEMBER_KEY = 'prosodyTrainer.rememberedWords.v1';
+let remembered = {};
+function readRemembered() {
+  try {
+    const raw = window.localStorage.getItem(REMEMBER_KEY);
+    const obj = raw ? JSON.parse(raw) : {};
+    return obj && typeof obj === 'object' ? obj : {};
+  } catch (e) { return {}; }
+}
+function writeRemembered() {
+  try {
+    window.localStorage.setItem(REMEMBER_KEY, JSON.stringify(remembered));
+    return true;
+  } catch (e) { return false; }
+}
+E.loadLearnedWords(readRemembered());
+remembered = E.getLearnedWords();   // keeps only entries the engine accepts
+const REMEMBER_REASONS = {
+  'function-word': 'Function words gain or lose a beat by context, so their ' +
+    'stress is not remembered. Set beats on the Beats tier instead.',
+  'context-heteronym': 'This word changes stress with its role in the sentence ' +
+    '(noun or verb), so one stress cannot be remembered for every sentence. ' +
+    'Choose a dictionary pronunciation for this passage instead.',
+  'not-edited': 'Change the word stress or syllables first, then remember it.',
+  'same-as-default': 'This is already the automatic analysis; nothing to remember.',
+  'no-stress': 'A remembered word needs at least one stressed syllable.',
+  'invalid': 'This word could not be remembered.'
+};
 
 /* ---------- dictionary: try full asset, fall back to embedded subset ----- */
 const chip = document.getElementById('dictChip');
@@ -763,6 +821,7 @@ function beatCount() {
 /* ---------- analysis ---------- */
 function analyze(prefix) {
   const text = document.getElementById('input').value;
+  E.loadLearnedWords(session.active ? {} : remembered);
   doc = E.analyze(text, {
     strictAlternation: document.getElementById('strictAlt').checked,
     clashSubordination: document.getElementById('clashSub').checked,
@@ -1242,6 +1301,8 @@ function renderDebug() {
     [pdi.pdi, 'distance from automatic model (PDI)'],
     [Math.round(st.cmuRate * 100) + '%', 'words found in CMU'],
     [Math.round(st.heuristicRate * 100) + '%', 'estimated by rule'],
+    ...(st.learnedRate !== undefined
+      ? [[Math.round(st.learnedRate * 100) + '%', 'from remembered words']] : []),
     [Math.round(st.userEditRate * 100) + '%', 'edited by you'],
     [st.tierMismatchCount, 'stress ≠ beat syllables'],
     [st.implicitProsodyProfile.rhythmicRegularityIndex, 'regularity fit score'],
@@ -1281,7 +1342,8 @@ function renderDebug() {
       if (ci >= 2 && ci <= 4) td.className = 'mono';
       if (ci === 5) td.className = 'src-' +
         (wd.lexicalSource === 'CMU' ? 'CMU'
-         : wd.lexicalSource === 'user' ? 'user' : 'heuristic');
+         : wd.lexicalSource === 'user' ? 'user'
+         : wd.lexicalSource === 'learned' ? 'learned' : 'heuristic');
       if (ci === 6) td.className = 'mono ' +
         (c >= 0.9 ? 'conf-hi' : c >= 0.6 ? 'conf-mid' : 'conf-lo');
       td.textContent = c;
@@ -1631,6 +1693,57 @@ function openInspector(wi) {
   });
   dlg.appendChild(t3);
 
+  if (!session.active) {
+    const rem = document.createElement('div');
+    rem.className = 'tierrow';
+    rem.innerHTML = '<div class="tl">Remember for future analyses</div>';
+    const refusal = E.learnableWord(wd.normalized);
+    const msg = document.createElement('p');
+    msg.className = 'hint';
+    msg.setAttribute('role', 'status');
+    if (wd.lexicalSource === 'learned') {
+      msg.textContent = 'Remembered: ' + wd.syllables.map(x => x.text).join('·') +
+        ' ' + wd.lexicalPattern + '.';
+      const fg = document.createElement('button');
+      fg.textContent = 'Forget remembered stress';
+      fg.dataset.key = 'forget';
+      fg.addEventListener('click', () => {
+        E.forgetWord(wd.normalized);
+        remembered = E.getLearnedWords();
+        writeRemembered();
+        E.refreshWord(doc, wd.normalized);
+        renderAll(); openInspector(wi);
+        announce('Forgot the remembered stress for ' + wd.word + '.');
+      });
+      rem.append(fg, msg);
+    } else if (refusal) {
+      msg.textContent = REMEMBER_REASONS[refusal];
+      rem.appendChild(msg);
+    } else if (wd.userEdited.lexical) {
+      const rb = document.createElement('button');
+      rb.textContent = 'Remember this word stress';
+      rb.dataset.key = 'remember';
+      rb.addEventListener('click', () => {
+        const r = E.learnWord(doc, wi);
+        if (!r.ok) {
+          msg.textContent = REMEMBER_REASONS[r.reason] || REMEMBER_REASONS.invalid;
+          announce(msg.textContent);
+          return;
+        }
+        remembered = E.getLearnedWords();
+        const saved = writeRemembered();
+        const others = E.refreshWord(doc, wd.normalized);
+        renderAll(); openInspector(wi);
+        announce('Remembered ' + wd.word + ' as ' + r.entry.syllables.map(x =>
+          x.text).join('·') + ' ' + r.entry.pattern +
+          (others ? '; updated ' + others + ' other instance(s) here' : '') +
+          (saved ? '.' : '. This browser would not save it, so it lasts only until the page closes.'));
+      });
+      rem.append(rb, msg);
+    }
+    if (rem.childNodes.length > 1) dlg.appendChild(rem);
+  }
+
   const foot = document.createElement('div');
   foot.className = 'row';
   const reset = document.createElement('button');
@@ -1696,8 +1809,10 @@ function download(name, content, type) {
 }
 function exportProvenance() {
   const m = doc && doc.dictionaryMetadata;
+  const used = doc ? doc.words.filter(w => w.lexicalSource === 'learned').length : 0;
   return 'Rhythm Reader Pro build ' + E.build + '\nDictionary: ' +
-    (m ? m.id + '\nDictionary SHA-256: ' + m.sha256 : 'unversioned') + '\n';
+    (m ? m.id + '\nDictionary SHA-256: ' + m.sha256 : 'unversioned') + '\n' +
+    (used ? 'Remembered words applied: ' + used + ' word(s)\n' : '');
 }
 function lexiconCSV() {
   const rows = [['word', 'syllables', 'lexical_stress', 'template_pattern',
@@ -1776,6 +1891,86 @@ function runExport(v) {
   announce('Export started.');
 }
 
+/* ---------- remembered-words panel ---------- */
+function renderRemembered(status) {
+  const list = document.getElementById('rememberedList');
+  if (!list) return;
+  list.innerHTML = '';
+  const keys = Object.keys(remembered).sort();
+  document.getElementById('rememberedStatus').textContent =
+    (status ? status + ' ' : '') +
+    (keys.length ? keys.length + ' remembered word(s).' : 'No remembered words yet.') +
+    (session.active && keys.length ? ' Paused while research mode is on.' : '');
+  document.getElementById('rememberedExport').disabled = !keys.length;
+  document.getElementById('rememberedClear').disabled = !keys.length;
+  for (const k of keys) {
+    const e = remembered[k];
+    const li = document.createElement('li');
+    const w = document.createElement('span'); w.className = 'w'; w.textContent = k;
+    const sy = document.createElement('span'); sy.className = 'mono';
+    sy.textContent = e.syllables.map(x => x.text).join('·') + '  ' + e.pattern +
+      (e.defaultPattern ? '  (automatic: ' + e.defaultPattern + ')' : '');
+    const b = document.createElement('button');
+    b.textContent = 'Forget';
+    b.setAttribute('aria-label', 'Forget remembered stress for ' + k);
+    b.addEventListener('click', () => {
+      E.forgetWord(k);
+      remembered = E.getLearnedWords();
+      writeRemembered();
+      if (doc && !session.active) { E.refreshWord(doc, k); renderAll(); }
+      renderRemembered('Forgot ' + k + '.');
+      announce('Forgot the remembered stress for ' + k + '.');
+    });
+    li.append(w, sy, b);
+    list.appendChild(li);
+  }
+}
+document.getElementById('rememberedExport').addEventListener('click', () => {
+  download('remembered-words.json', JSON.stringify({
+    format: 'prosodytrainer-remembered-words', version: 1,
+    engineBuild: E.build, exportedAt: new Date().toISOString(),
+    words: remembered }, null, 1), 'application/json');
+  announce('Export started.');
+});
+document.getElementById('rememberedImport').addEventListener('change', (ev) => {
+  const file = ev.target.files && ev.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    let incoming = null;
+    try {
+      const obj = JSON.parse(reader.result);
+      incoming = obj && obj.words && typeof obj.words === 'object' ? obj.words : obj;
+    } catch (e) { incoming = null; }
+    if (!incoming || typeof incoming !== 'object') {
+      renderRemembered('That file is not a remembered-words export.');
+      ev.target.value = '';
+      return;
+    }
+    // Merge: imported entries are added; an imported word replaces this
+    // browser's entry for the same word.
+    const res = E.loadLearnedWords(Object.assign({}, remembered, incoming));
+    remembered = E.getLearnedWords();
+    writeRemembered();
+    if (!session.active) E.loadLearnedWords(remembered);
+    renderRemembered('Imported; ' + res.rejected + ' entr' +
+      (res.rejected === 1 ? 'y' : 'ies') + ' skipped.');
+    ev.target.value = '';
+    if (doc && !session.active) analyze('Remembered words imported. ');
+  };
+  reader.readAsText(file);
+});
+document.getElementById('rememberedClear').addEventListener('click', () => {
+  const n = Object.keys(remembered).length;
+  if (!n || !window.confirm('Forget all ' + n + ' remembered word(s) in this browser?')) return;
+  const words = Object.keys(remembered);
+  E.loadLearnedWords({});
+  remembered = {};
+  writeRemembered();
+  if (doc && !session.active) { words.forEach(k => E.refreshWord(doc, k)); renderAll(); }
+  renderRemembered('All remembered words forgotten.');
+});
+
 /* ---------- controls wiring ---------- */
 document.getElementById('analyzeBtn').addEventListener('click', analyze);
 document.getElementById('researchMode').addEventListener('change', (ev) => {
@@ -1803,6 +1998,14 @@ document.getElementById('researchMode').addEventListener('change', (ev) => {
   }
   chip.hidden = !on;
   if (on && session.t0 === null) session.t0 = Date.now();
+  // Turning research mode on re-analyzes a passage that used remembered
+  // words, so the participant starts from the automatic analysis. Turning it
+  // off never re-analyzes (that would discard the annotation on screen);
+  // remembered words apply again from the next analysis.
+  if (on && doc && doc.words.some(w => w.lexicalSource === 'learned'))
+    analyze('Remembered words are paused in research mode. ');
+  renderRemembered(on || !Object.keys(remembered).length ? '' :
+    'Remembered words apply again from the next analysis.');
   announce(on ? 'Research logging started. Edits are now recorded.'
               : 'Research logging stopped. The session log was cleared.');
 });
@@ -1976,6 +2179,7 @@ function renderAll() {
   renderSurface();
   renderDebug();
   renderLexicon();
+  renderRemembered();
 }
 })();
 </script>

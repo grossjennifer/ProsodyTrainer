@@ -14,8 +14,10 @@
  * Timing model — stress-timed, the way the Learn pages describe English:
  *   • Beats (syllables with rhythmicStress 'S') fall at equal intervals, one
  *     beat interval apart (60000 / bpm ms).
- *   • The weak syllables between two beats share the interval equally, so a
- *     weak–strong line ticks  w S w S  and a triple line  w w S w w S.
+ *   • Within the interval from one beat to the next, the stressed syllable
+ *     takes a longer share than each weak syllable (stressWeight, 1.5 : 1 by
+ *     default), because stressed syllables are longer as well as louder;
+ *     the weak syllables share the rest equally. Beats stay isochronous.
  *   • Leading weak syllables before a phrase's first beat (an anacrusis, the
  *     "the" in "the MOUSE ran UP the CLOCK") are an upbeat: each takes the
  *     same slot a weak syllable of the following foot takes, so the first
@@ -36,14 +38,16 @@
   const DEFAULTS = {
     bpm: 120,            // beat interval 500 ms
     strongRestBeats: 1,  // rest after a strong phrase boundary, in beats
-    weakRestBeats: 0.5   // rest after a weak phrase boundary (comma)
+    weakRestBeats: 0.5,  // rest after a weak phrase boundary (comma)
+    stressWeight: 1.5    // a beat syllable's share of its foot vs. one weak syllable
   };
 
   /* --------------------------------------------------------------------------
    * schedule(doc, opts)
    * Returns { events, total, beatMs, beats } where each event is
-   *   { t, w, s, stress, nuclear, word, text, phrase }
-   * t in ms from the start; w/s index doc.words / .syllables; phrase indexes
+   *   { t, dur, w, s, stress, nuclear, word, text, phrase }
+   * t in ms from the start; dur is the syllable's slot in ms (its share of
+   * the beat interval); w/s index doc.words / .syllables; phrase indexes
    * doc.phrases. `total` is the end time including the final rest.
    * ------------------------------------------------------------------------ */
   function schedule(doc, opts) {
@@ -90,13 +94,22 @@
       });
       if (cur.length) groups.push(cur);
 
+      // Weak-syllable slot of a foot: the beat syllable counts stressWeight,
+      // each weak syllable 1, and together they fill one beat interval.
+      const sw = o.stressWeight;
+      const weakSlot = n => beatMs / (sw + n - 1);
       const slotOf = (g, gi) => {
-        if (g[0].sy.rhythmicStress === 'S') return beatMs / g.length;
-        // Anacrusis: match the weak-slot length of the foot that follows;
-        // with no following foot (a phrase with no beat at all) use
-        // half-beats.
+        if (g[0].sy.rhythmicStress === 'S') return weakSlot(g.length);
+        // Anacrusis: match the weak-slot length of the foot that follows
+        // (as if it had at least one weak syllable); with no following foot
+        // (a phrase with no beat at all) use half-beats.
         const next = groups[gi + 1];
-        return beatMs / (next ? Math.max(2, next.length) : 2);
+        return next ? weakSlot(Math.max(2, next.length)) : beatMs / 2;
+      };
+      const slotFor = (g, gi, x) => {
+        const weak = slotOf(g, gi);
+        if (x.sy.rhythmicStress !== 'S') return weak;
+        return g.length === 1 ? beatMs : weak * sw;
       };
 
       // Fit the phrase's first beat to the grid, leaving room for the rest
@@ -107,12 +120,12 @@
       t = firstBeat - lead;
 
       groups.forEach((g, gi) => {
-        const slot = slotOf(g, gi);
         g.forEach(x => {
+          const slot = slotFor(g, gi, x);
           const strong = x.sy.rhythmicStress === 'S';
           if (strong) { beats++; lastBeat = t; }
           events.push({
-            t: Math.round(t), w: x.w, s: x.s,
+            t: Math.round(t), dur: Math.round(slot), w: x.w, s: x.s,
             stress: strong ? 'S' : 'W',
             nuclear: !!x.sy.nuclear,
             word: x.wd.word, text: x.sy.text, phrase: pi
@@ -141,10 +154,13 @@
    *   hooks.AudioContext       optional injection (tests)
    * Returns { play(doc, opts), stop(), get playing(), supported }
    *
-   * Sound: a short sine burst with an exponential decay. Beats are higher,
-   * louder and slightly longer than weak ticks; the phrase nucleus (▲) is the
-   * same click as any other beat — the display already marks it, and the
-   * tap track is about the beat grid, not prominence.
+   * Sound: a sine tone at one pitch for every syllable. A beat differs from a
+   * weak syllable the way a stressed syllable differs from an unstressed one
+   * in English: it is louder and longer (a sustained tone filling about half
+   * its slot, versus a short soft tick). Pitch is kept the same on purpose:
+   * in English, pitch marks the phrase accent rather than stress itself, so
+   * it is left free to mark accent. The phrase nucleus (▲) sounds like any
+   * other beat; the display already marks it.
    * ------------------------------------------------------------------------ */
   function player(hooks) {
     hooks = hooks || {};
@@ -156,16 +172,19 @@
     let playing = false;
     let token = 0;
 
-    function click(at, strong) {
+    function click(at, strong, slotSec) {
       if (!ctx) return;
       const osc = ctx.createOscillator();
       const gain = ctx.createGain();
       osc.type = 'sine';
-      osc.frequency.value = strong ? 880 : 520;
+      osc.frequency.value = 660;
       const peak = strong ? 0.9 : 0.22;
-      const dur = strong ? 0.07 : 0.035;
+      const dur = strong
+        ? Math.min(0.28, Math.max(0.09, 0.55 * (slotSec || 0.3)))
+        : 0.04;
       gain.gain.setValueAtTime(0.0001, at);
-      gain.gain.exponentialRampToValueAtTime(peak, at + 0.002);
+      gain.gain.exponentialRampToValueAtTime(peak, at + 0.005);
+      if (strong) gain.gain.exponentialRampToValueAtTime(peak * 0.7, at + dur * 0.7);
       gain.gain.exponentialRampToValueAtTime(0.0001, at + dur);
       osc.connect(gain).connect(ctx.destination);
       osc.start(at);
@@ -205,7 +224,7 @@
       const lead = 0.08;
       const base = ctx ? ctx.currentTime + lead : 0;
       sch.events.forEach(ev => {
-        click(base + ev.t / 1000, ev.stress === 'S');
+        click(base + ev.t / 1000, ev.stress === 'S', ev.dur / 1000);
         timers.push(setTimeout(() => {
           if (my !== token) return;
           if (typeof hooks.onSyllable === 'function') hooks.onSyllable(ev, sch);

@@ -27,7 +27,7 @@
     {
       id: 'tennyson-valley-death', kind: 'familiar-verse', meter: 'dactyl',
       text: 'All in the valley of Death',
-      marked: 'ALL in the VALley of death'
+      marked: 'ALL in the VALley of DEATH'
     },
     {
       id: 'tennyson-cannon', kind: 'familiar-verse', meter: 'dactyl',

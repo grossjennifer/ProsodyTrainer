@@ -20,7 +20,7 @@
  *
  *   beat + nucleus     the ordinary case
  *   beat, no nucleus   any non-final beat in a line
- *   nucleus, no beat   `All in the VALley of death` — extrametrical nucleus
+ *   nucleus, no beat   `HALF a league HALF a league` — the second `league`
  *   neither            an unstressed syllable
  *
  * The old suite could not express the third case, which is precisely the one
@@ -75,19 +75,28 @@ const nucleusOf = (doc, ipIndex) => {
 }
 
 /* -- 3. A nucleus may carry NO metrical beat ------------------------------
- * The case the old suite could not express. Terminal `Death` in the
- * conventional Tennyson reading is extrametrical but remains the phrase's
- * strongest prominence. */
+ * The case the old suite could not express. In the owner-confirmed dactylic
+ * reading `HALF a league HALF a league`, the second `league` is the phrase's
+ * strongest prominence but falls off the beat. (Until 12 Nov 2026 this test
+ * used terminal `Death` in `All in the valley of Death`; the owner then ruled
+ * that `Death` carries a beat, checked below.) */
 {
-  const doc = E.analyze('All in the valley of Death');
-  const death = doc.words.find(w => w.normalized === 'death').syllables[0];
-  assert.strictEqual(death.rhythmicStress, 'W',
-    'extrametrical Death carries no beat'); checks++;
-  assert.strictEqual(death.phraseProminence, 'nucleus',
-    'extrametrical Death still carries phrase prominence'); checks++;
-  ok(death.prominenceSource, 'prominence records its source');
-  ok(typeof death.prominenceConfidence === 'number',
+  const doc = E.analyze('Half a league, half a league,');
+  const league = doc.words.filter(w => w.normalized === 'league')[1].syllables[0];
+  assert.strictEqual(league.rhythmicStress, 'W',
+    'the second league carries no beat'); checks++;
+  assert.strictEqual(league.phraseProminence, 'nucleus',
+    'the second league still carries phrase prominence'); checks++;
+  ok(league.prominenceSource, 'prominence records its source');
+  ok(typeof league.prominenceConfidence === 'number',
     'prominence records a confidence');
+
+  const d2 = E.analyze('All in the valley of Death');
+  const death = d2.words.find(w => w.normalized === 'death').syllables[0];
+  assert.strictEqual(death.rhythmicStress, 'S',
+    'Death carries a beat (owner ruling)'); checks++;
+  assert.strictEqual(death.phraseProminence, 'nucleus',
+    'Death also carries the phrase nucleus'); checks++;
 }
 
 /* -- 4. Beats without prominence are legal and normal --------------------- */

@@ -62,7 +62,7 @@ assert.strictEqual(doc.selectedReading, 'nursery-kings-horses');
 
 doc = E.analyze('All in the valley of Death');
 const death = doc.words.find(w => w.normalized === 'death').syllables[0];
-assert.strictEqual(death.rhythmicStress, 'W', 'extrametrical Death is not a beat');
+assert.strictEqual(death.rhythmicStress, 'S', 'Death carries a beat (owner ruling, 12 Nov 2026)');
 assert.strictEqual(death.phraseProminence, 'nucleus',
   'phrase prominence remains visible independently of meter');
 

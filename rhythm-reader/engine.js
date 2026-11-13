@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.3.3';
+  const ENGINE_BUILD = '3.6.0';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -186,6 +186,71 @@
 
   function loadKnownReadings(readings) {
     KNOWN_READINGS = Array.isArray(readings) ? readings.slice() : [];
+  }
+
+  /* Remembered words (3.4.0). A reader's corrected word stress or syllable
+   * division, kept so the next analysis starts from it. The engine only holds
+   * the list; storing it (and deciding when to apply it) is the page's job,
+   * and the list starts empty, so nothing changes unless a page loads one.
+   * Two kinds of word are never remembered, because their stress is decided
+   * by context, not by the word: the stress-shifting heteronyms (`REcord` /
+   * `reCORD`), whose reading the contextual rules choose per sentence, and
+   * function words, which gain or lose a beat by meter, not by lexical
+   * stress. A remembered word replaces the dictionary's default; the
+   * dictionary pronunciations stay available as alternates. */
+  let LEARNED = new Map();   // normalized word -> entry
+  let BYPASS_LEARNED = false;
+  function lettersOf(t) { return String(t).toLowerCase().replace(/[^a-z']/g, ''); }
+  function learnRefusal(normalized) {
+    if (FUNCTION_WORDS.has(normalized)) return 'function-word';
+    if (SHIFTING_HETERONYMS.has(normalized)) return 'context-heteronym';
+    return null;
+  }
+  function validLearnedEntry(key, e) {
+    if (!e || typeof key !== 'string' || !key || learnRefusal(key)) return null;
+    if (!Array.isArray(e.syllables) || !e.syllables.length) return null;
+    const syls = [];
+    for (const sy of e.syllables) {
+      if (!sy || typeof sy.text !== 'string' || !sy.text) return null;
+      if (!/^[012]$/.test(String(sy.stress))) return null;
+      const ph = Array.isArray(sy.phonemes) && sy.phonemes.length &&
+        sy.phonemes.every(x => typeof x === 'string') ? sy.phonemes.slice() : null;
+      syls.push({ text: sy.text, stress: String(sy.stress), phonemes: ph });
+    }
+    const pattern = syls.map(x => x.stress).join('');
+    if (!/[12]/.test(pattern)) return null;
+    if (lettersOf(syls.map(x => x.text).join('')) !== lettersOf(key)) return null;
+    return {
+      word: key, syllables: syls, pattern,
+      defaultPattern: typeof e.defaultPattern === 'string' ? e.defaultPattern : null,
+      learnedAt: typeof e.learnedAt === 'string' ? e.learnedAt : null,
+      engineBuild: typeof e.engineBuild === 'string' ? e.engineBuild : null
+    };
+  }
+  // Replace the remembered list. Accepts { word: entry } (what
+  // getLearnedWords returns). Invalid entries are skipped and counted.
+  function loadLearnedWords(obj) {
+    LEARNED = new Map();
+    let rejected = 0;
+    if (obj && typeof obj === 'object') {
+      for (const [k, e] of Object.entries(obj)) {
+        const v = validLearnedEntry(String(k).toLowerCase(), e);
+        if (v) LEARNED.set(v.word, v); else rejected++;
+      }
+    }
+    return { loaded: LEARNED.size, rejected };
+  }
+  function getLearnedWords() {
+    const out = {};
+    for (const [k, e] of LEARNED) out[k] = JSON.parse(JSON.stringify(e));
+    return out;
+  }
+  function forgetWord(normalized) {
+    return LEARNED.delete(String(normalized || '').toLowerCase().replace(/’/g, "'"));
+  }
+  function learnedEntryFor(normalized) {
+    if (BYPASS_LEARNED || !LEARNED.size || learnRefusal(normalized)) return null;
+    return LEARNED.get(normalized) || null;
   }
 
   function normalizeWord(orth) {
@@ -801,6 +866,20 @@
       lexSource = fb.source;
       lexConf = fb.confidence;
       rule = fb.rule;
+    }
+
+    const learned = learnedEntryFor(normalized);
+    if (learned) {
+      syllTexts = learned.syllables.map(x => x.text);
+      phonemesBySyll = learned.syllables.map(x => x.phonemes ? x.phonemes.slice() : null);
+      lexPattern = learned.pattern;
+      lexSource = 'learned';
+      lexConf = CONF.USER;
+      rule = 'remembered-word';
+      const kept = learned.syllables.every(x => x.phonemes)
+        ? learned.syllables.map(x => x.phonemes).flat().join(' ') : null;
+      alternates = cmu ? cmu.prons.filter(p => p.join(' ') !== kept)
+        .map(p => ({ phonemes: p, pattern: stressPatternOf(p) })) : [];
     }
 
     const template = assignTemplate(lexPattern, isFn);
@@ -1642,7 +1721,7 @@
    *
    *   prominence agreement — a small bonus when the phrase nucleus also
    *     carries a metrical beat. Small, because a nucleus need NOT be a beat;
-   *     that is exactly the `All in the VALley of death` case.
+   *     that is the `HALF a league HALF a league` case.
    * ======================================================================== */
 
   /* All weights live in one table so they can be swept during development.
@@ -1691,7 +1770,7 @@
   /* Faithfulness, computed word by word so the Rhythm Rule discount can
    * apply. `shifted` collects the words whose beat was relocated, for
    * provenance reporting. */
-  function faithfulnessCost(stream, beats, shifted) {
+  function faithfulnessCost(stream, beats, shifted, acc) {
     let cost = 0, k = 0;
     while (k < stream.length) {
       const wd = stream[k].wd;
@@ -1728,8 +1807,16 @@
           raw > W.SHIFT && !wd.userEdited.rhythmic) {
         cost += W.SHIFT;
         if (shifted) shifted.push(wd);
+        if (acc) acc.f.SHIFT += 1;
       } else {
         cost += raw;
+        if (acc) {
+          acc.fixed += raw;
+          for (let t = k; t < j; t++) if (beats[t] !== stream[t].pref.value) {
+            const src = stream[t].pref.source || 'unknown';
+            acc.faith[src] = (acc.faith[src] || 0) + stream[t].pref.weight;
+          }
+        }
       }
       k = j;
     }
@@ -1783,11 +1870,15 @@
    * have taken the beat; a tail of reduced or unstressed syllables (`...
    * WONdering`) stays free, which is what keeps catalectic and feminine
    * endings costless. Without `beatable` the old behaviour is kept. */
-  function gridFit(beats, prior, beatable) {
+  function gridFit(beats, prior, beatable, acc) {
     const n = beats.length;
     let last = -1;
     for (let i = n - 1; i >= 0; i--) if (beats[i] === 'S') { last = i; break; }
-    if (last === -1) return { cost: W.NO_BEAT, period: null, phase: null };
+    if (last === -1) {
+      if (acc) acc.f.NO_BEAT += 1;
+      return { cost: W.NO_BEAT, period: null, phase: null };
+    }
+    let bestCounts = null;
     let best = { cost: Infinity, period: null, phase: null };
     for (const p of GRID_PERIODS) {
       for (let ph = 0; ph < p; ph++) {
@@ -1816,9 +1907,21 @@
          * broken by evidence — which is what the metre prior below does when
          * surrounding lines supply it. An isolated single line genuinely is
          * ambiguous here, and should be reported as such. */
-        if (prior && prior.period === p && prior.phase === ph) cost -= W.METRE_PRIOR;
-        if (cost < best.cost) best = { cost, period: p, phase: ph };
+        const matched = !!(prior && prior.period === p && prior.phase === ph);
+        if (matched) cost -= W.METRE_PRIOR;
+        if (cost < best.cost) {
+          best = { cost, period: p, phase: ph };
+          if (acc) bestCounts = { miss, tailMiss, extra, ternary: p === 3 ? 1 : 0,
+                                  prior: matched ? 1 : 0 };
+        }
       }
+    }
+    if (acc && bestCounts) {
+      acc.f.GRID_MISS += bestCounts.miss;
+      acc.f.GRID_TAIL_MISS += bestCounts.tailMiss;
+      acc.f.GRID_EXTRA += bestCounts.extra;
+      acc.f.TERNARY += bestCounts.ternary;
+      acc.f.METRE_PRIOR -= bestCounts.prior;
     }
     return best;
   }
@@ -1841,7 +1944,7 @@
    * W.PROSE is therefore the threshold answering "how regular must a passage
    * be before calling it metrical?" rather than a free parameter.
    * ---------------------------------------------------------------------- */
-  function structureFit(beats, ctx) {
+  function structureFit(beats, ctx, acc) {
     /* REGIME IS A PROPERTY OF THE TEXT, NOT OF EACH CANDIDATE.
      *
      * A first implementation let every candidate choose independently, by
@@ -1862,7 +1965,7 @@
     if (ctx && ctx.regime === 'prose') {
       return { cost: 0, regime: 'prose', period: null, phase: null };
     }
-    const grid = gridFit(beats, ctx && ctx.metrePrior, ctx && ctx.beatable);
+    const grid = gridFit(beats, ctx && ctx.metrePrior, ctx && ctx.beatable, acc);
     if (grid.period === null)
       return { cost: grid.cost, regime: 'prose', period: null, phase: null };
     return { cost: grid.cost, regime: 'metrical',
@@ -1969,10 +2072,11 @@
           }
           for (let i = 0; i < freeBeats.length; i++)
             if (!freeBeats[i]) freeBeats[i] = stream[i].pref.value;
-          const clashWeight = config && config.strictAlternation ? W.CLASH * 1.6
-            : !config || config.clashSubordination !== false ? W.CLASH : 0;
+          const clashFactor = config && config.strictAlternation ? 1.6
+            : !config || config.clashSubordination !== false ? 1 : 0;
+          const clashWeight = W.CLASH * clashFactor;
           const readings = candidateReadings(stream, freeBeats,
-            { nucleusIdx: -1, clashWeight, regime: 'metrical',
+            { nucleusIdx: -1, clashWeight, clashFactor, regime: 'metrical',
               metrePrior: null, settledMeter: false,
               beatable: beatableSyllables(stream) });
           const reading = readings[0];
@@ -2160,7 +2264,7 @@
              phrases, metrePrior };
   }
 
-  function eurhythmyCost(beats, ctx, regime) {
+  function eurhythmyCost(beats, ctx, regime, acc) {
     const clashWeight = ctx.clashWeight;
     let cost = 0;
     for (let i = 0; i + 1 < beats.length; i++) {
@@ -2179,22 +2283,26 @@
        * making it cheap to CLASH. That yields `and the birds SANG`: the
        * accent survives, and alternation is still respected. */
       cost += clashWeight;
+      if (acc) acc.f.CLASH += (ctx.clashFactor !== undefined ? ctx.clashFactor
+        : (W.CLASH ? clashWeight / W.CLASH : 0));
     }
     let run = 0;
     for (let i = 0; i <= beats.length; i++) {
       if (i < beats.length && beats[i] === 'W') { run++; continue; }
-      if (run > 2)
+      if (run > 2) {
         cost += (i === beats.length ? W.TRAIL_LAPSE : W.LAPSE) * (run - 2);
+        if (acc) acc.f[i === beats.length ? 'TRAIL_LAPSE' : 'LAPSE'] += run - 2;
+      }
       run = 0;
     }
     return cost;
   }
 
-  function readingCost(stream, beats, ctx) {
-    const structure = structureFit(beats, ctx);
-    let cost = faithfulnessCost(stream, beats, null) +
+  function readingCost(stream, beats, ctx, acc) {
+    const structure = structureFit(beats, ctx, acc);
+    let cost = faithfulnessCost(stream, beats, null, acc) +
                structure.cost +
-               eurhythmyCost(beats, ctx, structure.regime);
+               eurhythmyCost(beats, ctx, structure.regime, acc);
     /* Once the first pass has independently established that the passage is
      * metrical, reward an exact sustained grid. This is deliberately absent
      * from the exploratory pass, where it could manufacture metre in prose.
@@ -2209,18 +2317,44 @@
     if (ctx.settledMeter && priorMatched && structure.regime === 'metrical' &&
         (stream.length >= GRID_COHERENCE_MIN_SYLLABLES ||
          ctx.aggregateCoherence) &&
-        uncreditedStructureCost <= exactGridCost + 1e-9)
+        uncreditedStructureCost <= exactGridCost + 1e-9) {
       cost -= W.GRID_COHERENCE +
         (ctx.aggregateCoherence ? W.AGGREGATE_COHERENCE : 0);
+      if (acc) {
+        acc.f.GRID_COHERENCE -= 1;
+        if (ctx.aggregateCoherence) acc.f.AGGREGATE_COHERENCE -= 1;
+      }
+    }
     /* Keeping a beat on the nucleus is worth more in prose than in verse.
      * Prose rhythm is organised around phrase accents rather than a periodic
      * grid, so the nuclear accent is the main thing holding the phrase
      * together and should not be traded away to satisfy alternation. In
      * verse the grid does that organising work, so the bonus stays small —
      * a nucleus may legitimately fall on an extrametrical syllable. */
-    if (ctx.nucleusIdx >= 0 && beats[ctx.nucleusIdx] === 'S')
+    if (ctx.nucleusIdx >= 0 && beats[ctx.nucleusIdx] === 'S') {
       cost -= (structure.regime === 'prose' ? W.NUCLEUS_PROSE : W.NUCLEUS);
+      if (acc) acc.f[structure.regime === 'prose' ? 'NUCLEUS_PROSE' : 'NUCLEUS'] -= 1;
+    }
     return cost;
+  }
+
+  /* Cost decomposition (3.5.0), for weight fitting. A reading's cost is
+   *   fixed + sum over k of W[k] * features[k]
+   * where `fixed` is the faithfulness paid at the rhythm-preference weights
+   * (tag tables, not part of W) and `features` counts every use of a W entry
+   * (discounts count as negative). Computed by the same code path as the
+   * cost itself, so the two cannot drift; test_reading_features.js checks
+   * the identity on every candidate of the corpus. PROSE and GIVEN are not
+   * per-reading terms (PROSE sets the regime threshold, GIVEN scales a
+   * preference weight), so they are not features. */
+  const FEATURE_KEYS = ['CLASH', 'LAPSE', 'TRAIL_LAPSE', 'GRID_MISS', 'GRID_TAIL_MISS',
+    'GRID_EXTRA', 'TERNARY', 'SHIFT', 'NO_BEAT', 'NUCLEUS', 'NUCLEUS_PROSE',
+    'METRE_PRIOR', 'GRID_COHERENCE', 'AGGREGATE_COHERENCE'];
+  function costBreakdown(stream, beats, ctx) {
+    const acc = { f: {}, fixed: 0, faith: {} };
+    FEATURE_KEYS.forEach(k => { acc.f[k] = 0; });
+    const cost = readingCost(stream, beats, ctx, acc);
+    return { cost, fixed: acc.fixed, features: acc.f, faithfulnessBySource: acc.faith };
   }
 
   /* -- Local search ---------------------------------------------------------
@@ -2459,7 +2593,7 @@
        * the metrical beat. It informs ranking only through a small bonus, and
        * it is never erased by the beat analysis — a nucleus can sit on a
        * syllable that carries no beat. */
-      if (config.nuclearStress) applyNuclearStress(words, ip);
+      if (config.nuclearStress) applyNuclearStress(words, ip, config);
       let nucleusIdx = -1;
       if (ip.nucleus) {
         nucleusIdx = stream.findIndex(x =>
@@ -2469,8 +2603,9 @@
       // Clash pressure is configurable: `strictAlternation` raises it,
       // disabling `clashSubordination` removes it entirely (which is how a
       // user can ask to see contrastively licensed adjacent prominence).
-      const clashWeight = config.strictAlternation ? W.CLASH * 1.6
-        : config.clashSubordination ? W.CLASH : 0;
+      const clashFactor = config.strictAlternation ? 1.6
+        : config.clashSubordination ? 1 : 0;
+      const clashWeight = W.CLASH * clashFactor;
       let metrePrior = config.metrePrior || null;
       let aggregateCoherence = false;
       if (metrePrior && metrePrior.aggregate && metrePrior.aggregateSpan &&
@@ -2480,7 +2615,7 @@
         if (Number.isInteger(localPhase))
           metrePrior = Object.assign({}, metrePrior, { phase: localPhase });
       }
-      const ctx = { nucleusIdx, clashWeight,
+      const ctx = { nucleusIdx, clashWeight, clashFactor,
                     regime: config.regime || 'metrical',
                     metrePrior,
                     aggregateCoherence,
@@ -2500,6 +2635,10 @@
 
       const readings = candidateReadings(stream, freeBeats, ctx);
       ip.readings = readings.slice(0, MAX_READINGS);
+      // Kept off the serialised document (non-enumerable): the stream holds
+      // references back into `words`. Used only by explainReading().
+      Object.defineProperty(ip, '_scoring', { value: { stream, ctx },
+        enumerable: false, configurable: true, writable: true });
 
       /* A reader's choice of candidate must survive reanalysis. reflow() re-runs
        * this whole function, so the choice is stored as the chosen BEAT STRING
@@ -2583,6 +2722,7 @@
   }
 
   function projectDocument(words, ips, config) {
+    markDiscourseGivenness(words, !!config.discourseFocus, ips);
     // Pass 1 — metrical objective, no prior. Establishes how well the text
     // takes to a grid at all.
     project(words, ips, Object.assign({}, config,
@@ -2696,7 +2836,7 @@
    * structure can shift the nucleus leftward, so it is a gated pass and never
    * overrides a user's own rhythmic edit.  A single flat marker (`sy.nuclear`)
    * plus `ip.nucleus` lets the UI highlight the phrase's strongest beat. */
-  function applyNuclearStress(words, ip) {
+  function applyNuclearStress(words, ip, config) {
     const [start, end] = ip.span;
     if (end < start) return;
     // Rightmost content word (function words reduce and do not take the nucleus
@@ -2706,6 +2846,36 @@
       if (!words[w].isFunctionWord) { nw = w; break; }
     }
     if (nw === -1) nw = end;
+    // Discourse focus (3.6.0, opt-in): the nucleus goes to the rightmost
+    // content word that is NEW to the discourse; given words are deaccented.
+    // When every content word is given, the default stands: a wrong guess is
+    // worse than the ordinary reading.
+    let source = 'rule:nuclear-stress';
+    const answer = config && config.discourseFocus ? answerFocus(words, start, end) : -1;
+    const special = answer === -1 && config && config.discourseFocus
+      ? functionFocus(words, start, end) : null;
+    if (answer !== -1) {
+      nw = answer; source = 'rule:answer-focus';
+    } else if (special) {
+      nw = special.w; source = special.source;
+    } else if (config && config.discourseFocus) {
+      // Candidates: new content words, excluding prepositions and verb
+      // particles (`off`, `out`, `about`), which carry accent only by
+      // default. Among them an argument (noun, adjective) outranks a verb:
+      // `BRAD gave him a red tie`, not `Brad GAVE him a red tie`, when both
+      // are new [Gussenhoven 1983; Selkirk 1995].
+      let newArg = -1, newAny = -1;
+      for (let w = end; w >= start; w--) {
+        const x = words[w];
+        if (x.isFunctionWord || x.discourseGiven) continue;
+        if (x.posTag === 'PREP' || x.posTag === 'PART') continue;
+        if (newAny === -1) newAny = w;
+        if (newArg === -1 && (x.posTag === 'NOUN' || x.posTag === 'ADJ') &&
+            !verbLike(words, w)) newArg = w;
+      }
+      const pick = newArg !== -1 ? newArg : newAny;
+      if (pick !== -1 && pick !== nw) { nw = pick; source = 'rule:givenness'; }
+    }
     const wd = words[nw];
     // Nuclear syllable = primary lexical stress; else the rightmost strong
     // syllable; else the last syllable.
@@ -2730,10 +2900,217 @@
     }
     wd.syllables[ns].nuclear = true;
     wd.syllables[ns].phraseProminence = 'nucleus';
-    wd.syllables[ns].prominenceSource = 'rule:nuclear-stress';
+    wd.syllables[ns].prominenceSource = source;
     wd.syllables[ns].prominenceConfidence = CONF.NUCLEAR;
-    ip.nucleus = { word: nw, syllable: ns, ref: [nw, ns],
-                   source: 'rule:nuclear-stress' };
+    ip.nucleus = { word: nw, syllable: ns, ref: [nw, ns], source };
+  }
+
+  /* Discourse givenness (3.6.0). A content word is given when a word with
+   * the same rough stem occurred earlier in the passage. Deliberately crude:
+   * no synonyms, no pronoun reference, no irregular forms beyond identity. */
+  function discourseStem(norm) {
+    let t = String(norm).toLowerCase().replace(/['’]s$/, '').replace(/[^a-z]/g, '');
+    if (t.length > 4 && t.endsWith('ies')) return t.slice(0, -3) + 'y';
+    if (t.length > 5 && t.endsWith('ing')) t = t.slice(0, -3);
+    else if (t.length > 4 && t.endsWith('ed')) t = t.slice(0, -2);
+    else if (t.length > 4 && /(ss|sh|ch|x|z)es$/.test(t)) t = t.slice(0, -2);
+    else if (t.length > 3 && t.endsWith('s') && !t.endsWith('ss')) t = t.slice(0, -1);
+    if (t.length > 3 && /([b-df-hj-np-tv-z])\1$/.test(t)) t = t.slice(0, -1);
+    if (t.length > 3 && t.endsWith('e')) t = t.slice(0, -1);
+    return t;
+  }
+  // The word-class tagger is heuristic and often tags verbs as nouns or
+  // adjectives (`gave`, `replied`, `watched`). For focus, a word that takes
+  // an object or complement right after it (`gave him`, `bought a`,
+  // `replied that`, `told to`), or ends in -ed, is treated as a verb.
+  function verbLike(words, w) {
+    const next = words[w + 1];
+    if (/ed$/.test(words[w].normalized)) return true;
+    return !!(next && (next.posTag === 'DET' || next.posTag === 'PRON' ||
+                       next.posTag === 'INF'));
+  }
+
+  // Semantically light nouns behave as given: `the BEST kind`, `the SAME
+  // thing` [Bolinger 1972].
+  const LIGHT_NOUNS = new Set(['kind', 'kinds', 'sort', 'sorts', 'type', 'types',
+    'thing', 'things', 'stuff', 'one', 'ones']);
+  /* Answer focus (3.6.0). An earlier sentence with an indefinite placeholder
+   * (`someone fell out`, `one car ... caught fire`, `one of the students
+   * stopped eating`) raises the question of WHO or WHICH. A later phrase whose
+   * first content word is followed only by given material from that clause
+   * answers it, and the answer is the focus: `SAM fell out of the canoe`. */
+  const PLACEHOLDERS = new Set(['someone', 'somebody', 'something']);
+  const DEMONSTRATIVES = new Set(['this', 'that', 'these', 'those']);
+  function answerFocus(words, start, end) {
+    const frame = words[start] && words[start].answerFrame;
+    if (!frame) return -1;
+    if (frame.wh === 'where') {           // `This goes HERE`
+      for (let w = start; w <= end; w++)
+        if (/^(here|there)$/.test(words[w].normalized)) return w;
+      return -1;
+    }
+    if (frame.wh === 'subject') {         // `I am`, `HE is`, `I read this book`
+      let subj = -1;
+      for (let w = start; w <= end; w++) {
+        const x = words[w];
+        if (x.normalized === 'no' || x.normalized === 'well') continue;
+        if (x.posTag === 'PRON' || DEMONSTRATIVES.has(x.normalized) ||
+            !x.isFunctionWord) { subj = w; break; }
+      }
+      if (subj === -1 || frame.has(discourseStem(words[subj].normalized))) return -1;
+      for (let w = subj + 1; w <= end; w++) {
+        const x = words[w];
+        if (!x.isFunctionWord && x.posTag !== 'PREP' && x.posTag !== 'PART' &&
+            !x.discourseGiven) return -1;
+      }
+      return subj;
+    }
+    const content = [];
+    for (let w = start; w <= end; w++) {
+      const x = words[w];
+      if (x.isFunctionWord || x.posTag === 'PREP' || x.posTag === 'PART') continue;
+      content.push(w);
+    }
+    if (content.length < 2) return -1;
+    const [first, ...rest] = content;
+    if (frame.has(discourseStem(words[first].normalized))) return -1;
+    if (!rest.every(w => words[w].discourseGiven)) return -1;
+    if (!rest.some(w => frame.has(discourseStem(words[w].normalized)))) return -1;
+    return first;
+  }
+
+  const CONTRAST_CLASS = new Map();
+  [['place', 'in', ['in', 'inside', 'into', 'within']],
+   ['place', 'out', ['out', 'outside']],
+   ['contact', 'on', ['on', 'onto']], ['contact', 'off', ['off']],
+   ['vertical', 'up', ['up']], ['vertical', 'down', ['down']],
+   ['height', 'over', ['over', 'above']], ['height', 'under', ['under', 'below', 'beneath']],
+   ['time', 'before', ['before']], ['time', 'after', ['after']],
+   ['time', 'during', ['as', 'when', 'while']]]
+    .forEach(([scale, cls, ws]) => ws.forEach(x => CONTRAST_CLASS.set(x, { scale, cls })));
+
+  /* Two function-word foci that need no question to answer (3.6.0):
+   *   VP ellipsis — a phrase of pronoun + auxiliary alone (`He CAN`, `I AM`)
+   *     accents the auxiliary: the polarity is what is asserted;
+   *   contrastive demonstrative — `this/that` before a given noun, when the
+   *     rest of the phrase is given, carries the contrast (`I read THIS book`). */
+  function functionFocus(words, start, end) {
+    const span = [];
+    for (let w = start; w <= end; w++) span.push(w);
+    const content = span.filter(w => !words[w].isFunctionWord);
+    const last = words[end];
+    if (!content.length && span.length <= 3 && words[start].posTag === 'PRON' &&
+        (last.posTag === 'AUX' || last.posTag === 'MODAL'))
+      return { w: end, source: 'rule:ellipsis-polarity' };
+    // Contrastive preposition or temporal conjunction: `IN bed` after `out of
+    // their beds`, `AS you leave` after `before I leave`. Fires when the last
+    // two sentences used a word from the same scale but a different class.
+    // Only when nothing in the phrase is new (a new word is the better focus:
+    // `keep his FEET off the coffee table`), and only when both words govern
+    // the same thing (`out of their BEDS` / `in BED`).
+    const allGiven = content.every(c => words[c].discourseGiven ||
+      words[c].posTag === 'PREP' || words[c].posTag === 'PART');
+    const headStem = (from, limit) => {
+      for (let k = from + 1; k <= limit && k < words.length; k++) {
+        const x = words[k];
+        if (!x.isFunctionWord && x.posTag !== 'PREP' && x.posTag !== 'PART' &&
+            !CONTRAST_CLASS.has(x.normalized))
+          return discourseStem(x.normalized);
+      }
+      return null;
+    };
+    const here = words[start].discourseSentence;
+    for (let w = start; w <= end && allGiven; w++) {
+      const cls = CONTRAST_CLASS.get(words[w].normalized);
+      if (!cls) continue;
+      const head = headStem(w, end);
+      if (!head) continue;
+      for (let v = start - 1; v >= 0 && words[v].discourseSentence >= here - 3; v--) {
+        const other = CONTRAST_CLASS.get(words[v].normalized);
+        if (other && other.scale === cls.scale && other.cls !== cls.cls &&
+            headStem(v, v + 4) === head)
+          return { w, source: 'rule:contrast-scale' };
+      }
+    }
+    for (let w = start; w < end; w++) {
+      const x = words[w], next = words[w + 1];
+      if (DEMONSTRATIVES.has(x.normalized) && next && next.posTag === 'NOUN' &&
+          next.discourseGiven &&
+          content.every(c => words[c].discourseGiven || words[c].posTag === 'PREP' ||
+                             words[c].posTag === 'PART'))
+        return { w, source: 'rule:demonstrative-contrast' };
+    }
+    return null;
+  }
+
+  function markDiscourseGivenness(words, on, ips) {
+    // Sentence index per word, from strong phrase boundaries.
+    const sentence = new Array(words.length).fill(0);
+    if (ips) {
+      let sn = 0;
+      for (const ip of ips) {
+        for (let w = ip.span[0]; w <= ip.span[1]; w++) sentence[w] = sn;
+        if (ip.boundaryAfter === 'strong') sn++;
+      }
+    }
+    // Placeholder clauses: content stems from the placeholder to sentence end.
+    let frame = null, frameSentence = -1;
+    const frames = [];
+    for (let i = 0; i < words.length && on; i++) {
+      const n = words[i].normalized;
+      const isOne = n === 'one' && words[i + 1] &&
+        (words[i + 1].posTag === 'NOUN' || words[i + 1].normalized === 'of') &&
+        !(words[i - 1] && /^(no|the|this|that|every|any)$/.test(words[i - 1].normalized));
+      // A question asking WHO/WHICH/WHAT (as subject) or WHERE, at the start
+      // of a phrase, frames the next sentence's answer.
+      const ipStart = i === 0 || sentence[i - 1] !== sentence[i] ||
+        (ips && ips.some(ip => ip.span[0] === i));
+      if (ipStart && /^(who|which|what|where)$/.test(n) ||
+          n === 'either' && words[i + 1] && words[i + 1].normalized === 'of') {
+        const f = new Set();
+        for (let j = i + 1; j < words.length && sentence[j] === sentence[i]; j++) {
+          const x = words[j];
+          if (!x.isFunctionWord && x.posTag !== 'PREP' && x.posTag !== 'PART')
+            f.add(discourseStem(x.normalized));
+        }
+        frames.push({ at: i, sentence: sentence[i], f,
+          wh: n === 'where' ? 'where' : 'subject' });
+        continue;
+      }
+      if (PLACEHOLDERS.has(n) || isOne) {
+        const f = new Set();
+        let j = i + 1;
+        if (isOne) {   // skip the head: `one car`, `one of the students`
+          while (words[j] && sentence[j] === sentence[i] &&
+                 (words[j].isFunctionWord || words[j].normalized === 'of')) j++;
+          j++;
+        }
+        for (; j < words.length && sentence[j] === sentence[i]; j++) {
+          const x = words[j];
+          if (!x.isFunctionWord && x.posTag !== 'PREP' && x.posTag !== 'PART')
+            f.add(discourseStem(x.normalized));
+        }
+        if (f.size) frames.push({ at: i, sentence: sentence[i], f });
+      }
+    }
+    let fi = 0;
+    const seen = new Set();
+    for (let wi = 0; wi < words.length; wi++) {
+      const wd = words[wi];
+      if (!on) { delete wd.discourseGiven; delete wd.answerFrame; continue; }
+      while (fi < frames.length && frames[fi].sentence < sentence[wi]) {
+        frame = frames[fi].f; frameSentence = frames[fi].sentence;
+        frame.wh = frames[fi].wh || null; frame.sentence = frameSentence; fi++;
+      }
+      // A question frames only the sentence that answers it.
+      if (frame && frame.wh && sentence[wi] > frame.sentence + 1) frame = null;
+      wd.discourseSentence = sentence[wi];
+      if (frame) wd.answerFrame = frame; else delete wd.answerFrame;
+      const key = discourseStem(wd.normalized);
+      wd.discourseGiven = !wd.isFunctionWord &&
+        (seen.has(key) || LIGHT_NOUNS.has(wd.normalized));
+      if (key) seen.add(key);
+    }
   }
 
   /* ==========================================================================
@@ -3008,12 +3385,14 @@
   function computeStats(words, ips, meter) {
     const n = words.length || 1;
     const bySource = { CMU: 0, heuristic: 0 };
+    if (words.some(wd => wd.lexicalSource === 'learned')) bySource.learned = 0;
     const templateDistribution = {};
     const patternDistribution = {};
     let tierMismatch = 0, syllTotal = 0, userEdits = 0;
 
     for (const wd of words) {
-      bySource[wd.lexicalSource === 'CMU' ? 'CMU' : 'heuristic']++;
+      bySource[wd.lexicalSource === 'CMU' ? 'CMU'
+        : wd.lexicalSource === 'learned' ? 'learned' : 'heuristic']++;
       const tname = wd.syllables.length === 1
         ? 'monosyllable-' + (wd.isFunctionWord ? 'function' : 'content')
         : wd.template.traditionalName;
@@ -3064,6 +3443,8 @@
     return {
       cmuRate: round2(bySource.CMU / n),
       heuristicRate: round2(bySource.heuristic / n),
+      ...(bySource.learned !== undefined
+        ? { learnedRate: round2(bySource.learned / n) } : {}),
       userEditRate: round2(userEdits / n),
       templateDistribution,
       patternDistribution,
@@ -3097,7 +3478,8 @@
 
   function analyze(text, options) {
     const config = Object.assign({ strictAlternation: false,
-      clashSubordination: true, nuclearStress: true, textType: 'auto',
+      clashSubordination: true, nuclearStress: true, discourseFocus: false,
+      textType: 'auto',
       useKnownReadings: true },
       options || {});
     const tokens = tokenize(text);
@@ -3285,6 +3667,87 @@
     return doc;
   }
 
+  // Remember the word's current stress and syllable division for future
+  // analyses. Only a word the reader has edited at the word-stress tier
+  // (digits, split/merge, or a dictionary pronunciation) can be remembered.
+  // Returns { ok: true, entry } or { ok: false, reason }.
+  function learnWord(doc, wordIdx) {
+    const wd = doc.words[wordIdx];
+    if (!wd) return { ok: false, reason: 'no-word' };
+    const refusal = learnRefusal(wd.normalized);
+    if (refusal) return { ok: false, reason: refusal };
+    if (!wd.userEdited.lexical) return { ok: false, reason: 'not-edited' };
+    if (!/[12]/.test(wd.lexicalPattern)) return { ok: false, reason: 'no-stress' };
+    const rawWords = doc.tokens.filter(t => t.type === 'word').map(t => t.text);
+    const posTags = tagPOS(rawWords);
+    BYPASS_LEARNED = true;
+    let def;
+    try {
+      def = analyzeWord(rawWords[wordIdx],
+        contextualPrimaryIndex(rawWords, wordIdx, posTags), posTags[wordIdx]);
+    } finally { BYPASS_LEARNED = false; }
+    const entry = validLearnedEntry(wd.normalized, {
+      syllables: wd.syllables.map(sy => ({ text: sy.text.toLowerCase(),
+        stress: sy.lexicalStress, phonemes: sy.phonemes })),
+      defaultPattern: def.lexicalPattern,
+      learnedAt: new Date().toISOString(), engineBuild: ENGINE_BUILD });
+    if (!entry) return { ok: false, reason: 'invalid' };
+    if (entry.pattern === def.lexicalPattern &&
+        entry.syllables.map(x => x.text).join('|') ===
+        def.syllables.map(x => x.text.toLowerCase()).join('|'))
+      return { ok: false, reason: 'same-as-default' };
+    LEARNED.set(entry.word, entry);
+    wd.editHistory.push({ tier: 'lexical', op: 'remember',
+      old: def.lexicalPattern, new: entry.pattern, t: Date.now() });
+    return { ok: true, entry: JSON.parse(JSON.stringify(entry)) };
+  }
+
+  /* Cost breakdown of any beat string for intonational phrase `ipIndex` of an
+   * analysed document, scored in the same context (regime, metre prior,
+   * nucleus) as the engine's own candidates. `beats` is an array or string
+   * of S/W, one per syllable of the phrase. Returns null if the phrase has
+   * no scoring context or the length is wrong. */
+  function explainReading(doc, ipIndex, beats) {
+    const ip = doc.phrases && doc.phrases[ipIndex];
+    const sc = ip && ip._scoring;
+    if (!sc) return null;
+    const b = typeof beats === 'string' ? beats.split('') : beats.slice();
+    if (b.length !== sc.stream.length || b.some(x => x !== 'S' && x !== 'W')) return null;
+    return costBreakdown(sc.stream, b, sc.ctx);
+  }
+  function getWeights() { return Object.assign({}, W); }
+
+  // Why a word cannot be remembered ('function-word' | 'context-heteronym'),
+  // or null if it can. Lets a page explain before offering the control.
+  function learnableWord(normalized) {
+    return learnRefusal(String(normalized || '').toLowerCase().replace(/’/g, "'"));
+  }
+
+  // After remembering or forgetting a word, re-run the automatic analysis
+  // for every instance of it in this document that the reader has not
+  // edited, in a single reflow. Edited instances are left alone. Returns the
+  // number of instances refreshed.
+  function refreshWord(doc, normalized) {
+    const rawWords = doc.tokens.filter(t => t.type === 'word').map(t => t.text);
+    const posTags = tagPOS(rawWords);
+    let n = 0;
+    doc.words.forEach((wd, i) => {
+      if (wd.normalized !== normalized) return;
+      if (wd.userEdited.lexical || wd.userEdited.template || wd.userEdited.rhythmic) return;
+      const fresh = analyzeWord(rawWords[i],
+        contextualPrimaryIndex(rawWords, i, posTags), posTags[i]);
+      fresh.editHistory = wd.editHistory;
+      doc.words[i] = fresh;
+      n++;
+    });
+    if (n) {
+      markGivenness(doc.words);
+      markStranded(doc.words, new Set((doc.phrases || []).map(ip => ip.span[1])));
+      reflow(doc);
+    }
+    return n;
+  }
+
   // Split syllable i of a word at character offset (1..len-1). The original
   // lexical digit stays on the left part; the right part is unstressed.
   // Structural edits invalidate the phonemic alignment for that word.
@@ -3397,7 +3860,8 @@
       .filter(p => p === 'R' || !VOWELS.has(p)).join(' ');
   }
   function syncopeVariant(wd) {
-    if (wd.userEdited.lexical || !wd.alternates.length) return -1;
+    if (wd.userEdited.lexical || wd.lexicalSource === 'learned' ||
+        !wd.alternates.length) return -1;
     if (wd.syllables.some(s => !s.phonemes)) return -1;
     const cur = wd.syllables.map(s => s.phonemes).flat();
     const pat = wd.lexicalPattern;
@@ -4032,7 +4496,9 @@
     setWeights, proseCostFor, detectMetrePrior,
     splitSyllable, mergeSyllables, selectTemplateVariant, reanalyze,
     togglePhiBoundary, computePDI, forceScansion, clearForcedScansion, morphSegment,
-    selectPronunciation, selectReading, incongruentMap, stimulusPair, beatSubset, trainingSet,
+    selectPronunciation, selectReading,
+    loadLearnedWords, getLearnedWords, learnWord, forgetWord, learnableWord, refreshWord,
+    explainReading, getWeights, featureKeys: FEATURE_KEYS.slice(), incongruentMap, stimulusPair, beatSubset, trainingSet,
     toCSV, profileCSV, annotatedText, roundTripText,
     constants: { FUNCTION_WORDS, CHUNK_STARTERS, CONF, FOOT_NAMES,
                  HYPHEN_EXCEPTIONS, PHI_MAX_WORDS, RHYTHM_FEET }

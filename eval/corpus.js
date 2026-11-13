@@ -136,13 +136,12 @@ const PASSAGES = [
   { id: 'byron-2', group: 'byron-sennacherib', split: 'dev', meter: 'anapest',
     source: 'Owner-supplied web example',
     text: 'And his cohorts were gleaming in purple and gold',
-    marked: 'and his cohorts were GLEAMing in PURple and GOLD',
+    marked: 'and his COhorts were GLEAMing in PURple and GOLD',
     normalisedFrom: 'and his cohorts were GLEAMING in PURPLE and GOLD',
-    flagForReview: true,
-    note: 'FLAGGED FOR OWNER REVIEW — gold NOT changed. Same pattern as ' +
-          'byron-1: "cohorts" is the only unmarked content word in an ' +
-          'otherwise fully marked anapestic line. The engine reads CO-horts ' +
-          'and IS COUNTED AS WRONG against this gold.' },
+    note: 'Gold revised by the owner (Jennifer Gross), 12 Nov 2026: COhorts ' +
+          'carries a beat. The earlier marking left "cohorts" unbeaten, a ' +
+          'gap from whole-word web bolding, giving three beats in an ' +
+          'anapestic tetrameter line.' },
   { id: 'byron-3', group: 'byron-sennacherib', split: 'dev', meter: 'anapest',
     source: 'Owner-supplied web example',
     text: 'And the sheen of their spears was like stars on the sea',
@@ -162,12 +161,11 @@ const PASSAGES = [
     text: 'Twas the night before Christmas when all through the house',
     marked: 'twas the NIGHT before CHRISTmas when ALL through the HOUSE' },
   { id: 'stnick-2', group: 'st-nicholas', split: 'held', meter: 'anapest',
-    provisional: true,
     source: 'Owner-supplied screenshot',
     text: 'Not a creature was stirring not even a mouse',
-    marked: 'not a CREAture was STIRring not even a MOUSE',
-    note: 'Handoff: unbeaten "EVen" should be treated literally only if ' +
-          'confirmed intentional.' },
+    marked: 'not a CREAture was STIRring not EVen a MOUSE',
+    note: 'Gold revised by the owner, 12 Nov 2026: EVen carries a beat, as ' +
+          'in the Experiment 1 stimulus (Appendix A). No longer provisional.' },
   { id: 'stnick-3', group: 'st-nicholas', split: 'held', meter: 'anapest',
     provisional: true,
     source: 'Owner-supplied screenshot',
@@ -210,8 +208,11 @@ const PASSAGES = [
     marked: 'CANnon in FRONT of them' },
   { id: 'brigade-4', group: 'light-brigade', split: 'dev', meter: 'dactyl',
     source: 'Owner-supplied web example',
-    text: 'Half a league half a league',
-    marked: 'HALF a league HALF a league' },
+    text: 'Half a league, half a league,',
+    marked: 'HALF a league HALF a league',
+    note: 'Gold confirmed by the owner, 12 Nov 2026. Commas restored to ' +
+          'match the poem (they were lost in transcription); the gold ' +
+          'marking is unchanged.' },
   { id: 'brigade-5', group: 'light-brigade', split: 'dev', meter: 'dactyl',
     source: 'Owner-supplied web example',
     text: 'Half a league onward',
@@ -220,10 +221,12 @@ const PASSAGES = [
     inKnownRegistry: true,
     source: 'Owner-supplied web example',
     text: 'All in the valley of Death',
-    marked: 'ALL in the VALley of death',
+    marked: 'ALL in the VALley of DEATH',
     prominence: 'death',
-    note: 'Terminal "Death" is extrametrical (no beat) but retains phrase ' +
-          'prominence. This is the key beats-vs-prominence interface case.' },
+    note: 'Gold revised by the owner, 12 Nov 2026: terminal "Death" carries ' +
+          'a beat as well as the phrase nucleus (dactylic dimeter plus a ' +
+          'final stressed syllable). It was previously marked extrametrical. ' +
+          'The prominence-without-beat example is now brigade-4 ("league").' },
   { id: 'brigade-7', group: 'light-brigade', split: 'dev', meter: 'dactyl',
     source: 'Owner-supplied web example',
     text: 'Rode the six hundred',

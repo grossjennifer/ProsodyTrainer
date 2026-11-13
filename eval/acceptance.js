@@ -81,14 +81,18 @@ check(4, 'contextual heteronym suite still passes', () => {
   assert.ok(m && Number(m[1]) >= 27, out);
 });
 
-/* 5 — does not erase phrase prominence when a syllable is extrametrical. */
-check(5, 'prominence survives extrametricality', () => {
+/* 5 — does not erase phrase prominence when a syllable carries no beat.
+ * Example: the owner-confirmed dactylic reading HALF a league HALF a league,
+ * where the second `league` is the phrase nucleus but falls off the beat.
+ * (Until 12 Nov 2026 this used `All in the valley of Death`; the owner then
+ * ruled that `Death` carries a beat.) */
+check(5, 'prominence survives without a beat', () => {
   E.loadKnownReadings(global.window.PROSODY_KNOWN_READINGS);
-  const doc = E.analyze('All in the valley of Death');
-  const death = doc.words.find(w => w.normalized === 'death').syllables[0];
-  assert.strictEqual(death.rhythmicStress, 'W', 'Death should carry no beat');
-  assert.strictEqual(death.phraseProminence, 'nucleus',
-    'Death should still carry phrase prominence');
+  const doc = E.analyze('Half a league, half a league,');
+  const league = doc.words.filter(w => w.normalized === 'league')[1].syllables[0];
+  assert.strictEqual(league.rhythmicStress, 'W', 'the second league should carry no beat');
+  assert.strictEqual(league.phraseProminence, 'nucleus',
+    'the second league should still carry phrase prominence');
 });
 
 /* 6 — contrastive adjacent prominence remains available. */
