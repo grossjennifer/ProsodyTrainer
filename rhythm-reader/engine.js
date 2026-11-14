@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.0';
+  const ENGINE_BUILD = '3.6.1';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -1991,6 +1991,21 @@
   const REGIME_MIN_EVIDENCE = 6;       // long-phrase syllables needed
   const REGIME_MIN_AGREEING_PHRASES = 3;
   const REGIME_AGREEMENT = 0.75;
+  /* A lone punctuated sentence (3.6.1). Almost any short sentence can be
+   * walked onto SOME grid by promoting function words, and the grid cost
+   * above cannot see that: it measures how regular the beats are, not what
+   * it cost to put them there. So `Sam fell out of the canoe.` fitted
+   * perfectly as SAM fell OUT of THE caNOE and was read as verse. For text
+   * laid out as a sentence (see sentenceLayout), a fitting grid therefore
+   * counts as LENGTH evidence of metre only when it is corroborated: either the
+   * words' own stresses already land on it (faithfulness per syllable at or
+   * below this ceiling), or at least two phrases independently agree on the
+   * template. Unpunctuated lines and text with line breaks are unaffected —
+   * there the layout itself says `verse line`, and promotion is licensed.
+   * So are the aggregate (comma-spanning grid) and repetition routes, which
+   * carry their own evidence, and any text with a registered known reading. */
+  const REGIME_SENTENCE_MAX_STRAIN = 0.05;
+  const REGIME_SENTENCE_MIN_AGREEING = 2;
 
   /* Auto-detection must not decide whether text is metrical from only the
    * lexically cheapest reading. That creates a circular content-word bias:
@@ -2153,10 +2168,40 @@
     return null;
   }
 
+  /* Is the text laid out as running sentences rather than as lines of verse?
+   * True when no line break separates words and the text ends in a full
+   * stop, question mark or exclamation mark (closing quotes and brackets
+   * may follow). This is the one cue a reader has, before reading a word,
+   * that `The dog barked at the mailman every day.` is not a line of a poem;
+   * it is used only to decide how much evidence metre needs. */
+  const SENTENCE_FINAL = new Set(['.', '?', '!']);
+  const CLOSERS = new Set(['"', "'", '\u201D', '\u2019', ')', ']']);
+  function sentenceLayout(tokens) {
+    let seenWord = false, pendingBreak = false, last = null;
+    for (const tok of tokens) {
+      if (tok.type === 'word') {
+        if (pendingBreak) return false;          // words on two lines
+        seenWord = true;
+      } else if (seenWord && (tok.type === 'parabreak' ||
+                 (tok.type === 'space' && /[\r\n]/.test(tok.text)))) {
+        pendingBreak = true;
+        continue;
+      }
+      if (tok.type === 'punct' && !CLOSERS.has(tok.text)) last = tok.text;
+      else if (tok.type === 'word') last = null;
+    }
+    return seenWord && last !== null && SENTENCE_FINAL.has(last);
+  }
+
   function classifyRegime(words, ips, textType, config) {
     if (textType === 'prose') return { regime: 'prose', reason: 'user:prose' };
-    if (textType === 'verse' || textType === 'song')
-      return { regime: 'metrical', reason: 'user:' + textType };
+    /* Verse and Song fix the REGIME, not the metre (3.6.1). They used to
+     * return here, so a chosen Verse reading never received the metre prior
+     * that Let-it-decide derives below, and scanned the same line worse than
+     * auto did. The evidence is now gathered either way; only the verdict is
+     * forced. */
+    const forced = textType === 'verse' || textType === 'song';
+    const reason = forced ? 'user:' + textType : 'auto';
 
     /* Two independent kinds of evidence, because verse comes in two shapes
      * that a single test cannot cover:
@@ -2176,7 +2221,7 @@
      * `The sun arose, and the birds sang` — two short clauses that happen to
      * fit, and that do not agree with each other — be read as verse.
      */
-    let cost = 0, syll = 0, longSyll = 0;
+    let cost = 0, syll = 0, longSyll = 0, strain = 0;
     const votes = new Map();
     let phrases = 0;
     for (const ip of ips) {
@@ -2184,6 +2229,7 @@
       if (!r || r.beats.length < 3) continue;
       phrases++;
       cost += r.components.structure;
+      strain += r.components.faithfulness;
       syll += r.beats.length;
       if (r.beats.length >= REGIME_MIN_IP_SYLLABLES) longSyll += r.beats.length;
       if (r.template) {
@@ -2191,8 +2237,9 @@
         votes.set(k, (votes.get(k) || 0) + 1);
       }
     }
-    if (!syll) return { regime: 'prose', reason: 'auto:no-evidence',
-                        evidenceSyllables: 0 };
+    if (!syll) return forced
+      ? { regime: 'metrical', reason }
+      : { regime: 'prose', reason: 'auto:no-evidence', evidenceSyllables: 0 };
 
     const fit = cost / syll;
     const total = Array.from(votes.values()).reduce((a, b) => a + b, 0);
@@ -2203,16 +2250,23 @@
     const agreement = total > 0 ? top / total : 0;
 
     const repeatedTernary = repeatedTernaryGridEvidence(words, ips);
+    const loneSentence = !forced && !!(config && config.sentenceLayout);
+    const strainPerSyllable = strain / syll;
+    const corroborated = !loneSentence ||
+      strainPerSyllable <= REGIME_SENTENCE_MAX_STRAIN ||
+      (phrases >= REGIME_SENTENCE_MIN_AGREEING && agreement >= REGIME_AGREEMENT);
     const aggregate = weakBoundaryGridEvidence(words, ips, config);
     const byAggregate = !!aggregate;
     // Prefer the broader aggregate account when enough text supports it;
     // repetition is the short-passage fallback.
     const byRepeatedTernary = !!repeatedTernary && !byAggregate;
-    const byLength = longSyll >= REGIME_MIN_EVIDENCE && fit <= REGIME_FIT_THRESHOLD;
+    const byLength = corroborated &&
+      longSyll >= REGIME_MIN_EVIDENCE && fit <= REGIME_FIT_THRESHOLD;
     const byAgreement = phrases >= REGIME_MIN_AGREEING_PHRASES &&
                         agreement >= REGIME_AGREEMENT &&
                         fit <= REGIME_FIT_THRESHOLD * 2;
-    const metrical = byLength || byAgreement || byAggregate || byRepeatedTernary;
+    const metrical = forced || byLength || byAgreement || byAggregate ||
+                     byRepeatedTernary;
 
     let metrePrior = null;
     let priorKey = null;
@@ -2252,12 +2306,15 @@
       });
     }
 
-    return { regime: metrical ? 'metrical' : 'prose', reason: 'auto',
+    return { regime: metrical ? 'metrical' : 'prose', reason,
              evidence: metrical
                ? (byRepeatedTernary ? 'repeated-ternary'
                  : byAggregate ? 'weak-boundary-grid'
-                 : byLength ? 'length' : 'agreement') : 'none',
+                 : byLength ? 'length'
+                 : byAgreement ? 'agreement' : 'user') : 'none',
              fit: round2(fit), agreement: round2(agreement),
+             ...(loneSentence ? { sentenceLayout: true,
+               strain: round2(strainPerSyllable), corroborated } : {}),
              aggregateFit: aggregate ? round2(aggregate.fit) : null,
              evidenceSyllables: byRepeatedTernary ? repeatedTernary.syllables
                : byAggregate ? aggregate.syllables : longSyll,
@@ -2614,6 +2671,12 @@
         const localPhase = metrePrior.phrasePhases && metrePrior.phrasePhases[s];
         if (Number.isInteger(localPhase))
           metrePrior = Object.assign({}, metrePrior, { phase: localPhase });
+      } else if (metrePrior && metrePrior.aggregate && metrePrior.aggregateSpan) {
+        /* A grid established across one run of comma-linked phrases says
+         * nothing about a phrase outside that run (3.6.1). Without this the
+         * anapest of `Not a creature was stirring, not even a mouse.` was
+         * imposed on a preceding `The mouse ran up the clock.` */
+        metrePrior = null;
       }
       const ctx = { nucleusIdx, clashWeight, clashFactor,
                     regime: config.regime || 'metrical',
@@ -3483,6 +3546,10 @@
       useKnownReadings: true },
       options || {});
     const tokens = tokenize(text);
+    // Derived from the text on every analysis, never taken from the caller.
+    // A registered verse text is verse however it is punctuated.
+    config.sentenceLayout = sentenceLayout(tokens) &&
+      !(config.useKnownReadings !== false && findKnownReading(text));
 
     // Build word list + IP break map from punctuation.
     const words = [];

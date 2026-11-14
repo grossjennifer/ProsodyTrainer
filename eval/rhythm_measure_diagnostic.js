@@ -11,7 +11,11 @@ const ITEMS = require('./rhythm_measure_candidates.js');
 E.loadDictionary(global.window.CMUDICT_FULL, 'full');
 E.loadKnownReadings([]); // Generalization only: no memorized conventional lines.
 const textTypeAt = process.argv.indexOf('--text-type');
-const textType = textTypeAt >= 0 ? process.argv[textTypeAt + 1] : 'auto';
+// The candidates are verse lines laid out as sentences. The instrument sets
+// their text type explicitly (3.6.1) rather than leaning on auto-detection,
+// which now reads a lone punctuated sentence as prose. Pass --text-type auto
+// to see what Let-it-decide makes of them.
+const textType = textTypeAt >= 0 ? process.argv[textTypeAt + 1] : 'verse';
 
 function locate(doc, ref) {
   const [word, occurrence, syllable] = ref;

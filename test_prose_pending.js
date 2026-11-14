@@ -46,8 +46,6 @@ const CASES = [
     'the second `to` takes the beat in is TO live'],
   ['Then the little Hiawatha learned of every bird its language.', 'then', 0, 'S',
     'Let it decide reads the trochaic line as prose (THEN loses its beat)', 'auto'],
-  ['And today the Great Yertle, that marvelous he', 'he', 0, 'S',
-    'line alone on Verse: noun use of `he` (that marvelous HE) stays weak', 'verse'],
 ];
 // Regime cases: the passage should be read as having a regular beat.
 const REGIME_CASES = [
