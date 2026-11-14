@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.1';
+  const ENGINE_BUILD = '3.6.2';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -3228,12 +3228,16 @@
   // AMBIGUITY_MARGIN of the minimum = genuinely alternative scansions
   // (the classic iamb/trochee ambiguity of perfectly alternating text).
   const MIN_AMBIGUITY_SYLLS = 6;
+  const PROBE_TIE = 0.05;      // absorbs the amphibrach's per-foot tieCost
+  const PURE_FIT = 0.15;       // pure-scansion cost per syllable that still
+                               // counts as a clean fit (one catalectic end,
+                               // or one substituted syllable in a long line)
 
   function gridProbe(stream) {
     if (stream.length < MIN_AMBIGUITY_SYLLS) return [];
-    const costs = {};
+    const costs = {}, leads = {};
     for (const f of METRICAL_FEET) {
-      let best = Infinity;
+      let best = Infinity, bestLead = 0;
       for (let off = 0; off < f.pattern.length; off++) {
         let cost = off * SINGLETON_COST;
         let i = off;
@@ -3245,14 +3249,34 @@
           i += f.pattern.length;
         }
         cost += (stream.length - i) * SINGLETON_COST; // tail singletons
-        best = Math.min(best, cost);
+        // Offsets are tried in increasing order and only a strictly cheaper
+        // one replaces the best, so `bestLead` is the smallest lead-in.
+        if (cost < best - 1e-9) { best = cost; bestLead = off; }
       }
       costs[f.name] = best;
+      /* An anapestic line that opens weak-STRONG has not set two syllables
+       * aside: it has opened with an iamb, the standard substitution (`the
+       * STOCKings were HUNG by the CHIMney with CARE`). That opening counts
+       * as a foot, so such a line stays a real tie with the amphibrachic
+       * reading of the same beats, and both are reported. */
+      const iambicOpening = f.name === 'anapest' && bestLead === 2 &&
+        stream[0].sw === 'W' && stream[1].sw === 'S';
+      leads[f.name] = iambicOpening ? 0 : bestLead;
     }
     const min = Math.min(...Object.values(costs));
-    return Object.entries(costs)
+    const near = Object.entries(costs)
       .filter(([, c]) => c <= min + AMBIGUITY_MARGIN)
-      .map(([name, c]) => ({ type: name, cost: round2(c) }));
+      .map(([name, c]) => ({ type: name, cost: round2(c), lead: leads[name] }));
+    /* The line's opening settles a tie (3.6.2). `TYger TYger BURNing BRIGHT`
+     * fits trochees from its first syllable with one syllable short at the
+     * end (catalexis, the ordinary way a falling line closes), and fits
+     * iambs only by setting its first syllable aside. Those two scansions
+     * cost the same here, so every regular line that ends on a beat was
+     * reported as `alternating (trochaic/iambic scansions near-equivalent)`.
+     * A scansion is now dropped when another costs no more and needs fewer
+     * syllables set aside before its first foot. */
+    return near.filter(a => !near.some(b =>
+      b !== a && b.cost <= a.cost + PROBE_TIE && b.lead < a.lead));
   }
 
   // Build the feet of the best "pure" scansion of one foot type over a
@@ -3326,14 +3350,26 @@
       if (!stream.length) continue;
       const best = meterParseIP(stream);
       const probe = gridProbe(stream);
-      const alternates = probe.length >= 2 ? probe : [];
-      const used = forcedFoot ? gridFeet(stream, forcedFoot) : best;
+      const alternates = probe.length >= 2 ? probe.slice() : [];
+      /* One pure scansion that fits cleanly, in a phrase read as metrical:
+       * that IS the line's metre. Its feet are shown and it names the label.
+       * The free parse would otherwise describe `ALL the king's HORses and
+       * ALL the king's MEN` as trochee + iamb + anapest + anapest, which
+       * costs nothing and says nothing. */
+      const selected = ip.readings && ip.readings[ip.selectedReadingIndex];
+      const pure = !forcedFoot && probe.length === 1 &&
+        selected && selected.regime === 'metrical' &&
+        probe[0].cost / stream.length <= PURE_FIT
+        ? METRICAL_FEET.find(f => f.name === probe[0].type) : null;
+      const used = forcedFoot ? gridFeet(stream, forcedFoot)
+        : pure ? gridFeet(stream, pure) : best;
       allFeet.push(...used.feet);
       totalCost += used.cost;
       totalSyll += stream.length;
       confSum += stream.reduce((a, s) => a + s.conf, 0);
       ipReports.push({ span: ip.span, feet: used.feet, cost: round2(used.cost),
-                       dpCost: round2(best.cost), alternates });
+                       dpCost: round2(best.cost), alternates,
+                       ...(pure ? { pure: pure.name, syllables: stream.length } : {}) });
     }
 
     // Local runs: >=3 consecutive feet of one classical type.
@@ -3365,6 +3401,12 @@
     const totalFeet = allFeet.length || 1;
     let label = 'mixed';
     const dom = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
+    // Cleanly fitting pure scansions that agree, covering most of the text.
+    const pureIPs = ipReports.filter(r => r.pure);
+    const pureSyll = pureIPs.reduce((a, r) => a + r.syllables, 0);
+    const pureVote = pureIPs.length &&
+      pureIPs.every(r => r.pure === pureIPs[0].pure) &&
+      pureSyll >= 0.7 * totalSyll ? pureIPs[0].pure : null;
     const ambiguousIPs = ipReports.filter(r => r.alternates.length);
 
     /* Regime gate. The DP foot parser will always return SOME parse of any
@@ -3397,6 +3439,8 @@
       const types = Array.from(new Set(
         ambiguousIPs.flatMap(r => r.alternates.map(a => ADJ[a.type] || a.type))));
       label = `alternating (${types.join('/')} scansions near-equivalent)`;
+    } else if (pureVote) {
+      label = `predominantly ${FOOT_ADJ[pureVote]}`;
     } else if (dom && dom[1] / totalFeet >= 0.7) {
       label = `predominantly ${FOOT_ADJ[dom[0]]}`;
     } else if (localRuns.length) {
