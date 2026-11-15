@@ -575,6 +575,37 @@ function renderPhraseChoices() {
   }
 }
 
+/* Rhythm Reader names a rhythm the way the training teaches it — STRONG-weak,
+ * weak-weak-STRONG — and never by foot name. Rhythm Reader Pro keeps the
+ * technical label. The engine's label is read here only to pick the wording. */
+const TAUGHT_RHYTHM = {
+  trochee: 'STRONG-weak', trochaic: 'STRONG-weak',
+  iamb: 'weak-STRONG', iambic: 'weak-STRONG',
+  anapest: 'weak-weak-STRONG', anapestic: 'weak-weak-STRONG',
+  dactyl: 'STRONG-weak-weak', dactylic: 'STRONG-weak-weak',
+  amphibrach: 'weak-STRONG-weak', amphibrachic: 'weak-STRONG-weak'
+};
+function plainRhythmLine(ms, chosen) {
+  const label = (ms && ms.label) || '';
+  const regular = 'Read as having a regular beat' + (chosen ? ' (your choice)' : '');
+  const types = ((ms && ms.ambiguous && ms.ambiguousTypes) || [])
+    .map(t => TAUGHT_RHYTHM[t]).filter(Boolean);
+  if (types.length >= 2) {
+    const count = ['two', 'three', 'four', 'five'][types.length - 2] || 'several';
+    const list = types.slice(0, -1).join(', ') + ' and ' + types[types.length - 1];
+    return regular + '. It fits ' + count + ' patterns about equally well: ' + list + '.';
+  }
+  const single = /^(?:predominantly|conventional|read as) (\w+)/.exec(label);
+  if (single && TAUGHT_RHYTHM[single[1]])
+    return regular + ': ' + TAUGHT_RHYTHM[single[1]] + '.';
+  if (/^mixed with local/.test(label))
+    return regular + ' that changes pattern along the way.';
+  if (label === 'mixed')
+    return 'Read as having a beat' + (chosen ? ' (your choice)' : '') +
+      ', but no single repeating pattern.';
+  return regular + '.';
+}
+
 /* The tool now decides whether a passage has a regular beat at all. Saying so
  * matters: a foot name is a much stronger claim than a prose reading, and a
  * reader should be able to tell which one they are being given. */
@@ -582,7 +613,6 @@ function renderRegimeNote() {
   const note = document.getElementById('regimeNote');
   const rhythmNote = document.getElementById('rhythmNote');
   const regime = (doc.regime && doc.regime.regime) || 'metrical';
-  const label = (doc.meterSummary && doc.meterSummary.label) || '';
   const chosen = doc.regime && String(doc.regime.reason || '').startsWith('user:');
 
   if (regime === 'prose') {
@@ -595,8 +625,7 @@ function renderRegimeNote() {
       'syllables. A teal ▲ marks the phrase’s strongest point, which ' +
       'need not sit on a beat.';
   } else {
-    note.textContent = 'Read as having a regular beat' +
-      (chosen ? ' (your choice)' : '') + (label ? ' — ' + label : '') + '.';
+    note.textContent = plainRhythmLine(doc.meterSummary, chosen);
     rhythmNote.textContent = 'Here the tool fits a repeating beat across each ' +
       'phrase using strong–weak, weak–strong, weak–weak–strong, ' +
       'strong–weak–weak and weak–strong–weak feet. That is a deliberately small set, not ' +
