@@ -737,6 +737,9 @@ function logEvent(e) {
     dictionary_sha256: doc && doc.dictionaryMetadata ? doc.dictionaryMetadata.sha256 : '',
     participant: session.participant || 'anonymous',
     study: session.study || '',
+    text_type: doc && doc.config ? doc.config.textType : '',
+    strict_alternation: doc && doc.config ? !!doc.config.strictAlternation : '',
+    clash_subordination: doc && doc.config ? !!doc.config.clashSubordination : '',
     passage_index: session.passageIndex,
     timestamp: new Date(now).toISOString(),
     ms_since_analyze: session.t0 === null ? 0 : now - session.t0,
@@ -758,7 +761,8 @@ function researchCSV() {
   const cols = ['engine_build','participant','study','passage_index',
     'timestamp','ms_since_analyze','latency_ms',
     'action','tier','word','word_index','syllable_index','before','after',
-    'confidence_before','confidence_after','reversal','dictionary_id','dictionary_sha256'];
+    'confidence_before','confidence_after','reversal','dictionary_id','dictionary_sha256',
+    'text_type','strict_alternation','clash_subordination'];
   const esc = v => /[",\n]/.test(String(v))
     ? '"' + String(v).replace(/"/g,'""') + '"' : String(v);
   return [cols.join(',')]
@@ -818,21 +822,81 @@ function beatCount() {
 }
 
 /* ---------- analysis ---------- */
-function analyze(prefix) {
+/* Hand edits (3.6.6). A fresh analysis replaces the document, so anything
+   the reader changed by hand is gone. That is never done silently: the
+   reader is asked first, and in research mode the loss is logged. */
+function handEditCount() {
+  if (!doc) return 0;
+  let n = doc.words.filter(w => w.userEdited.lexical ||
+    w.userEdited.rhythmic || w.userEdited.template ||
+    w.syllables.some(sy => sy.rhythmicSource === 'user')).length;
+  for (const ip of doc.phrases) {
+    if (ip.userEdited) n++;
+    if (ip.pinnedReadingKey) n++;
+  }
+  if (doc.config && doc.config.forcedScansion) n++;
+  if (!n && E.computePDI(doc).pdi > 0) n = 1;
+  return n;
+}
+function confirmDiscardEdits(why) {
+  const n = handEditCount();
+  if (!n) return true;
+  const yes = window.confirm(why + ' re-runs the analysis and discards your ' +
+    n + ' hand edit' + (n === 1 ? '' : 's') + '. Continue?');
+  if (yes) logEvent({ action: 'edits-discarded', tier: 'all',
+    word: why, before: n, after: 0 });
+  return yes;
+}
+/* One hand edit can move a neighbouring beat: taking the beat off `said`
+   can put one on `she`. Those consequences are logged as `beat-reflow`, so
+   the log shows every change the reader saw, not only the one they made. */
+function beatSnapshot() {
+  return doc.words.map(wd => wd.syllables.map(sy => sy.rhythmicStress));
+}
+function logReflow(before, skipWord, skipSyl) {
+  if (!session.active || !before) return;
+  doc.words.forEach((wd, wi) => {
+    const was = before[wi];
+    if (!was || was.length !== wd.syllables.length) return;
+    wd.syllables.forEach((sy, si) => {
+      if (was[si] === sy.rhythmicStress) return;
+      if (wi === skipWord && (skipSyl === undefined || si === skipSyl)) return;
+      logEvent({ action: 'beat-reflow', tier: 'rhythmic', wordIdx: wi,
+        sylIdx: si, word: wd.word, before: was[si], after: sy.rhythmicStress,
+        locus: 'beat-reflow:' + wi + ':' + si });
+    });
+  });
+}
+function logSetting(name, before, after) {
+  logEvent({ action: 'setting-change', tier: 'setting', word: name,
+    before: String(before), after: String(after),
+    locus: 'setting:' + name });
+}
+
+let lastAnalyzedText = null;
+function analyze(prefix, opts) {
   const text = document.getElementById('input').value;
+  const settingChange = !!(opts && opts.settingChange);
+  // Analyse again over the same text: the reader's edits would be lost.
+  if (!settingChange && doc && text === lastAnalyzedText &&
+      !confirmDiscardEdits('Analysing this text again')) return;
   document.getElementById('numberNote').hidden = !/\d/.test(text);
   E.loadLearnedWords(session.active ? {} : remembered);
   doc = E.analyze(text, {
     strictAlternation: document.getElementById('strictAlt').checked,
     clashSubordination: document.getElementById('clashSub').checked,
     textType: document.getElementById('textType').value });
+  lastAnalyzedText = text;
   feetForced = false;
   ambigAccepted = false;
   ambigLogged = false;
-  session.t0 = Date.now(); session.lastT = null; session.history.clear();
-  session.passageIndex += 1;
-  logEvent({ action: 'analyze', before: '', after: '',
-             word: text.slice(0, 40) });
+  if (!settingChange) {
+    // A new passage. A changed setting is the same passage, re-read.
+    session.t0 = Date.now(); session.lastT = null; session.history.clear();
+    session.passageIndex += 1;
+    logEvent({ action: 'analyze', before: '', after: '',
+               word: text.slice(0, 40) });
+  }
   renderAll();
   announce((typeof prefix === 'string' ? prefix : '') +
     'Analysis updated: ' + beatCount() + ' beats, ' +
@@ -890,7 +954,9 @@ function makePhraseJoint(kind, wordIdx) {
       tier: 'phrase', wordIdx, word: doc.words[wordIdx].word,
       before: kind === 'PHI' ? 'boundary' : 'none',
       after: kind === 'PHI' ? 'none' : 'boundary' });
+    const snap = beatSnapshot();
     E.togglePhiBoundary(doc, wordIdx);
+    logReflow(snap);
     renderAll();
     announce('Phrase boundary ' + (kind === 'PHI' ? 'removed' : 'inserted') +
       ' before ' + doc.words[wordIdx].word + '.');
@@ -1465,7 +1531,9 @@ function onSylClick(wi, si) {
     logEvent({ action: 'beat-toggle', tier: 'rhythmic', wordIdx: wi,
       sylIdx: si, word: wd.word, before: cur, after: next,
       confidenceBefore: wd.syllables[si].rhythmicConfidence });
+    const snap = beatSnapshot();
     E.editRhythmicStress(doc, wi, si, next);
+    logReflow(snap, wi, si);
     renderAll();
     announce((next === 'S' ? 'Beat moved to ' : 'Beat removed from ') +
       wd.syllables[si].text.toUpperCase() + ' in ' + wd.word + '. ' +
@@ -1479,7 +1547,9 @@ function onSylClick(wi, si) {
     logEvent({ action: 'stress-cycle', tier: 'lexical', wordIdx: wi,
       sylIdx: si, word: wd.word, before: cur, after: cyc[cur],
       confidenceBefore: wd.lexicalConfidence });
+    const snap = beatSnapshot();
     E.editLexicalStress(doc, wi, pat);
+    logReflow(snap);
     renderAll();
     announce('Word stress on ' + wd.word + ' syllable ' + (si + 1) +
       ' set to ' + cyc[cur] + '.');
@@ -1607,7 +1677,10 @@ function openInspector(wi) {
         after: cyc[sy.lexicalStress], confidenceBefore: wd.lexicalConfidence });
       const pat = wd.syllables.map((x, k) =>
         k === si ? cyc[x.lexicalStress] : x.lexicalStress).join('');
-      E.editLexicalStress(doc, wi, pat); renderAll(); openInspector(wi); });
+      const snap = beatSnapshot();
+      E.editLexicalStress(doc, wi, pat);
+      logReflow(snap);
+      renderAll(); openInspector(wi); });
     cell.append(t, d);
     syls.appendChild(cell);
   });
@@ -1687,7 +1760,9 @@ function openInspector(wi) {
       logEvent({ action: 'beat-toggle', tier: 'rhythmic', wordIdx: wi,
         sylIdx: si, word: wd.word, before: sy.rhythmicStress, after: next,
         confidenceBefore: sy.rhythmicConfidence });
+      const snap = beatSnapshot();
       E.editRhythmicStress(doc, wi, si, next);
+      logReflow(snap, wi, si);
       renderAll(); openInspector(wi); });
     t3.appendChild(b);
   });
@@ -1810,14 +1885,25 @@ function download(name, content, type) {
 function exportProvenance() {
   const m = doc && doc.dictionaryMetadata;
   const used = doc ? doc.words.filter(w => w.lexicalSource === 'learned').length : 0;
+  const c = (doc && doc.config) || {};
+  const edited = doc ? doc.words.filter(w => w.userEdited.lexical ||
+    w.userEdited.rhythmic || w.userEdited.template).length : 0;
   return 'Rhythm Reader Pro build ' + E.build + '\nDictionary: ' +
     (m ? m.id + '\nDictionary SHA-256: ' + m.sha256 : 'unversioned') + '\n' +
+    (doc ? 'Text type: ' + c.textType + ' (read as ' +
+      (doc.regime && doc.regime.regime === 'prose' ? 'prose' : 'verse') + ')\n' +
+      'Strict alternation: ' + (c.strictAlternation ? 'on' : 'off') +
+      '; clash subordination: ' + (c.clashSubordination ? 'on' : 'off') + '\n' +
+      'Analysis source: ' + (doc.analysisSource || 'general-inference') + '\n' +
+      'Hand-edited words: ' + edited + '\n' : '') +
     (used ? 'Remembered words applied: ' + used + ' word(s)\n' : '');
 }
 function lexiconCSV() {
   const rows = [['word', 'syllables', 'lexical_stress', 'template_pattern',
                  'template_name', 'realizations', 'confidence', 'source',
-                 'instances', 'engine_build', 'dictionary_id', 'dictionary_sha256']];
+                 'instances', 'engine_build', 'dictionary_id', 'dictionary_sha256',
+                 'text_type', 'regime', 'strict_alternation', 'clash_subordination']];
+  const cfg = doc.config || {};
   for (const e of lexEntries()) {
     const wd = e.wd;
     const realizations = {};
@@ -1829,7 +1915,9 @@ function lexiconCSV() {
       Object.entries(realizations).map(([p, n]) => p + 'x' + n).join(' '),
       wd.lexicalConfidence, wd.lexicalSource, e.instances.length, E.build,
       doc.dictionaryMetadata ? doc.dictionaryMetadata.id : '',
-      doc.dictionaryMetadata ? doc.dictionaryMetadata.sha256 : '']);
+      doc.dictionaryMetadata ? doc.dictionaryMetadata.sha256 : '',
+      cfg.textType || '', doc.regime ? doc.regime.regime : '',
+      !!cfg.strictAlternation, !!cfg.clashSubordination]);
   }
   return rows.map(r => r.map(v => /[",\n]/.test(String(v))
     ? '"' + String(v).replace(/"/g, '""') + '"' : String(v)).join(',')).join('\n');
@@ -2039,18 +2127,33 @@ document.querySelectorAll('[data-ex]').forEach(b =>
 renderStudyExamples();
 document.getElementById('textType').addEventListener('change', (ev) => {
   if (!doc) return;
-  analyze('Text type set to ' + ev.target.options[ev.target.selectedIndex].text + '. ');
+  const was = doc.config.textType;
+  if (!confirmDiscardEdits('Changing the text type')) {
+    ev.target.value = was;          // keep the edits, and the setting
+    return;
+  }
+  const before = beatSnapshot();
+  analyze('Text type set to ' + ev.target.options[ev.target.selectedIndex].text + '. ',
+    { settingChange: true });
+  logSetting('text_type', was, doc.config.textType);
+  logReflow(before);
 });
 document.getElementById('strictAlt').addEventListener('change', () => {
   if (!doc) return;
-  E.reanalyze(doc, { strictAlternation:
-    document.getElementById('strictAlt').checked });
+  const before = beatSnapshot();
+  const on = document.getElementById('strictAlt').checked;
+  E.reanalyze(doc, { strictAlternation: on });
+  logSetting('strict_alternation', !on, on);
+  logReflow(before);
   renderAll();
 });
 document.getElementById('clashSub').addEventListener('change', () => {
   if (!doc) return;
-  E.reanalyze(doc, { clashSubordination:
-    document.getElementById('clashSub').checked });
+  const before = beatSnapshot();
+  const on = document.getElementById('clashSub').checked;
+  E.reanalyze(doc, { clashSubordination: on });
+  logSetting('clash_subordination', !on, on);
+  logReflow(before);
   renderAll();
 });
 document.getElementById('sylBreaks').addEventListener('change', renderSurface);

@@ -245,7 +245,9 @@ async function exercise(relPath, goId, surfaceSel) {
   ok(btn.getAttribute('aria-pressed') === 'false' && !d.querySelector(surfaceSel + ' .syl.now'),
     `${label}: playback ends by itself and resets the control`);
 
-  // Re-analysing stops playback.
+  // Re-analysing stops playback. A beat was edited above, so Pro asks before
+  // discarding it (3.6.6); the reader agrees.
+  d.defaultView.confirm = () => true;
   btn.click();
   d.getElementById(goId).click();
   await sleep(100);

@@ -15,7 +15,7 @@ const E = require('./rhythm-reader-pro/engine.js');
 
 assert.strictEqual(readerEngine, proEngine,
   'Reader and Pro must continue to ship the same engine');
-assert.strictEqual(E.build, '3.6.5');
+assert.strictEqual(E.build, '3.6.6');
 
 E.loadDictionary({
   HAPPY: 'HH AE1 P IY0', CHILDREN: 'CH IH1 L D R AH0 N',
@@ -27,10 +27,12 @@ assert.strictEqual(doc.engineBuild, E.build,
   'an analysis records the engine build');
 
 const syllableCSV = E.toCSV(doc).split('\n');
-assert(syllableCSV[0].endsWith(',engine_build,dictionary_id,dictionary_sha256'),
-  'syllable CSV appends a build column without renaming existing fields');
-assert(syllableCSV.slice(1).every(row => row.endsWith(',' + E.build + ',,')),
-  'every syllable row records the build');
+assert(syllableCSV[0].endsWith(',engine_build,dictionary_id,dictionary_sha256' +
+  ',text_type,regime,strict_alternation,clash_subordination,analysis_source'),
+  'syllable CSV appends build and settings columns without renaming existing fields');
+assert(syllableCSV.slice(1).every(row =>
+  row.endsWith(',' + E.build + ',,,verse,metrical,false,true,general-inference')),
+  'every syllable row records the build and the settings it was produced under');
 
 const profile = E.profileCSV(doc);
 assert(profile.includes('engine_build,' + E.build),

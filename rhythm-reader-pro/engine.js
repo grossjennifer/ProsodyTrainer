@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.5';
+  const ENGINE_BUILD = '3.6.6';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -4603,7 +4603,14 @@
                    'template_pattern', 'template_name', 'rhythmic_stress',
                    'phrase_prominence',
                    'lexical_source', 'rhythmic_source', 'lexical_confidence',
-                   'rhythmic_confidence', 'user_edited', 'engine_build', 'dictionary_id', 'dictionary_sha256']];
+                   'rhythmic_confidence', 'user_edited', 'engine_build', 'dictionary_id', 'dictionary_sha256',
+                   // 3.6.6: the settings the table was produced under
+                   'text_type', 'regime', 'strict_alternation',
+                   'clash_subordination', 'analysis_source']];
+    const cfg = doc.config || {};
+    const settings = [cfg.textType || '', doc.regime ? doc.regime.regime : '',
+                      !!cfg.strictAlternation, !!cfg.clashSubordination,
+                      doc.analysisSource || ''];
     doc.words.forEach(wd => {
       wd.syllables.forEach((sy, i) => {
         rows.push([wd.word, i, sy.text, sy.lexicalStress,
@@ -4614,7 +4621,8 @@
                    (wd.userEdited.lexical || wd.userEdited.rhythmic ||
                     wd.userEdited.template), doc.engineBuild || ENGINE_BUILD,
                    doc.dictionaryMetadata ? doc.dictionaryMetadata.id : '',
-                   doc.dictionaryMetadata ? doc.dictionaryMetadata.sha256 : '']);
+                   doc.dictionaryMetadata ? doc.dictionaryMetadata.sha256 : '',
+                   ...settings]);
       });
     });
     return rows.map(r => r.map(csvEscape).join(',')).join('\n');
@@ -4627,6 +4635,11 @@
       ['engine_build', doc.engineBuild || ENGINE_BUILD],
       ['dictionary_id', doc.dictionaryMetadata ? doc.dictionaryMetadata.id : ''],
       ['dictionary_sha256', doc.dictionaryMetadata ? doc.dictionaryMetadata.sha256 : ''],
+      ['text_type', (doc.config || {}).textType || ''],
+      ['regime', doc.regime ? doc.regime.regime : ''],
+      ['strict_alternation', !!(doc.config || {}).strictAlternation],
+      ['clash_subordination', !!(doc.config || {}).clashSubordination],
+      ['analysis_source', doc.analysisSource || ''],
       ['pdi_reference', 'distance_from_automatic_model'],
       ['prosodic_divergence_index', d.pdi],
       ['pdi_lexical', d.components.lexical],
