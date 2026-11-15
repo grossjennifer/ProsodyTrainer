@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.2';
+  const ENGINE_BUILD = '3.6.3';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -1182,6 +1182,34 @@
   const VERB_CUES = new Set(['to', 'will', 'would', 'shall', 'should', 'can',
     'could', 'may', 'might', 'must', 'do', 'does', 'did']);
 
+  // Used only by the modifier and clause-position rules at the end of
+  // contextualPrimaryIndex (3.6.3).
+  const COMMON_ADJECTIVES = new Set([
+    'fresh', 'new', 'old', 'good', 'bad', 'big', 'small', 'great', 'little',
+    'large', 'local', 'recent', 'final', 'heavy', 'serious', 'better', 'best',
+    'worse', 'worst', 'cheap', 'organic', 'broken', 'rapid', 'angry',
+    'illegal', 'legal', 'national', 'daily', 'weekly', 'annual', 'major',
+    'minor', 'public', 'private', 'strong', 'weak', 'high', 'low', 'long',
+    'short', 'early', 'late', 'free', 'full', 'important', 'common', 'modern',
+    'foreign', 'raw', 'steady', 'sharp', 'sudden', 'slow', 'quick', 'constant',
+    'written', 'total', 'direct', 'real', 'huge', 'tiny', 'simple', 'clear',
+    'main', 'whole', 'current', 'former', 'next', 'last', 'first', 'second',
+    'only', 'same', 'other', 'another', 'such', 'more', 'less', 'much', 'many',
+    'some', 'any', 'no', 'every', 'each', 'several', 'few', 'pure', 'dry',
+    'wet', 'hot', 'cold', 'red', 'blue', 'green', 'black', 'white', 'grave',
+    'yellow', 'special', 'overdue', 'peaceful', 'violent', 'steep', 'secret',
+    'quiet', 'loud', 'famous', 'expensive', 'frozen', 'canned', 'homemade'
+  ]);
+  const IRREGULAR_PLURALS = new Set(['children', 'people', 'men', 'women',
+    'police', 'staff', 'mice', 'geese', 'teeth', 'feet', 'cattle']);
+  const BARE_VERB_GOVERNORS = new Set(['help', 'helps', 'helped', 'let',
+    'lets', 'please']);
+  const MID_ADVERBS = new Set(['always', 'never', 'often', 'also', 'still',
+    'just', 'usually', 'rarely', 'sometimes', 'then', 'now', 'soon',
+    'really', 'simply', 'quickly', 'slowly']);
+  const CLAUSE_STARTERS = new Set(['and', 'but', 'or', 'because', 'that',
+    'which', 'who', 'when', 'if', 'while', 'although', 'so']);
+
   // Subject pronouns: a heteronym directly after one is a finite verb.
   const SUBJ_PRONOUNS = new Set(['i', 'we', 'they', 'you', 'he', 'she', 'it']);
 
@@ -1289,14 +1317,67 @@
       if (t === 'DET' || (rawWords[k] || '').toLowerCase().endsWith("'s")) return 0;
     }
 
-    // Bare noun subject immediately before the heteronym: "muscles contract
-    // quickly". Only when that noun is not itself inside a determiner-initial
-    // phrase, which the loop above has already excluded.
-    if (['NOUN', 'NOUNS'].includes(prevTag) &&
-        (nextTag === 'ADV' || nextTag === 'DET' || nextTag === 'PREP' ||
-         i === rawWords.length - 1)) return 1;
+    /* --- Modifier and clause-position evidence (3.6.3) ---------------------
+     * Reached only when no determiner, cue word or pronoun has decided the
+     * word. Two facts about English do the work, and both hold for these
+     * stress-shifting pairs specifically:
+     *
+     *   - an adjective is followed by a noun, never by a finite verb
+     *     (`fresh PROduce`, `better TRANSport`, `a broken REcord`);
+     *   - a bare verb form agrees with a plural subject, so after a singular
+     *     noun the bare form is the head of a compound (`vanilla EXtract`,
+     *     `farm PROduce`) and after a plural one it is the verb (`farmers
+     *     exPORT grain`).
+     *
+     * The tagger is heuristic and often wrong about the neighbouring word
+     * (`fresh` comes back as a verb after `sells`), so number and adjective
+     * status are read from the surface form, not from the tag. Only bare and
+     * -s forms are decided here; -ed and -ing forms keep the dictionary's
+     * choice. */
+    if (/(ed|ing)$/.test(word)) return null;
+    const lower = k => (rawWords[k] || '').toLowerCase().replace(/’/g, "'");
+    let p = i - 1;
+    while (p >= 0 && MID_ADVERBS.has(lower(p))) p--;      // `they often record`
+    const pw = lower(p), pt = tags && tags[p];
+    if (!pw) return null;
+    const sForm = /[^s]s$/.test(word);
 
-    if (prevTag === 'ADJ') return 0;                             // "a violent conflict"
+    if (BARE_VERB_GOVERNORS.has(pw)) return 1;             // `help transport`
+    if (COMMON_ADJECTIVES.has(pw) || pt === 'ADJ') return 0;
+
+    const nominal = ['NOUN', 'NOUNS', 'OPEN', 'NUM'].includes(pt);
+    const pluralSubject = IRREGULAR_PLURALS.has(pw) ||
+      (/[^s]s$/.test(pw) && (nominal || pt === 'VERB')) ||
+      (nominal && (lower(p - 1) === 'and' || lower(p - 2) === 'and'));
+    const nextAux = nextTag === 'AUX' || nextTag === 'MODAL';
+
+    if (pluralSubject && !sForm) return nextAux ? 0 : 1;  // `farmers exPORT`
+    if (nextAux) return 0;                                 // `bus TRANSport is`
+
+    // A finite verb earlier in the clause means this word is not the verb:
+    // `added vanilla EXtract`, `need building PERmits`.
+    for (let k = p - 1; k >= 0 && k >= p - 6; k--) {
+      const w = lower(k);
+      if (CLAUSE_STARTERS.has(w)) break;
+      if (['VERB', 'AUX', 'MODAL'].includes(tags[k]) &&
+          !COMMON_ADJECTIVES.has(w)) return 0;
+    }
+
+    if (sForm) {
+      // After a singular noun the -s form is either a plural compound head
+      // or the clause's verb. A clause has one finite verb: if another
+      // follows, this word is the noun (`oil EXports fell`); if none does,
+      // this word is the verb (`Maria preSENTS awards each year`).
+      if (!nominal) return null;
+      for (let k = i + 1; k < rawWords.length; k++) {
+        if (CLAUSE_STARTERS.has(lower(k))) break;
+        if (['VERB', 'AUX', 'MODAL'].includes(tags[k])) return 0;
+      }
+      return 1;
+    }
+    // Bare form after a singular noun (compound head) or after a verb
+    // (its object): `farm PROduce sells well`, `sells PROduce`.
+    if (nominal || pt === 'VERB') return 0;
     return null;
   }
 
