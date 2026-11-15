@@ -176,6 +176,7 @@ footer a { color: var(--phrase); }
     <span class="spacer"></span>
     <button class="primary" id="go">Show the beat</button>
   </div>
+  <p id="numberNote" class="hint" role="note" hidden>Numbers and symbols written as figures (2019, $25, 3.5%) are not given beats. Spell them out to include them in the rhythm.</p>
   <div class="row" style="margin-top:.5rem">
     <span id="textTypeLabel" style="font-weight:600;font-size:.95rem">
       Read this as</span>
@@ -183,12 +184,11 @@ footer a { color: var(--phrase); }
       id="textType" style="margin-left:.4rem">
       <button data-type="auto" aria-pressed="true">Let it decide</button>
       <button data-type="prose" aria-pressed="false">Ordinary prose</button>
-      <button data-type="verse" aria-pressed="false">Verse</button>
-      <button data-type="song" aria-pressed="false">Song or rhyme</button>
+      <button data-type="verse" aria-pressed="false">Verse, song or rhyme</button>
     </div>
   </div>
   <p class="hint" style="margin-top:.35rem">This changes the analysis, not
-  just the label. Verse and song expect a regular beat; prose does not. It is
+  just the label. Verse, song and rhyme expect a regular beat; prose does not. It is
   a starting assumption, not an override — strongly rhythmic text can still
   come out metrical when you choose prose.</p>
   <details class="study-card">
@@ -287,7 +287,6 @@ function renderStudyExamples() {
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = example.label + ' (' + example.meter + ')';
-    b.title = example.note;
     b.addEventListener('click', () => {
       document.getElementById('input').value = example.text;
       textType = 'verse';
@@ -318,7 +317,7 @@ s.onload = () => boot(!!window.CMUDICT_FULL);
 s.onerror = () => boot(false);
 document.head.appendChild(s);
 
-let textType = 'auto';   // 'auto' | 'prose' | 'verse' | 'song'
+let textType = 'auto';   // 'auto' | 'prose' | 'verse'
 
 /* One small polite live region announces concise changes. The reading
  * surface itself is NOT live: re-announcing the whole passage on every tap
@@ -340,6 +339,8 @@ function beatCount() {
 function analyze(prefix) {
   stopPlayback();
   doc = E.analyze(document.getElementById('input').value, { textType });
+  document.getElementById('numberNote').hidden =
+    !/\d/.test(document.getElementById('input').value);
   render();
   announce((typeof prefix === 'string' ? prefix : '') +
     'Analysis updated: ' + beatCount() + ' beats. ' +

@@ -380,6 +380,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   <h2 id="inH">Text to analyze</h2>
   <textarea id="input" aria-label="Text to analyze"
     placeholder="Type or paste English text…">The little puppy ran away before the children noticed.</textarea>
+  <p id="numberNote" class="hint" role="note" hidden>Numbers and symbols written as figures (2019, $25, 3.5%) are not given beats. Spell them out to include them in the rhythm.</p>
   <div class="row">
     <button class="chip" data-ex="trochaic">Trochaic — STRONG-weak</button>
     <button class="chip" data-ex="iambic">Iambic — weak-STRONG</button>
@@ -392,11 +393,10 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <select id="textType" aria-describedby="textTypeHelp">
       <option value="auto" selected>auto-detect</option>
       <option value="prose">prose</option>
-      <option value="verse">verse</option>
-      <option value="song">song or rhyme</option>
+      <option value="verse">verse, song or rhyme</option>
     </select>
-    <span id="textTypeHelp" class="sr-only">Analyse this text as prose, verse,
-      or song. Changing it re-runs the analysis.</span>
+    <span id="textTypeHelp" class="sr-only">Analyse this text as prose, or as
+      verse, song or rhyme. Changing it re-runs the analysis.</span>
     <label class="opt research"><input type="checkbox" id="strictAlt">
       strict alternation (demote clashing secondaries)</label>
     <label class="opt research"><input type="checkbox" id="clashSub" checked>
@@ -791,7 +791,6 @@ function renderStudyExamples() {
     const b = document.createElement('button');
     b.type = 'button';
     b.textContent = example.label + ' (' + example.meter + ')';
-    b.title = example.note;
     b.addEventListener('click', () => {
       document.getElementById('input').value = example.text;
       document.getElementById('textType').value = 'verse';
@@ -821,6 +820,7 @@ function beatCount() {
 /* ---------- analysis ---------- */
 function analyze(prefix) {
   const text = document.getElementById('input').value;
+  document.getElementById('numberNote').hidden = !/\d/.test(text);
   E.loadLearnedWords(session.active ? {} : remembered);
   doc = E.analyze(text, {
     strictAlternation: document.getElementById('strictAlt').checked,

@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.3';
+  const ENGINE_BUILD = '3.6.4';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -138,7 +138,15 @@
    * ======================================================================== */
 
   // A word = letters plus internal apostrophes/hyphens (don't, mother-in-law).
-  const WORD_RE = /[A-Za-z]+(?:['’][A-Za-z]+)*(?:-[A-Za-z]+(?:['’][A-Za-z]+)*)*/y;
+  // Letters include accented ones (3.6.4): `café` was split into the word
+  // `caf` and a stray `é`, and read as one syllable.
+  const WORD_RE = /\p{L}+(?:['’]\p{L}+)*(?:-\p{L}+(?:['’]\p{L}+)*)*/yu;
+
+  /* Accents are removed for lookup and syllable counting only (`café` is
+   * found as CAFE); the letters shown are always the ones that were typed. */
+  function stripAccents(text) {
+    return text.normalize('NFD').replace(/\p{M}+/gu, '').normalize('NFC');
+  }
 
   function tokenize(text) {
     const tokens = [];
@@ -440,7 +448,10 @@
 
     // C+le ending: final syllable is C+"le" (table, little, possible).
     let cleTail = null;
-    if (/[^aeiou]le$/.test(word) && N >= 2) {
+    // Not when the final syllable is stressed: `Michelle`, `gazelle` end in a
+    // silent e, not in a syllabic l, and were divided `Miche·lle` (3.6.4).
+    if (/[^aeiou]le$/.test(word) && N >= 2 &&
+        !(sylInfo && sylInfo[N - 1] && sylInfo[N - 1].stressed)) {
       cleTail = word.slice(-3); // e.g. "ble", "tle"
       // remove any group inside the tail
       const tailStart = word.length - 3;
@@ -780,7 +791,41 @@
    * SECTION 7 — Word analysis (assembles Tier 1 + Tier 2 for one word)
    * ======================================================================== */
 
+  /* Accented letters: analyse the unaccented spelling, then put the typed
+   * letters back into the syllables. Removing an accent never changes the
+   * number of letters for the precomposed characters English text uses; if it
+   * ever does, the unaccented letters are shown instead of guessing. */
   function analyzeWord(orth, preferredPrimary, posTag) {
+    const plain = stripAccents(orth);
+    if (plain === orth) return analyzeWordPlain(orth, preferredPrimary, posTag);
+    /* A typed final é is a sounded final syllable: `résumé` is the noun
+     * (RÉ·su·mé), not the verb `resume`. Where the dictionary lists such a
+     * reading among several, the accent selects it. */
+    if (!Number.isInteger(preferredPrimary) && /é$/i.test(orth)) {
+      const cmu = lookupCMU(plain);
+      const sounded = cmu && cmu.prons.length > 1 &&
+        cmu.prons.find(pr => /^EY\d$/.test(pr[pr.length - 1]));
+      if (sounded) preferredPrimary = stressPatternOf(sounded).indexOf('1');
+    }
+    const a = analyzeWordPlain(plain, preferredPrimary, posTag);
+    const typed = Array.from(orth.toLowerCase().replace(/’/g, "'"));
+    const bare = Array.from(plain.toLowerCase().replace(/’/g, "'"));
+    if (typed.length === bare.length) {
+      let at = 0;
+      for (const sy of a.syllables) {
+        let out = '';
+        for (const ch of Array.from(sy.text)) {
+          while (at < bare.length && bare[at] !== ch) at++;
+          out += at < bare.length ? typed[at++] : ch;
+        }
+        sy.text = out;
+      }
+      a.word = orth;
+    }
+    return a;
+  }
+
+  function analyzeWordPlain(orth, preferredPrimary, posTag) {
     const normalized = orth.toLowerCase().replace(/’/g, "'");
     const isFn = FUNCTION_WORDS.has(normalized);
     const cmu = lookupCMU(orth);
@@ -817,7 +862,24 @@
           return { stressed: /[12]/.test(v || ''),
                    lax: v ? LAX_VOWELS.has(v.replace(/\d/, '')) : false };
         });
-        const ortho = orthoSyllabify(normalized.replace(/[^a-z']/g, ''), phonSylls.length, sylInfo);
+        let ortho = orthoSyllabify(normalized.replace(/[^a-z']/g, ''), phonSylls.length, sylInfo);
+        /* A hyphenated word listed whole in the dictionary keeps the
+         * dictionary's stress, but its letters are divided part by part so
+         * that no syllable runs across the hyphen and the hyphen is shown:
+         * `well-known` was displayed `wel·lknown`, `mother-in-law` as
+         * `moth·e·rin·law` (3.6.4). Used only when the parts' syllables add
+         * up to the dictionary's count. */
+        if (normalized.includes('-')) {
+          const parts = orth.split('-').filter(x => x.length);
+          const texts = [];
+          parts.forEach((part, pi) => {
+            const sub = analyzeWordPlain(part).syllables.map(sy => sy.text);
+            if (pi < parts.length - 1) sub[sub.length - 1] += '-';
+            texts.push(...sub);
+          });
+          if (parts.length > 1 && texts.length === phonSylls.length)
+            ortho = { sylls: texts, forced: false };
+        }
         syllTexts = ortho.sylls;
         phonemesBySyll = phonSylls;
         lexSource = 'CMU';
@@ -835,7 +897,7 @@
     if (!syllTexts && normalized.includes('-')) {
       const parts = orth.split('-').filter(p => p.length);
       if (parts.length > 1) {
-        const analyses = parts.map(p => analyzeWord(p));
+        const analyses = parts.map(p => analyzeWordPlain(p));
         syllTexts = [];
         phonemesBySyll = [];
         lexPattern = '';
@@ -3671,6 +3733,10 @@
       useKnownReadings: true },
       options || {});
     const tokens = tokenize(text);
+    // Song is the same analysis as verse (3.6.4): the two never gave a
+    // different reading, so the tools offer one choice. `song` is still
+    // accepted so that saved settings and older scripts keep working.
+    if (config.textType === 'song') config.textType = 'verse';
     // Derived from the text on every analysis, never taken from the caller.
     // A registered verse text is verse however it is punctuated.
     config.sentenceLayout = sentenceLayout(tokens) &&

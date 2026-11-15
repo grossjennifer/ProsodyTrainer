@@ -90,7 +90,8 @@ eq(d.regime.reason, 'user:verse');
 eq(beat(d, 'she'), 'S', show(d));
 eq(beat(d, 'can'), 'W', show(d));
 d = E.analyze('They will return the book before the dawn.', { textType: 'song' });
-eq(d.regime.reason, 'user:song');
+eq(d.regime.reason, 'user:verse', 'song is accepted and analysed as verse');
+eq(d.config.textType, 'verse');
 eq(beat(d, 'will'), 'S', show(d));
 eq(beat(d, 'they'), 'W', show(d));
 // The same line under Let it decide is now prose.
