@@ -6,6 +6,8 @@
  *     was divided across it (`wel·lknown`, `moth·e·rin·law`);
  *   - a stressed final -lle was divided as a syllabic l (`Miche·lle`);
  *   - `song` was a separate text type that never gave a different reading.
+ * 3.6.5 adds: every silent -lle ending (`Nashvi·lle`), and Mc- names, which
+ * were split evenly by length (`mcd·ona·ld`).
  */
 'use strict';
 const assert = require('assert');
@@ -51,6 +53,28 @@ eq(sylls('A gazelle ran.', 'gazelle'), ['ga', 'zelle']);
 eq(sylls('The little table.', 'little'), ['lit', 'tle']);
 eq(sylls('The little table.', 'table'), ['ta', 'ble']);
 eq(sylls('It is possible.', 'possible'), ['pos', 'si', 'ble']);
+
+// 3.6.5 — a final -lle with a silent e is never a syllable of its own.
+eq(sylls('We drove to Nashville.', 'Nashville'), ['nash', 'ville']);
+eq(sylls('A vaudeville act.', 'vaudeville'), ['vaude', 'ville']);
+eq(sylls('We drove to Crossville.', 'Crossville'), ['cross', 'ville']);
+eq(sylls('We drove to Belleville.', 'Belleville'), ['belle', 'ville']);
+eq(sylls('We drove to Jacksonville.', 'Jacksonville'), ['jack', 'son', 'ville']);
+eq(sylls('Danielle called.', 'Danielle'), ['dan', 'i', 'elle']);
+eq(sylls('Gabrielle called.', 'Gabrielle'), ['gab', 'ri', 'elle']);
+eq(sylls('The Bastille fell.', 'Bastille'), ['bas', 'tille']);
+// A sounded ending is not treated as silent.
+eq(sylls('They played reveille.', 'reveille').length, 3);
+// Stress is untouched by any of this: only the division moved.
+eq(primary('We drove to Nashville.', 'Nashville'), 0);
+eq(primary('Danielle called.', 'Danielle'), 2);
+
+// 3.6.5 — Mc- is a syllable with no vowel letter.
+eq(sylls('Ask McDonald.', 'McDonald'), ['mc', 'do', 'nald']);
+eq(sylls('Ask McCarthy.', 'McCarthy'), ['mc', 'car', 'thy']);
+eq(sylls('Ask McIntosh.', 'McIntosh'), ['mc', 'in', 'tosh']);
+eq(sylls('Ask McKinley.', 'McKinley'), ['mc', 'kin', 'ley']);
+eq(primary('Ask McDonald.', 'McDonald'), 1);
 
 // Song is accepted and analysed as verse.
 const line = 'Mary had a little lamb.';

@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.4';
+  const ENGINE_BUILD = '3.6.5';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -446,11 +446,31 @@
     let groups = vowelGroups(word);
     let forced = false;
 
+    // Mc- is a syllable with no vowel letter (3.6.5). Without this the word
+    // has fewer vowel groups than syllables and was split evenly by length:
+    // `mcd·ona·ld`, `mcc·art·hy`, `mci·nto·sh`. Used only when the rest of
+    // the name then divides cleanly into the remaining syllables.
+    if (/^mc./.test(word) && N >= 2 && sylInfo) {
+      const rest = orthoSyllabify(word.slice(2), N - 1, sylInfo.slice(1));
+      if (rest && !rest.forced) return { sylls: ['mc', ...rest.sylls], forced: false };
+    }
+
     // C+le ending: final syllable is C+"le" (table, little, possible).
     let cleTail = null;
     // Not when the final syllable is stressed: `Michelle`, `gazelle` end in a
     // silent e, not in a syllabic l, and were divided `Miche·lle` (3.6.4).
-    if (/[^aeiou]le$/.test(word) && N >= 2 &&
+    // Nor for any -lle whose last syllable ends in a consonant sound (3.6.5):
+    // there the e is silent and the l belongs to the syllable before it, so
+    // `Nashville` is `Nash·ville`, not `Nashvi·lle`. A sounded ending
+    // (`reveille`) is left to the general rules below.
+    const silentLle = /lle$/.test(word) && N >= 1 &&
+      !!(sylInfo && sylInfo[N - 1] && sylInfo[N - 1].closed);
+    if (silentLle && groups.length > 1) {
+      const last = groups[groups.length - 1];
+      if (word.slice(last[0], last[1]) === 'e' && last[1] === word.length)
+        groups.pop();                 // the silent e is not a syllable
+    }
+    if (/[^aeiou]le$/.test(word) && N >= 2 && !silentLle &&
         !(sylInfo && sylInfo[N - 1] && sylInfo[N - 1].stressed)) {
       cleTail = word.slice(-3); // e.g. "ble", "tle"
       // remove any group inside the tail
@@ -509,6 +529,15 @@
       const cEnd = groups[g + 1][0];      // start of next vowel group
       const cluster = word.slice(cStart, cEnd);
       let cut = null;
+
+      // rule 0: -ville is a unit (cross·ville, belle·ville), whatever
+      // letters come before it; it would otherwise fall to the doubles rule.
+      const villeAt = word.length - 5;
+      if (silentLle && g === N - 2 && word.endsWith('ville') &&
+          villeAt >= cStart && villeAt <= cEnd) {
+        cuts.push(villeAt);
+        continue;
+      }
 
       const dbl = cluster.match(/(.)\1/); // rule 1: doubles
       if (dbl) {
@@ -860,7 +889,8 @@
         const sylInfo = phonSylls.map(ph => {
           const v = ph.find(p => VOWELS.has(p.replace(/\d/, '')));
           return { stressed: /[12]/.test(v || ''),
-                   lax: v ? LAX_VOWELS.has(v.replace(/\d/, '')) : false };
+                   lax: v ? LAX_VOWELS.has(v.replace(/\d/, '')) : false,
+                   closed: !VOWELS.has(ph[ph.length - 1].replace(/\d/, '')) };
         });
         let ortho = orthoSyllabify(normalized.replace(/[^a-z']/g, ''), phonSylls.length, sylInfo);
         /* A hyphenated word listed whole in the dictionary keeps the
@@ -4167,7 +4197,8 @@
     const sylInfo = phonSylls.map(ph => {
       const v = ph.find(p => VOWELS.has(p.replace(/\d/, '')));
       return { stressed: /[12]/.test(v || ''),
-               lax: v ? LAX_VOWELS.has(v.replace(/\d/, '')) : false };
+               lax: v ? LAX_VOWELS.has(v.replace(/\d/, '')) : false,
+               closed: !VOWELS.has(ph[ph.length - 1].replace(/\d/, '')) };
     });
     const ortho = orthoSyllabify(
       wd.normalized.replace(/[^a-z']/g, ''), phonSylls.length, sylInfo);
@@ -4236,7 +4267,8 @@
     const sylInfo = phonSylls.map(ph => {
       const v = ph.find(p => VOWELS.has(p.replace(/\d/, '')));
       return { stressed: /[12]/.test(v || ''),
-               lax: v ? LAX_VOWELS.has(v.replace(/\d/, '')) : false };
+               lax: v ? LAX_VOWELS.has(v.replace(/\d/, '')) : false,
+               closed: !VOWELS.has(ph[ph.length - 1].replace(/\d/, '')) };
     });
     const ortho = orthoSyllabify(
       wd.normalized.replace(/[^a-z']/g, ''), phonSylls.length, sylInfo);
