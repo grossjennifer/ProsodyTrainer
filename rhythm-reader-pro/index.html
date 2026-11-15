@@ -445,7 +445,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
         border:1px solid var(--ctrl); border-radius:6px">
         <option value="all">all beats</option>
         <option value="phrase">one per phrase</option>
-        <option value="sentence">one per sentence</option>
+        <option value="sentence">one per punctuated phrase</option>
         <option value="none">none</option>
       </select></label>
     <label class="opt research"><input type="checkbox" id="confView"> show model fit</label>
@@ -1952,12 +1952,13 @@ function runExport(v) {
     download('training_set.txt',
       'FULL MARKING (all beats):\n' + ts.full +
       '\n\nONE MARK PER PHRASE:\n' + ts.phrase +
-      '\n\nONE MARK PER SENTENCE (transfer level):\n' + ts.sentence +
+      '\n\nONE MARK PER PUNCTUATED PHRASE:\n' + ts.sentence +
       '\n\nPLAIN (no cues):\n' + ts.plain +
-      '\n\nCue-fading sequence per the training-to-transfer design of ' +
-      'Gross, Roldan, Kiessel, Esselink, & Dunlap (2026, Reading and ' +
-      'Writing). Selection rule: first beat per unit survives; relocate ' +
-      'any mark by tap-editing before export.\n' +
+      '\n\nA cue-fading sequence, from all beats to none. Gross, Roldan, ' +
+      'Kiessel, Esselink, & Dunlap (2026) reduced cues to a single marker ' +
+      'to test transfer; these levels are a general fading aid and do not ' +
+      'reproduce that manipulation. Selection rule: first beat per unit ' +
+      'survives; relocate any mark by tap-editing before export.\n' +
       exportProvenance(), 'text/plain');
   }
   if (v === 'research') download('research_session' +

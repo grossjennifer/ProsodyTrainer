@@ -115,6 +115,14 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     ok(/Hand-edited words: \d+/.test(out), v + ' states the hand edits');
   }
 
+  // --- 4. the cue-fading levels say what they are ------------------------
+  const fading = await exportText('training');
+  ok(/\nONE MARK PER PUNCTUATED PHRASE:\n/.test(fading), 'third level is named for what it does');
+  ok(!/PER SENTENCE|transfer level/.test(fading), 'no claim of one mark per sentence');
+  ok(/do not reproduce that manipulation/.test(fading), 'the 2026 design is cited, not claimed');
+  ok(Array.from($('density').options).some(o => o.text === 'one per punctuated phrase'),
+    'the on-screen cue menu uses the same name');
+
   console.log(`test_pro_session.js: ${checks} checks passed.`);
   w.close();
 })().catch(e => { console.error(e.stack || e.message); process.exit(1); });
