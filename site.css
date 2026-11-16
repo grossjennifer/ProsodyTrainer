@@ -606,6 +606,12 @@ a.site-card:focus-visible {
   box-shadow: 0 0 0 4px var(--glow-halo);
 }
 
+.learn-example .learn-audio { margin-top: .7rem; }
+.learn-example.is-sounding .learn-audio {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
 .learn-contours li.is-sounding .contour-line { stroke: var(--glow-deep); }
 .learn-contours li.is-sounding .contour-dot { fill: var(--glow-deep); }
 

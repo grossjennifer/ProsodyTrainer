@@ -612,9 +612,15 @@ check("implicit prosody framed as the claim, not a sixth component",
 check("map styles live in the shared sheet, not inline",
   shared.includes(".learn-map") && shared.includes(".learn-map-root") &&
   !hub.includes("<style>"));
-check("only the focus page carries script; the rest are static", (function () {
+check("only the focus and rhythm pages carry script; the rest are static", (function () {
   const bare = page => (page.match(/<script(?![^>]*ld\+json)/g) || []).length;
-  return [hub, stress, rhythm, phrasing].every(p => bare(p) === 0) && bare(focus) === 1;
+  return [hub, stress, phrasing].every(p => bare(p) === 0) && bare(focus) === 1 && bare(rhythm) === 1;
+})());
+check("rhythm page script only reveals and plays the two recorded beats", (function () {
+  const js = (rhythm.match(/<script>([\s\S]*?)<\/script>/) || ["", ""])[1];
+  return js.includes("button.hidden = false") && js.includes("new Audio(") &&
+    !/display\s*[:=]\s*["']?none/.test(js) && !/\.hidden\s*=\s*true/.test(js) &&
+    !/removeChild|innerHTML/.test(js);
 })());
 check("focus page script hides nothing and gates nothing", (function () {
   const js = (focus.match(/<script>([\s\S]*?)<\/script>/) || ["", ""])[1];

@@ -125,6 +125,9 @@
           <i>broke</i>, and <i>crown</i>.</p>
           <p class="learn-gloss">Strong&ndash;weak, repeating. Traditionally a
           <i>trochee</i>. Also <i>PRO</i>duce, the noun.</p>
+          <button class="learn-audio" type="button" data-audio="../../audio/dum-da.mp3" aria-label="Play DUM-da, a strong-weak beat" hidden>
+            <span class="play-glyph">&#9654;</span> Hear DUM-da
+          </button>
         </div>
 
         <div class="learn-example">
@@ -136,6 +139,9 @@
           <i>clock</i>.</p>
           <p class="learn-gloss">Weak&ndash;strong. An <i>iamb</i>. Also
           pro<i>DUCE</i>, the verb.</p>
+          <button class="learn-audio" type="button" data-audio="../../audio/da-dum.mp3" aria-label="Play da-DUM, a weak-strong beat" hidden>
+            <span class="play-glyph">&#9654;</span> Hear da-DUM
+          </button>
         </div>
 
         <div class="learn-example">
@@ -494,5 +500,31 @@
     </footer>
 
   </div>
+  <script>
+  /* The two recorded beats. Progressive enhancement only: the buttons are
+     hidden in the served markup and this script reveals them, so a reader
+     without JavaScript sees the examples and no dead controls. */
+  (function () {
+    var buttons = document.querySelectorAll(".learn-audio");
+    if (!buttons.length || typeof Audio === "undefined") return;
+    var current = null;
+    function settle(item) { if (item) item.classList.remove("is-sounding"); }
+    Array.prototype.forEach.call(buttons, function (button) {
+      var item = button.closest(".learn-example");
+      button.hidden = false;
+      button.addEventListener("click", function () {
+        if (current) { current.clip.pause(); settle(current.item); }
+        var clip = new Audio(button.getAttribute("data-audio"));
+        current = { clip: clip, item: item };
+        if (item) item.classList.add("is-sounding");
+        clip.addEventListener("ended", function () { settle(item); });
+        clip.addEventListener("error", function () { settle(item); });
+        var started = clip.play();
+        if (started && typeof started.catch === "function")
+          started.catch(function () { settle(item); });
+      });
+    });
+  })();
+  </script>
 </body>
 </html>
