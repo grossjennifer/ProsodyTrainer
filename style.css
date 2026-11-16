@@ -22,6 +22,17 @@
 /* One rule for the hidden attribute, site-wide, instead of per-component patches. */
 [hidden] { display: none !important; }
 
+/* The welcome page: all type and rem-based spacing 15% larger, so the
+   smallest labels reach 14px and the controls 16px with every proportion
+   kept. A percentage, so a reader's own larger default still applies. */
+html.home { font-size: 115%; }
+/* At 320px (a desktop zoomed to 400%) the enlarged demo word would run 6px
+   past the edge; there the page keeps its original size, which reflows. */
+/* In a short window the full 15% would push two tour panels under the
+   controls, so the step is smaller there. */
+@media (max-height: 840px) { html.home { font-size: 108%; } }
+@media (max-width: 340px) { html.home { font-size: 100%; } }
+
 html, body {
   margin: 0;
   padding: 0;
