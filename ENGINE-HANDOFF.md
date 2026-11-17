@@ -209,16 +209,22 @@ Shared by both tools. `schedule(doc, opts)` builds a timetable: beats exactly
 evenly spaced, a stressed syllable taking a longer share of its interval
 (`stressWeight` 1.5 to 1). `player(hooks)` plays it.
 
-Since 16 November 2026 the player speaks two recordings of Prof. Gross's
-voice: "DUM" (342 ms) on a beat and "da" (158 ms) on a weak syllable. They
-are embedded in the file as base64 WAV (WAV, not MP3, because MP3 decodes
-with a variable lead-in and here the onset is the beat). They are decoded
-once at page load with an `OfflineAudioContext`. A syllable longer than 110%
-of its slot is faded out; nothing is sped up or re-pitched. If decoding is
-unavailable the player falls back to a tone and a tick.
-
-Known limits: at fast tempos and in three-beat patterns the end of "DUM" is
-clipped; every beat is the identical recording.
+Since 16 November 2026 the player speaks recordings of Prof. Gross's voice:
+"DUM" on a beat and "da" on a weak syllable. Since 17 November there are three
+tokens of each, taken in turn (so no two beats in a row are the identical
+recording), and each token comes in shorter versions (DUM about 330, 237 and
+150 ms; da about 155 and 98 ms). The player plays the longest version that
+fits the syllable's slot; the shortest fit the shortest slots the tempo
+slider allows (143 ms for a beat, 95 ms for a weak syllable, in a three-beat
+pattern at 180 per minute), so nothing is cut off. The shorter versions were
+made from the same recordings by removing whole pitch periods from the middle
+of the syllable: pitch and voice are unchanged, and the onset and release are
+untouched. All clips are embedded in the file as base64 WAV (WAV, not MP3,
+because MP3 decodes with a variable lead-in and here the onset is the beat)
+and decoded once at page load with an `OfflineAudioContext`. If decoding is
+unavailable the player falls back to a tone and a tick. The clips were cut
+from the uploads `DUMda.wav` (tokens at 1.38, 2.68 and 3.92 s) and
+`daDUM_take_two.wav` (3.13, 4.23 and 5.26 s).
 
 Protected by `test_rhythm_audio.js` (timing, fallback tones) and
 `test_beat_voice.js` (recordings, routing, fade, decode path).
@@ -425,7 +431,10 @@ motivated by the mechanism above.
 3. Whether a triple-time line that opens weak-STRONG should be labelled
    weak-weak-STRONG (anapestic) outright. At present four such corpus lines
    are reported as a tie between anapestic and amphibrachic.
-4. Whether `FRESH PROduce` should carry both beats.
+4. *Answered 17 November 2026:* "`FRESH produce` seems correct; there
+   should be no spondee." The engine at 3.6.10 reads `fresh PROduce`, with the
+   beat on the noun. The sentence is P32 of the 40 prose items, so apply the
+   ruling with the prose retuning (section 7), not before.
 5. Whether to add an office and telephone number to the contact page.
 
 ---
