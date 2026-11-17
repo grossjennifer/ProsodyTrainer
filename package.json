@@ -11,11 +11,12 @@
     "test:acceptance": "node eval/acceptance.js",
     "test:rhythm-candidates": "node eval/rhythm_measure_diagnostic.js --assert",
     "test:ternary-boundaries": "node test_ternary_boundaries.js",
-    "test:diagnostics": "node test_diagnostic_battery.js && node test_export_provenance.js && node test_prose_pending.js",
+    "test:diagnostics": "node test_diagnostic_battery.js && node test_export_provenance.js && node test_prose_pending.js && node test_prose_score.js",
     "stamp:dictionaries": "node stamp_dictionary_metadata.js",
     "fit": "node eval/fit.js",
     "fit:diagnose": "node eval/fit.js --diagnose",
-    "focus": "node eval/focus_eval.js"
+    "focus": "node eval/focus_eval.js",
+    "prose:score": "node eval/prose_score.js"
   },
   "devDependencies": {
     "jsdom": "^30.0.1"
