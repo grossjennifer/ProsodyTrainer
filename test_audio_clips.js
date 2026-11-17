@@ -51,8 +51,8 @@ if (JSDOM) {
 const rhythm = fs.readFileSync(at('learn/rhythm/index.html'), 'utf8');
 const beats = rhythm.match(/<button class="learn-audio"[^>]*>/g) || [];
 ok(beats.length === 2, 'two beat buttons on the rhythm page');
-for (const [i, clip, label] of [[0, 'audio/dum-da.mp3', 'Play DUM-da, a strong-weak beat'],
-                                [1, 'audio/da-dum.mp3', 'Play da-DUM, a weak-strong beat']]) {
+for (const [i, clip, label] of [[0, 'audio/dum-da.mp3', 'Hear DUM-da, a strong-weak beat'],
+                                [1, 'audio/da-dum.mp3', 'Hear da-DUM, a weak-strong beat']]) {
   ok(beats[i].includes('data-audio="../../' + clip + '"'), 'button ' + i + ' names ' + clip);
   ok(beats[i].includes('aria-label="' + label + '"'), 'button ' + i + ' says what it plays');
   ok(/\shidden>/.test(beats[i]), 'hidden in the served markup');

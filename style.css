@@ -45,6 +45,14 @@ html.home { font-size: 115%; }
 @media (min-width: 900px) and (max-height: 759px) { html.home { font-size: 125%; } }
 @media (min-width: 900px) and (max-height: 679px) { html.home { font-size: 115%; } }
 
+/* The Learn pages (17 November 2026): the same proportional enlargement as
+   the welcome page, chosen by Prof. Gross on her laptop. These pages scroll,
+   so no step for short windows is needed. A percentage, so a reader's own
+   larger default still applies. */
+html.learn { font-size: 115%; }
+@media (min-width: 900px) { html.learn { font-size: 135%; } }
+@media (max-width: 340px) { html.learn { font-size: 100%; } }
+
 html, body {
   margin: 0;
   padding: 0;

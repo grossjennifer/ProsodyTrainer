@@ -432,7 +432,12 @@ Chrome, plus keyboard, screen-reader, contrast, motion and 320 px checks)
 - Since 17 November the passage is one Tab stop in both tools (roving
   tabindex, `rovingFocus` in each page): the arrow keys move between
   syllables, Home and End jump to the ends, Tab leaves for Play.
-- The Learn pages have not had this review.
+- Learn pages reviewed 17 November: two Play buttons whose names did not
+  begin with their visible text ("Hear DUM-da"), and long DOI links that
+  forced sideways scrolling at 320 px (now wrap). No other violations; every
+  control has a visible focus ring. Their type is now enlarged like the
+  welcome page (`html.learn`: 115%, 135% at 900 px and wider, 100% at 340 px
+  and narrower).
 
 ---
 

@@ -96,6 +96,24 @@ const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) +
     ok(now.filter(b => b.tabIndex === 0).length === 1 && dd.activeElement.tabIndex === 0, `${name}: and it remains the one Tab stop`);
   }
 
+  // The Learn pages (17 November 2026).
+  const pages = ['learn/index.html', ...fs.readdirSync(path.join(__dirname, 'learn'))
+    .filter(n => fs.existsSync(path.join(__dirname, 'learn', n, 'index.html'))).map(n => `learn/${n}/index.html`)];
+  ok(pages.length === 8, 'eight Learn pages');
+  for (const f of pages) {
+    const html = fs.readFileSync(path.join(__dirname, f), 'utf8');
+    ok(/<html lang="en" class="learn">/.test(html), `${f}: takes the Learn type size`);
+    for (const m of html.matchAll(/<button class="learn-audio"[^>]*aria-label="([^"]+)"[^>]*>([\s\S]*?)<\/button>/g)) {
+      const shown = m[2].replace(/<[^>]+>|&#9654;|▶/g, '').replace(/\s+/g, ' ').trim();
+      ok(m[1].toLowerCase().startsWith(shown.toLowerCase()), `${f}: "${m[1]}" begins with "${shown}"`);
+    }
+  }
+  const style = fs.readFileSync(path.join(__dirname, 'style.css'), 'utf8');
+  ok(/html\.learn \{ font-size: 115%; \}/.test(style) && /min-width: 900px\) \{ html\.learn \{ font-size: 135%; \}/.test(style),
+    'Learn type: 15% larger, 35% on laptop and desktop widths');
+  ok(/\.learn-refs p \{\s*overflow-wrap: anywhere;/.test(fs.readFileSync(path.join(__dirname, 'site.css'), 'utf8')),
+    'Learn references: long links wrap on a narrow screen');
+
   console.log(`test_a11y_labels.js: ${checks} checks passed.`);
   process.exit(0);
 })().catch(e => { console.error(e); process.exit(1); });

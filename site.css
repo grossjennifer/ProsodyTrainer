@@ -399,6 +399,7 @@ a.site-card:focus-visible {
 }
 
 .learn-refs p {
+  overflow-wrap: anywhere;   /* long DOI links wrap at 320 px (WCAG 1.4.10) */
   font-size: .92rem;
   line-height: 1.6;
   color: var(--ink-soft);
