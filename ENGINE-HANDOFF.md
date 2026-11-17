@@ -427,10 +427,11 @@ Chrome, plus keyboard, screen-reader, contrast, motion and 320 px checks)
   Rhythm Reader had one heading. Protected by `test_a11y_labels.js`.
 - Open: Pro's one-letter syllables are smaller than 24 px (axe flags 2.5.8).
   They sit inside running text, which the criterion's inline exception
-  covers; widening them breaks words apart visibly. Awaiting a decision.
-- Open: every syllable is a Tab stop (not a WCAG failure, but heavy for
-  keyboard users on long passages). A single Tab stop with arrow keys between
-  syllables is the standard remedy. Awaiting a decision.
+  covers; widening them breaks words apart visibly. Prof. Gross decided on
+  17 November to leave them as they are.
+- Since 17 November the passage is one Tab stop in both tools (roving
+  tabindex, `rovingFocus` in each page): the arrow keys move between
+  syllables, Home and End jump to the ends, Tab leaves for Play.
 - The Learn pages have not had this review.
 
 ---

@@ -6,6 +6,7 @@
  *   5. The amber confidence colour meets 4.5:1 on the striped table rows.
  *   6. No empty column heading in Pro's word table.
  *   7. Rhythm Reader has headings for its two sections.
+ *   4. The passage is one Tab stop; the arrow keys move between syllables.
  * Requires jsdom. Skips loudly rather than silently passing if it is absent.
  */
 'use strict';
@@ -65,6 +66,35 @@ const ratio = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) +
   const css = fs.readFileSync(path.join(__dirname, 'rhythm-reader-pro/index.html'), 'utf8');
   const amber = /\.conf-mid \{ color: (#[0-9A-Fa-f]{6}); \}/.exec(css)[1];
   ok(ratio(amber, '#EFF2F1') >= 4.5 && ratio(amber, '#FFFFFF') >= 4.5, `Pro: amber ${amber} meets 4.5:1 on striped and plain rows`);
+
+  // 4. One Tab stop for the whole passage, arrow keys inside it.
+  for (const [file, go, box] of [['rhythm-reader/index.html', 'go', 'out'], ['rhythm-reader-pro/index.html', 'analyzeBtn', 'surface']]) {
+    const dd = await load(file);
+    const w = dd.defaultView;
+    dd.getElementById('input').value = 'Happy children running quickly.';
+    dd.getElementById(go).click(); await sleep(150);
+    const c = dd.getElementById(box);
+    const btns = Array.from(c.querySelectorAll('button'));
+    const name = file.split('/')[0];
+    ok(c.getAttribute('role') === 'group' && /^Rhythm, 8 syllables\. Arrow keys move between them\.$/.test(c.getAttribute('aria-label')),
+      `${name}: the passage is one named group`);
+    ok(btns.filter(b => b.tabIndex === 0).length === 1 && btns[0].tabIndex === 0, `${name}: exactly one syllable is in the Tab order, the first`);
+    const key = (k, extra) => dd.activeElement.dispatchEvent(new w.KeyboardEvent('keydown', Object.assign({ key: k, bubbles: true, cancelable: true }, extra || {})));
+    btns[0].focus();
+    key('ArrowRight'); ok(dd.activeElement === btns[1], `${name}: ArrowRight moves to the next syllable`);
+    ok(btns[1].tabIndex === 0 && btns[0].tabIndex === -1, `${name}: the Tab stop follows`);
+    key('End'); ok(dd.activeElement === btns[btns.length - 1], `${name}: End goes to the last`);
+    key('ArrowRight'); ok(dd.activeElement === btns[btns.length - 1], `${name}: ArrowRight stops at the end`);
+    key('Home'); ok(dd.activeElement === btns[0], `${name}: Home goes to the first`);
+    key('ArrowLeft'); ok(dd.activeElement === btns[0], `${name}: ArrowLeft stops at the start`);
+    key('ArrowDown'); ok(dd.activeElement === btns[1], `${name}: ArrowDown also moves on`);
+    key('ArrowRight', { ctrlKey: true }); ok(dd.activeElement === btns[1], `${name}: modified arrows are left to the browser`);
+    // Toggling rebuilds the passage; focus and the Tab stop stay on that syllable.
+    dd.activeElement.click(); await sleep(100);
+    const now = Array.from(c.querySelectorAll('button'));
+    ok(/^py, in Happy/.test(dd.activeElement.getAttribute('aria-label') || ''), `${name}: focus stays on the toggled syllable`);
+    ok(now.filter(b => b.tabIndex === 0).length === 1 && dd.activeElement.tabIndex === 0, `${name}: and it remains the one Tab stop`);
+  }
 
   console.log(`test_a11y_labels.js: ${checks} checks passed.`);
   process.exit(0);
