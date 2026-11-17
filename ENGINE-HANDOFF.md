@@ -1,6 +1,6 @@
 # Rhythm engine handoff
 
-Written 16 November 2026, at engine build **3.6.8**, for whoever works on the
+Written 16 November 2026, at engine build **3.6.9**, for whoever works on the
 engine next: a person, or an AI model with no memory of the work so far. Read
 this before changing `engine.js`. It records how the engine decides, what
 protects each decision, what is known to be wrong, and how to change things
@@ -32,8 +32,9 @@ prosodytrainer.com, served by GitHub Pages from the `main` branch of
    dev, score held-out once at the end.
 5. **Do not tune prose by feel.** The prose readings are frozen at 3.6.6 until
    the two human markings of the 40 prose sentences arrive (section 7). The
-   owner asked for this explicitly. (Since 3.6.5 the only reading change is 3.6.8, which
-   touches text containing quotation marks and nothing else.)
+   owner asked for this explicitly. (Since 3.6.5 the only beat changes are in 3.6.8, which
+   touches text containing quotation marks and nothing else; 3.6.9
+   changed labels and one regime decision for short comma lines.)
 6. **The owner rules on disputed readings.** Do not change a stored gold
    reading. Ask. Open rulings are in section 9.
 7. **Bump the build** (`ENGINE_BUILD` in `engine.js`) when a reading or an
@@ -378,8 +379,12 @@ motivated by the mechanism above.
   the two, measured the same way.
 - A punctuated single verse line not on the stored list reads as prose under
   auto (accepted cost, section 3.1).
-- Lines too short to establish a meter are labelled prose
-  (`Hickory, dickory, dock`).
+- Since 3.6.9 a whole line of three or more comma-separated phrases may
+  establish a beat with seven syllables (eight otherwise), and a single beat
+  closing a line does not count against its metre (`markLineEdges`,
+  `ip.lineStart`, `ip.lineEnd`). `Higgledy, piggledy, my black hen` is still
+  "mixed"; `Tyger! Tyger! burning bright` is still prose under auto because
+  exclamation marks are strong boundaries.
 - A line whose meter runs across a comma is labelled phrase by phrase.
 - Hiawatha under auto is read as prose (`test_prose_pending.js`).
 - A line break is not used as evidence of verse (the Yertle couplet).
@@ -446,5 +451,5 @@ and Verse metre prior; 3.6.2 meter labels; 3.6.3 homographs after a modifier;
 3.6.4 accents, hyphens, one verse choice, contact page; 3.6.5 `-lle` and
 `Mc-`; 3.6.6 Pro session integrity and export provenance; 3.6.7 CSV cells cannot
 become formulas; 3.6.8 quotation marks are not phrase boundaries, equal
-stimulus counts, annotated text as typed. Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
+stimulus counts, annotated text as typed; 3.6.9 short comma lines. Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
 Learn pages, larger welcome-page type, and the prose scoring pipeline.

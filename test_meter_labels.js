@@ -67,4 +67,26 @@ const doc = E.analyze("All the king's horses and all the king's men");
 assert.deepStrictEqual(doc.feet.map(f => f.type),
   ['dactyl', 'dactyl', 'dactyl', 'stray-S']); checks++;
 
+// 3.6.9: short lines made of comma-separated phrases.
+// A beat closing a line is catalexis, not a foot of another kind.
+is('Hickory, dickory, dock', 'predominantly dactylic', { textType: 'verse' });
+is('Hickory, dickory, dock.', 'predominantly dactylic', { textType: 'verse' });
+is('Hickory, dickory, dock', 'predominantly dactylic');          // auto: was prose
+is('Twinkle, twinkle, little star', 'predominantly trochaic');   // auto: was prose
+is('Hickory dickory dock', 'predominantly dactylic');            // unchanged without commas
+{
+  // The beats themselves do not move.
+  const b = t => E.analyze(t, { textType: 'auto' }).words.map(w => w.rhythmicPattern).join(' ');
+  assert.strictEqual(b('Hickory, dickory, dock'), 'SWW SWW S'); checks++;
+  // A seven-syllable comma run inside a longer line still needs eight.
+  const d = E.analyze('"Well, what are you doing, then?" John asked.', { textType: 'auto' });
+  assert.strictEqual(d.regime.regime, 'prose', 'a comma run inside a sentence is not a line'); checks++;
+  // A single-word phrase at the start of a line is not catalexis.
+  assert.strictEqual(E.analyze('No, I read this book.', { textType: 'verse' }).meterSummary.label, 'mixed'); checks++;
+  // Line edges are recorded on each phrase.
+  const p = E.analyze('Hickory, dickory, dock,\nThe mouse ran up the clock.', {}).phrases;
+  assert.deepStrictEqual(p.map(x => [x.lineStart, x.lineEnd]),
+    [[true, false], [false, false], [false, true], [true, true]]); checks++;
+}
+
 console.log(`test_meter_labels.js: ${checks} checks passed.`);

@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.8';
+  const ENGINE_BUILD = '3.6.9';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -2226,6 +2226,23 @@
 
   const AGGREGATE_GRID_MIN_SYLLABLES = 8;
 
+  /* 3.6.9: does each phrase begin a line, and end one? Read from the line
+   * breaks in the text. Used only to recognise a short line made of comma-
+   * separated phrases and a beat that closes a line. */
+  function markLineEdges(tokens, ips) {
+    const lineOf = [];
+    let line = 0;
+    for (const tk of tokens) {
+      if (tk.type === 'word') lineOf.push(line);
+      else if (/[\r\n]/.test(tk.text)) line++;
+    }
+    for (const ip of ips) {
+      const a = ip.span[0], b = ip.span[1];
+      ip.lineStart = a === 0 || lineOf[a - 1] !== lineOf[a];
+      ip.lineEnd = b === lineOf.length - 1 || lineOf[b + 1] !== lineOf[b];
+    }
+  }
+
   /* A weak punctuation boundary may end an intonational phrase without
    * ending the metrical line. Analyze each run of comma-separated IPs as one
    * continuous stream FOR REGIME EVIDENCE ONLY. The phrases remain separate
@@ -2252,7 +2269,16 @@
             wd, sy, i, ref: [w, i], pref: rhythmPreference(wd, i)
           }));
         }
-        if (stream.length >= AGGREGATE_GRID_MIN_SYLLABLES) {
+        /* 3.6.9: a run of three or more comma-separated phrases that is a
+         * whole line on its own may establish a grid with seven syllables:
+         * `Hickory, dickory, dock` and `Twinkle, twinkle, little star` are
+         * seven syllables each and were read as prose. Requiring the whole
+         * line keeps a short comma run inside a longer sentence
+         * (`"Well, what are you doing, then?" John asked.`) at eight. */
+        const wholeLine = ips[start].lineStart === true && ips[end].lineEnd === true;
+        const minSyllables = wholeLine && end - start + 1 >= REGIME_MIN_AGREEING_PHRASES
+          ? AGGREGATE_GRID_MIN_SYLLABLES - 1 : AGGREGATE_GRID_MIN_SYLLABLES;
+        if (stream.length >= minSyllables) {
           const fitted = fitPhraseRhythm(stream);
           const freeBeats = new Array(stream.length).fill(null);
           for (const unit of fitted.units) {
@@ -3545,7 +3571,7 @@
       totalCost += used.cost;
       totalSyll += stream.length;
       confSum += stream.reduce((a, s) => a + s.conf, 0);
-      ipReports.push({ span: ip.span, feet: used.feet, cost: round2(used.cost),
+      ipReports.push({ span: ip.span, lineEnd: ip.lineEnd, feet: used.feet, cost: round2(used.cost),
                        dpCost: round2(best.cost), alternates,
                        ...(pure ? { pure: pure.name, syllables: stream.length } : {}) });
     }
@@ -3576,7 +3602,16 @@
     for (const f of allFeet)
       if (METRICAL_FOOT_TYPES.includes(f.type))
         counts[f.type] = (counts[f.type] || 0) + 1;
-    const totalFeet = allFeet.length || 1;
+    /* 3.6.9: a single beat closing a line is catalexis, not a foot of another
+     * kind, and does not count against the line's metre. `Hickory, dickory,
+     * dock` is dactyl, dactyl, beat; with the beat counted, two dactyls of
+     * three feet fell short of the 70% needed to name the metre. */
+    let catalectic = 0;
+    for (const r of ipReports) {
+      const last = r.feet[r.feet.length - 1];
+      if (last && last.type === 'stray-S' && r.lineEnd === true) catalectic++;
+    }
+    const totalFeet = (allFeet.length - catalectic) || 1;
     let label = 'mixed';
     const dom = Object.entries(counts).sort((a, b) => b[1] - a[1])[0];
     // Cleanly fitting pure scansions that agree, covering most of the text.
@@ -3807,6 +3842,7 @@
     if (words.length)
       markStranded(words, new Set([...ipBreaksAfter, words.length - 1]));
     const ips = words.length ? chunk(words, ipBreaksAfter, boundaryStrengthAfter) : [];
+    markLineEdges(tokens, ips);
     let regimeInfo = projectDocument(words, ips, config);
     regimeInfo = applyMetricalSyncope(words, ips, config, regimeInfo);
     const inferred = readingSnapshot(words, 'inferred',
