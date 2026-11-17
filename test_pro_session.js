@@ -1,5 +1,5 @@
 /* test_pro_session.js — Rhythm Reader Pro never loses or fails to record
- * what a reader did (3.6.6).
+ * what a reader did (3.6.6), and a typed ID cannot become a formula (3.6.7).
  *
  *   1. A change that re-runs the analysis asks before discarding hand edits,
  *      and keeps both the edits and the setting when the reader declines.
@@ -122,6 +122,46 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   ok(/do not reproduce that manipulation/.test(fading), 'the 2026 design is cited, not claimed');
   ok(Array.from($('density').options).some(o => o.text === 'one per punctuated phrase'),
     'the on-screen cue menu uses the same name');
+
+  // --- 5. a typed ID can never become a spreadsheet formula (3.6.7) ------
+  {
+    const E = w.RhythmEngine;
+    eq(E.csvEscape('=2+3'), "'=2+3", 'a cell beginning with = is written as text');
+    eq(E.csvEscape('+SUM(A1)'), "'+SUM(A1)", 'likewise +');
+    eq(E.csvEscape('-cmd'), "'-cmd", 'likewise -');
+    eq(E.csvEscape('@x'), "'@x", 'likewise @');
+    eq(E.csvEscape('=HYPERLINK("http://x","y")'), '"\'=HYPERLINK(""http://x"",""y"")"', 'guarded first, then quoted');
+    eq(E.csvEscape(-12.5), '-12.5', 'a negative number is a number');
+    eq(E.csvEscape('-12.5'), '-12.5', 'and so is one that arrives as text');
+    eq(E.csvEscape('+3'), '+3', 'a signed number is left alone');
+    eq(E.csvEscape('P-07'), 'P-07', 'a hyphen inside an ID is untouched');
+    eq(E.csvEscape('a,b'), '"a,b"', 'commas are quoted as before');
+    eq(E.csvEscape('a\rb'), '"a\rb"', 'a carriage return now forces quoting');
+    eq(E.csvEscape(''), '', 'an empty cell stays empty');
+    eq(E.csvEscape(true), 'true', 'booleans are unchanged');
+
+    // Through the real page: IDs typed by an experimenter.
+    $('participantId').value = '=2+3'; fire($('participantId'), 'input');
+    $('studyId').value = '@pilot, wave 1'; fire($('studyId'), 'input');
+    $('input').value = 'Her friend left early, she said.';
+    answer = true; $('analyzeBtn').click(); await sleep(100);
+    syl('said syllable 1').click(); await sleep(50);
+    const csv = await exportText('research');
+    const lines = csv.split('\n');
+    const head = lines[0].split(',');
+    const last = lines[lines.length - 1];
+    ok(last.includes(",'=2+3,"), 'research log: the participant ID is guarded');
+    ok(last.includes(',"\'@pilot, wave 1",'), 'research log: the study label is guarded and quoted');
+    ok(!/(^|,)[=@+]/m.test(csv.split('\n').slice(1).join('\n')), 'research log: no cell begins with a formula character');
+    eq(head.indexOf('participant'), 1, 'research log: column order unchanged');
+    eq(w.session ? w.session.participant : '=2+3', '=2+3', 'the ID itself is stored as typed');
+    const json = JSON.parse(await exportText('json'));
+    eq(json.researchSession.participant, '=2+3', 'the JSON export keeps the ID exactly as typed');
+    for (const v of ['csv', 'profile', 'lexicon']) {
+      const t = await exportText(v);
+      ok(t && !/(^|,)[=@]/m.test(t), v + ' export: no cell begins with a formula character');
+    }
+  }
 
   console.log(`test_pro_session.js: ${checks} checks passed.`);
   w.close();

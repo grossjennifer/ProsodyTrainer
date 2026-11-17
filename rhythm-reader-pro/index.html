@@ -763,10 +763,9 @@ function researchCSV() {
     'action','tier','word','word_index','syllable_index','before','after',
     'confidence_before','confidence_after','reversal','dictionary_id','dictionary_sha256',
     'text_type','strict_alternation','clash_subordination'];
-  const esc = v => /[",\n]/.test(String(v))
-    ? '"' + String(v).replace(/"/g,'""') + '"' : String(v);
+  // E.csvEscape keeps a typed ID such as "=2+3" as text in a spreadsheet.
   return [cols.join(',')]
-    .concat(session.log.map(r => cols.map(c => esc(r[c])).join(',')))
+    .concat(session.log.map(r => cols.map(c => E.csvEscape(r[c])).join(',')))
     .join('\n');
 }
 let mode = 'bold';
@@ -1919,8 +1918,7 @@ function lexiconCSV() {
       cfg.textType || '', doc.regime ? doc.regime.regime : '',
       !!cfg.strictAlternation, !!cfg.clashSubordination]);
   }
-  return rows.map(r => r.map(v => /[",\n]/.test(String(v))
-    ? '"' + String(v).replace(/"/g, '""') + '"' : String(v)).join(',')).join('\n');
+  return rows.map(r => r.map(E.csvEscape).join(',')).join('\n');
 }
 /* The format <select> is only a choice; nothing downloads until the reader
    activates the Export button, so arrowing through the options is safe. */

@@ -1,6 +1,6 @@
 # Rhythm engine handoff
 
-Written 16 November 2026, at engine build **3.6.6**, for whoever works on the
+Written 16 November 2026, at engine build **3.6.7**, for whoever works on the
 engine next: a person, or an AI model with no memory of the work so far. Read
 this before changing `engine.js`. It records how the engine decides, what
 protects each decision, what is known to be wrong, and how to change things
@@ -32,7 +32,8 @@ prosodytrainer.com, served by GitHub Pages from the `main` branch of
    dev, score held-out once at the end.
 5. **Do not tune prose by feel.** The prose readings are frozen at 3.6.6 until
    the two human markings of the 40 prose sentences arrive (section 7). The
-   owner asked for this explicitly.
+   owner asked for this explicitly. (No reading has changed since 3.6.5;
+   3.6.6 and 3.6.7 changed exports only.)
 6. **The owner rules on disputed readings.** Do not change a stored gold
    reading. Ask. Open rulings are in section 9.
 7. **Bump the build** (`ENGINE_BUILD` in `engine.js`) when a reading or an
@@ -233,6 +234,11 @@ Protected by `test_rhythm_audio.js` (timing, fallback tones) and
   as a consequence of an edit (`beat-reflow`), and discarded edits. Every row
   carries `text_type`, `strict_alternation`, `clash_subordination`.
 - Every export states the settings it was produced under.
+- Since 3.6.7 every CSV cell goes through `E.csvEscape`, which writes text
+  beginning with `=`, `+`, `-` or `@` with a leading apostrophe so a
+  spreadsheet cannot run it as a formula. Numbers are left alone. Analysis
+  scripts should strip one leading apostrophe from the participant and study
+  columns. The JSON export keeps values as typed.
 - New columns are appended. Existing columns keep their names and order; do
   not reorder them, because analysis scripts read them by position.
 
@@ -386,8 +392,7 @@ motivated by the mechanism above.
 
 **Rhythm Reader Pro**
 - The annotated text export lowercases the text.
-- A participant ID beginning with `=` is written to CSV unescaped (a
-  spreadsheet treats it as a formula). Worth fixing soon.
+- The participant ID is used as typed in the name of the downloaded file.
 - Stimulus pairs can have unequal mark counts in rare cases.
 - An opening quotation mark starts a new phrase.
 
@@ -429,6 +434,6 @@ motivated by the mechanism above.
 Release history for this period: 3.6.0 discourse focus; 3.6.1 sentence rule
 and Verse metre prior; 3.6.2 meter labels; 3.6.3 homographs after a modifier;
 3.6.4 accents, hyphens, one verse choice, contact page; 3.6.5 `-lle` and
-`Mc-`; 3.6.6 Pro session integrity and export provenance. After 3.6.6, with no
-engine change: recorded DUM and da in "Hear the beat", Play buttons on the
+`Mc-`; 3.6.6 Pro session integrity and export provenance; 3.6.7 CSV cells cannot
+become formulas. Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
 Learn pages, larger welcome-page type, and the prose scoring pipeline.

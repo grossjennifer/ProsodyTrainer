@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.6';
+  const ENGINE_BUILD = '3.6.7';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -4661,9 +4661,21 @@
     return rows.map(r => r.map(csvEscape).join(',')).join('\n');
   }
 
+  /* One CSV cell.
+   *
+   * 3.6.7: a cell of text that begins with = + - or @ (or a tab or carriage
+   * return) is opened by a spreadsheet as a formula, not as text. A typed
+   * participant ID of `=2+3` would be recorded as 5, and a hostile one could
+   * run a command. Such a cell is written with a leading apostrophe, the
+   * standard guard, so it stays text. Numbers are left alone: a negative
+   * latency is a number, not a formula. Analysis scripts that read these
+   * columns should strip one leading apostrophe.
+   *
+   * Carriage returns now force quoting as line feeds always did. */
   function csvEscape(v) {
-    const s = String(v);
-    return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+    let s = String(v);
+    if (typeof v !== 'number' && /^[=+\-@\t\r]/.test(s) && !/^[+-]?\d+(?:\.\d+)?$/.test(s)) s = "'" + s;
+    return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
 
   function annotatedText(doc) {
@@ -4802,7 +4814,7 @@
     selectPronunciation, selectReading,
     loadLearnedWords, getLearnedWords, learnWord, forgetWord, learnableWord, refreshWord,
     explainReading, getWeights, featureKeys: FEATURE_KEYS.slice(), incongruentMap, stimulusPair, beatSubset, trainingSet,
-    toCSV, profileCSV, annotatedText, roundTripText,
+    toCSV, profileCSV, csvEscape, annotatedText, roundTripText,
     constants: { FUNCTION_WORDS, CHUNK_STARTERS, CONF, FOOT_NAMES,
                  HYPHEN_EXCEPTIONS, PHI_MAX_WORDS, RHYTHM_FEET }
   };
