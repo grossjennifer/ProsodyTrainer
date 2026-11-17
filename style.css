@@ -32,6 +32,18 @@ html.home { font-size: 115%; }
    controls, so the step is smaller there. */
 @media (max-height: 840px) { html.home { font-size: 108%; } }
 @media (max-width: 340px) { html.home { font-size: 100%; } }
+/* Laptop and desktop windows: 35% larger than the original, the size Prof.
+   Gross chose on her own laptop. The tour gives back two-thirds of its top
+   padding there so most panels still sit above the controls; a panel that
+   does not fit scrolls, as before. Shorter windows step down (25%, then
+   15%) so the tour does not turn into ten scrolling panels. Phones and
+   narrow tablets keep the smaller steps above. */
+@media (min-width: 900px) {
+  html.home { font-size: 135%; }
+  html.home .opening-exhibit { padding-top: 1rem; }
+}
+@media (min-width: 900px) and (max-height: 759px) { html.home { font-size: 125%; } }
+@media (min-width: 900px) and (max-height: 679px) { html.home { font-size: 115%; } }
 
 html, body {
   margin: 0;
