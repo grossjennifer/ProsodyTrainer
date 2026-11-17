@@ -1928,10 +1928,18 @@ document.getElementById('exportSel').addEventListener('change', (ev) => {
 document.getElementById('exportBtn').addEventListener('click', () => {
   runExport(document.getElementById('exportSel').value);
 });
+/* A typed participant ID, reduced to what is safe in a file name: letters,
+   digits, dot, hyphen and underscore; anything else becomes an underscore.
+   The ID inside the file is never altered. */
+function fileSafe(id) {
+  return String(id).replace(/[^\p{L}\p{N}._-]+/gu, '_').replace(/^[._]+/, '').slice(0, 60) || 'id';
+}
 function runExport(v) {
   if (!v || !doc) return;
   if (v === 'txt') download('rhythm_annotated.txt',
-    exportProvenance() + '\n' + E.annotatedText(doc),
+    exportProvenance() +
+    'Capitals mark beats. A syllable without a beat keeps the letters as typed.\n' +
+    '\n' + E.annotatedText(doc),
     'text/plain');
   if (v === 'csv') download('rhythm_analysis.csv', E.toCSV(doc), 'text/csv');
   if (v === 'profile') download('implicit_prosody_profile.csv', E.profileCSV(doc), 'text/csv');
@@ -1941,6 +1949,10 @@ function runExport(v) {
     download('stimulus_pair.txt',
       'CONGRUENT (' + p.congruentCount + ' marks):\n' + p.congruent +
       '\n\nINCONGRUENT (' + p.incongruentCount + ' marks):\n' + p.incongruent +
+      (p.shortfall ? '\n\nUNEQUAL MARK COUNTS: the incongruent version has ' + p.shortfall +
+        ' fewer mark' + (p.shortfall === 1 ? '' : 's') + '. At least one phrase has more ' +
+        'beats than syllables without a beat, so the marks cannot all be moved ' +
+        'within it. Do not use this pair where equal counts are required.' : '') +
       '\n\n' + exportProvenance() +
       '(deterministic; Gross et al., 2017 paradigm).\n',
       'text/plain');
@@ -1960,7 +1972,7 @@ function runExport(v) {
       exportProvenance(), 'text/plain');
   }
   if (v === 'research') download('research_session' +
-    (session.participant ? '_' + session.participant : '') + '.csv',
+    (session.participant ? '_' + fileSafe(session.participant) : '') + '.csv',
     researchCSV(), 'text/csv');
   if (v === 'json') {
     // the session log rides along only while research mode is active
@@ -1970,7 +1982,7 @@ function runExport(v) {
         participant: session.participant || 'anonymous',
         events: session.log } } : {});
     download('rhythm_document' +
-      (withLog && session.participant ? '_' + session.participant : '') +
+      (withLog && session.participant ? '_' + fileSafe(session.participant) : '') +
       '.json',
       JSON.stringify(payload, (k, val) => k === 'phonemes' && val === null ? undefined : val, 1),
       'application/json');

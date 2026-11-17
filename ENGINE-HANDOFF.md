@@ -1,6 +1,6 @@
 # Rhythm engine handoff
 
-Written 16 November 2026, at engine build **3.6.7**, for whoever works on the
+Written 16 November 2026, at engine build **3.6.8**, for whoever works on the
 engine next: a person, or an AI model with no memory of the work so far. Read
 this before changing `engine.js`. It records how the engine decides, what
 protects each decision, what is known to be wrong, and how to change things
@@ -32,8 +32,8 @@ prosodytrainer.com, served by GitHub Pages from the `main` branch of
    dev, score held-out once at the end.
 5. **Do not tune prose by feel.** The prose readings are frozen at 3.6.6 until
    the two human markings of the 40 prose sentences arrive (section 7). The
-   owner asked for this explicitly. (No reading has changed since 3.6.5;
-   3.6.6 and 3.6.7 changed exports only.)
+   owner asked for this explicitly. (Since 3.6.5 the only reading change is 3.6.8, which
+   touches text containing quotation marks and nothing else.)
 6. **The owner rules on disputed readings.** Do not change a stored gold
    reading. Ask. Open rulings are in section 9.
 7. **Bump the build** (`ENGINE_BUILD` in `engine.js`) when a reading or an
@@ -258,7 +258,7 @@ Protected by `test_pro_session.js` (drives the real page), `test_pro_polish.js`,
 
 | Group | Files | Protects |
 |---|---|---|
-| `test:engine` | `test_known_readings`, `test_contextual_heteronyms`, `test_phrase_prominence`, `test_ternary_boundaries`, `test_engine_edits`, `eval/novel_heteronyms`, `test_learned_words`, `test_reading_features`, `test_discourse_focus`, `test_sentence_layout`, `test_meter_labels`, `test_modifier_heteronyms`, `test_text_handling` | Engine readings and labels |
+| `test:engine` | `test_quotes_stimuli`, `test_known_readings`, `test_contextual_heteronyms`, `test_phrase_prominence`, `test_ternary_boundaries`, `test_engine_edits`, `eval/novel_heteronyms`, `test_learned_words`, `test_reading_features`, `test_discourse_focus`, `test_sentence_layout`, `test_meter_labels`, `test_modifier_heteronyms`, `test_text_handling` | Engine readings and labels |
 | `test:pages` | `test_asset_paths`, `test_exhibit`, `test_learn`, `test_interface`, `test_pro_polish`, `test_rhythm_audio`, `sound-spelling/test_onset_rime`, `test_remembered_words_page`, `test_reader_wording`, `test_contact_page`, `test_pro_session`, `test_audio_clips`, `test_beat_voice` | The pages, audio, wording |
 | `test:diagnostics` | `test_diagnostic_battery`, `test_export_provenance`, `test_prose_pending`, `test_prose_score` | The 16-case battery, exports, known pending errors, the prose scoring pipeline |
 | `test:rhythm-candidates` | `eval/rhythm_measure_diagnostic.js --assert` | The 40 rhythm-measure candidates under Verse (40 of 40) |
@@ -391,10 +391,10 @@ motivated by the mechanism above.
 - Numerals are not expanded. A note tells the reader to spell them out.
 
 **Rhythm Reader Pro**
-- The annotated text export lowercases the text.
-- The participant ID is used as typed in the name of the downloaded file.
-- Stimulus pairs can have unequal mark counts in rare cases.
-- An opening quotation mark starts a new phrase.
+- Where a phrase has more beats than syllables without one, a stimulus pair
+  cannot have equal mark counts. Since 3.6.8 the export says so.
+- Quoted speech with no comma before it (`She said "I will go."`) is not
+  split at the quotation mark.
 
 **Accessibility**
 - Only the welcome page's text size has been checked against WCAG. The tools
@@ -435,5 +435,6 @@ Release history for this period: 3.6.0 discourse focus; 3.6.1 sentence rule
 and Verse metre prior; 3.6.2 meter labels; 3.6.3 homographs after a modifier;
 3.6.4 accents, hyphens, one verse choice, contact page; 3.6.5 `-lle` and
 `Mc-`; 3.6.6 Pro session integrity and export provenance; 3.6.7 CSV cells cannot
-become formulas. Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
+become formulas; 3.6.8 quotation marks are not phrase boundaries, equal
+stimulus counts, annotated text as typed. Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
 Learn pages, larger welcome-page type, and the prose scoring pipeline.

@@ -163,6 +163,38 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     }
   }
 
+  // --- 6. exports say what they hold (3.6.8) -----------------------------
+  {
+    let name = null;
+    const click = w.HTMLAnchorElement.prototype.click;
+    w.HTMLAnchorElement.prototype.click = function () { name = this.download; };
+    $('participantId').value = '../P 07/=x'; fire($('participantId'), 'input');
+    await exportText('research');
+    eq(name, 'research_session_P_07_x.csv', 'the file name keeps only characters safe in a file name');
+    syl('said syllable 1').click(); await sleep(50);      // a new event, logged under the new ID
+    const csv = await exportText('research');
+    ok(csv.split('\n').pop().includes(',../P 07/=x,'), 'the ID inside the file is exactly as typed');
+    $('participantId').value = 'P-07'; fire($('participantId'), 'input');
+    await exportText('research');
+    eq(name, 'research_session_P-07.csv', 'an ordinary ID is used as it is');
+    w.HTMLAnchorElement.prototype.click = click;
+
+    $('textType').value = 'verse'; fire($('textType'), 'change'); await sleep(50);
+    $('input').value = 'With a heart for any fate'; $('analyzeBtn').click(); await sleep(100);
+    const tight = await exportText('stimuli');
+    ok(/CONGRUENT \(4 marks\)/.test(tight) && /INCONGRUENT \(3 marks\)/.test(tight), 'stimulus pair: the counts are stated');
+    ok(/UNEQUAL MARK COUNTS: the incongruent version has 1 fewer mark\./.test(tight), 'stimulus pair: an impossible case carries a warning');
+    $('input').value = 'Still achieving still pursuing'; $('analyzeBtn').click(); await sleep(100);
+    const even = await exportText('stimuli');
+    ok(/CONGRUENT \(4 marks\)/.test(even) && /INCONGRUENT \(4 marks\)/.test(even), 'stimulus pair: equal counts where the line has room');
+    ok(!/UNEQUAL/.test(even), 'stimulus pair: no warning when the counts are equal');
+
+    $('input').value = 'Sam went to Paris on Tuesday.'; $('analyzeBtn').click(); await sleep(100);
+    const txt = await exportText('txt');
+    ok(/Capitals mark beats\./.test(txt), 'annotated text: the convention is stated');
+    ok(/\bPAR·is\b/.test(txt) && !/\bsam\b/.test(txt), 'annotated text: letters are as typed, not lowercased');
+  }
+
   console.log(`test_pro_session.js: ${checks} checks passed.`);
   w.close();
 })().catch(e => { console.error(e.stack || e.message); process.exit(1); });

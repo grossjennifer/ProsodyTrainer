@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.7';
+  const ENGINE_BUILD = '3.6.8';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -1477,7 +1477,12 @@
    * SECTION 8 — Prosodic Chunker (IP and φ)  [design §7]
    * ======================================================================== */
 
-  const IP_PUNCT = new Set(['.', '!', '?', ';', ':', ',', '—', '–', '(', ')', '"', '“', '”']);
+  // 3.6.8: quotation marks are no longer phrase boundaries. They enclose; they
+  // do not pause. `The word "permit" has two readings` was cut into three
+  // phrases, each with its own main accent. Quoted speech is still set off
+  // wherever the writer punctuated it (`She said, "I will go."`), because the
+  // comma and the full stop are boundaries in their own right.
+  const IP_PUNCT = new Set(['.', '!', '?', ';', ':', ',', '—', '–', '(', ')']);
   // A comma commonly marks an intonational phrase without resetting a poem's
   // metrical grid. Keep the IP boundary (prominence still needs it), but mark
   // it as weak so passage-level metre inference may look across it. Other
@@ -4303,6 +4308,7 @@
     // returns { marks: Set('w:i'), congruentCount, incongruentCount }
     const marks = new Set();
     let congruentCount = 0;
+    let shortfall = 0;
     for (const ip of doc.phrases) {
       const leftoverStrong = [];
       const weakMonos = [];
@@ -4338,12 +4344,31 @@
       }
       // stressed monosyllables -> unstressed monosyllables, in order
       let k = 0;
+      let unplaced = 0;
       for (const w of leftoverStrong) {
         while (k < weakMonos.length && marks.has(weakMonos[k] + ':0')) k++;
         if (k < weakMonos.length) marks.add(weakMonos[k++] + ':0');
+        else unplaced++;
       }
+      // 3.6.8: when the phrase has no unstressed monosyllable left, a mark
+      // was simply dropped (`STILL aCHIEving STILL purSUing` gave two marks
+      // for four beats). Use the phrase's remaining unstressed syllables,
+      // inside its longer words, in order, so the two versions carry the
+      // same number of marks whenever the phrase has room for them.
+      for (let w = ip.span[0]; unplaced > 0 && w <= ip.span[1]; w++) {
+        const sylls = doc.words[w].syllables;
+        if (sylls.length === 1) continue;
+        for (let j = 0; unplaced > 0 && j < sylls.length; j++) {
+          if (sylls[j].rhythmicStress !== 'S' && !marks.has(w + ':' + j)) {
+            marks.add(w + ':' + j); unplaced--;
+          }
+        }
+      }
+      shortfall += unplaced;
     }
-    return { marks, congruentCount, incongruentCount: marks.size };
+    // `shortfall` > 0 means equal counts are impossible: some phrase has more
+    // beats than unstressed syllables (`WITH a HEART for ANy FATE`: 4 and 3).
+    return { marks, congruentCount, incongruentCount: marks.size, shortfall };
   }
 
   /* ==========================================================================
@@ -4461,7 +4486,8 @@
       congruent: renderWith((w, i, sy) => sy.rhythmicStress === 'S'),
       incongruent: renderWith((w, i) => inc.marks.has(w + ':' + i)),
       congruentCount: inc.congruentCount,
-      incongruentCount: inc.incongruentCount
+      incongruentCount: inc.incongruentCount,
+      shortfall: inc.shortfall
     };
   }
 
@@ -4679,13 +4705,19 @@
   }
 
   function annotatedText(doc) {
-    // Debug rendition: syllables joined by ·, stressed syllables in caps.
+    // Syllables joined by ·, beat syllables in capitals. 3.6.8: a syllable
+    // without a beat keeps the letters as typed, so `Sam` and `Tuesday` are
+    // no longer written `sam` and `tues·day`. A beat is a syllable entirely
+    // in capitals (`SAM`, `TUES·day`); a capital that is only spelling is
+    // followed by lower case. One case cannot be told apart in this format:
+    // a one-letter syllable that is always a capital (the pronoun `I`).
     let out = '';
     for (const tok of doc.tokens) {
       if (tok.type === 'word') {
         const wd = doc.words[tok.wordIndex];
-        out += wd.syllables.map(sy =>
-          sy.rhythmicStress === 'S' ? sy.text.toUpperCase() : sy.text
+        const typed = tokenSyllables(tok, wd);
+        out += wd.syllables.map((sy, i) =>
+          sy.rhythmicStress === 'S' ? typed[i].toUpperCase() : typed[i]
         ).join('·');
       } else out += tok.text;
     }
