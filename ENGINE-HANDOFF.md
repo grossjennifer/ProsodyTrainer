@@ -214,9 +214,10 @@ Since 16 November 2026 the player speaks recordings of Prof. Gross's voice:
 tokens of each, taken in turn (so no two beats in a row are the identical
 recording), and each token comes in shorter versions (DUM about 330, 237 and
 150 ms; da about 155 and 98 ms). The player plays the longest version that
-fits the syllable's slot; the shortest fit the shortest slots the tempo
-slider allows (143 ms for a beat, 95 ms for a weak syllable, in a three-beat
-pattern at 180 per minute), so nothing is cut off. The shorter versions were
+fits the syllable's slot; the shortest fit even a three-beat pattern at 180
+per minute (143 ms for a beat, 95 ms for a weak syllable), so nothing is cut
+off. The tempo slider runs from 60 to 140 (default 120) since 17 November:
+Prof. Gross found that at 180 a three-beat line is too fast to hear the beat. The shorter versions were
 made from the same recordings by removing whole pitch periods from the middle
 of the syllable: pitch and voice are unchanged, and the onset and release are
 untouched. All clips are embedded in the file as base64 WAV (WAV, not MP3,
@@ -418,9 +419,19 @@ motivated by the mechanism above.
 - Quoted speech with no comma before it (`She said "I will go."`) is not
   split at the quotation mark.
 
-**Accessibility**
-- Only the welcome page's text size has been checked against WCAG. The tools
-  and Learn pages have not had a keyboard, screen-reader and contrast pass.
+**Accessibility** (both tools reviewed 17 November 2026 with axe-core in
+Chrome, plus keyboard, screen-reader, contrast, motion and 320 px checks)
+- Fixed: Pro's text-type menu had no name in the simple view; syllable
+  buttons' names did not begin with the letters shown (2.5.3); Pro's amber
+  confidence colour fell short on striped rows; an empty table heading;
+  Rhythm Reader had one heading. Protected by `test_a11y_labels.js`.
+- Open: Pro's one-letter syllables are smaller than 24 px (axe flags 2.5.8).
+  They sit inside running text, which the criterion's inline exception
+  covers; widening them breaks words apart visibly. Awaiting a decision.
+- Open: every syllable is a Tab stop (not a WCAG failure, but heavy for
+  keyboard users on long passages). A single Tab stop with arrow keys between
+  syllables is the standard remedy. Awaiting a decision.
+- The Learn pages have not had this review.
 
 ---
 
@@ -431,10 +442,9 @@ motivated by the mechanism above.
 3. Whether a triple-time line that opens weak-STRONG should be labelled
    weak-weak-STRONG (anapestic) outright. At present four such corpus lines
    are reported as a tie between anapestic and amphibrachic.
-4. *Answered 17 November 2026:* "`FRESH produce` seems correct; there
-   should be no spondee." The engine at 3.6.10 reads `fresh PROduce`, with the
-   beat on the noun. The sentence is P32 of the 40 prose items, so apply the
-   ruling with the prose retuning (section 7), not before.
+4. *Answered 17 November 2026:* `fresh PROduce` is correct (one beat, on
+   the noun; no spondee). This is what the engine already reads, so nothing
+   changes. P32 of the 40 prose items.
 5. Whether to add an office and telephone number to the contact page.
 
 ---

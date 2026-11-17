@@ -283,7 +283,7 @@ td.mono, .mono { font-family: var(--mono); font-size: .82rem; }
 .remembered-list li { display: flex; flex-wrap: wrap; gap: .6rem; align-items: center;
   padding: .3rem 0; border-bottom: 1px solid var(--line, #ddd); }
 .remembered-list .w { font-weight: 600; min-width: 8rem; }
-.conf-hi { color: var(--phrase); } .conf-mid { color: #8A6D1F; } .conf-lo { color: var(--beat); }
+.conf-hi { color: var(--phrase); } .conf-mid { color: #745A14; } .conf-lo { color: var(--beat); }
 .statgrid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px,1fr));
   gap: .8rem; margin-top: .8rem; }
 .stat { background: var(--paper); border-radius: 8px; padding: .7rem .8rem; }
@@ -390,7 +390,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <button class="chip" data-ex="mixed">Mixed prose</button>
     <span class="spacer"></span>
     <label class="opt" for="textType" style="font-weight:600">text type</label>
-    <select id="textType" aria-describedby="textTypeHelp">
+    <select id="textType" aria-label="Text type" aria-describedby="textTypeHelp">
       <option value="auto" selected>auto-detect</option>
       <option value="prose">prose</option>
       <option value="verse">verse, song or rhyme</option>
@@ -482,7 +482,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
     <button id="playBtn" aria-pressed="false"
       aria-describedby="playHelp">&#9654; Hear the beat</button>
     <label for="tempo">Tempo
-      <input type="range" id="tempo" min="60" max="180" step="5" value="120">
+      <input type="range" id="tempo" min="60" max="140" step="5" value="120">
       <output id="tempoVal" for="tempo">120</output><abbr title="beats per minute">bpm</abbr></label>
     <span id="playHelp" class="sr-only">Plays the beat as spoken syllables: a longer,
       louder DUM on every beat and a short, soft da on every weak syllable,
@@ -1069,7 +1069,10 @@ function renderSurface() {
         b.textContent = restoreCase(tok.text, wd, i);
         const rhythmLabel = (sy.rhythmicStress === 'S' ? 'beat' : 'no beat') +
           (sy.nuclear ? ', phrase nucleus' : '');
-        b.setAttribute('aria-label', wd.word + ' syllable ' + (i + 1) + ', ' +
+        // The name starts with the letters shown (WCAG 2.5.3, Label in Name);
+        // the word and the syllable's place in it follow.
+        b.setAttribute('aria-label', b.textContent +
+          (wd.syllables.length > 1 ? ', in ' + tok.text + ', syllable ' + (i + 1) : '') + ', ' +
           (tier === 'rhythmic' ? rhythmLabel : 'stress ' + sy.lexicalStress) +
           '. Activate to change.');
         b.dataset.w = String(tok.wordIndex);
@@ -1405,7 +1408,7 @@ function renderDebug() {
   const tbl = document.createElement('table');
   tbl.innerHTML = '<thead><tr><th>word</th><th>syllables</th>' +
     '<th>lexical</th><th>template</th><th>beats</th><th>source</th>' +
-    '<th>model fit</th><th>in CMU</th><th>edited</th><th></th></tr></thead>';
+    '<th>model fit</th><th>in CMU</th><th>edited</th><th><span class="sr-only">Inspect</span></th></tr></thead>';
   const tb = document.createElement('tbody');
   doc.words.forEach((wd, wi) => {
     const tr = document.createElement('tr');

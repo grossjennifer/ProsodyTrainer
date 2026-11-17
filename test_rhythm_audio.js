@@ -191,9 +191,11 @@ async function exercise(relPath, goId, surfaceSel) {
 
   // Fast tempo so the test does not wait long.
   const tempo = d.getElementById('tempo');
-  tempo.value = '180';
+  ok(tempo.min === '60' && tempo.max === '140' && tempo.value === '120',
+    `${label}: tempo runs 60 to 140, default 120 (17 November 2026)`);
+  tempo.value = '180';                      // beyond the range: the slider clamps it
   tempo.dispatchEvent(new dom.window.Event('input'));
-  ok(d.getElementById('tempoVal').value === '180', `${label}: tempo readout follows the slider`);
+  ok(d.getElementById('tempoVal').value === '140', `${label}: tempo readout follows the slider`);
 
   btn.click();
   ok(btn.getAttribute('aria-pressed') === 'true', `${label}: Play sets pressed state`);

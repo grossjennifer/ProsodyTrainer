@@ -40,7 +40,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const fire = (el, type) => el.dispatchEvent(new w.Event(type, { bubbles: true }));
   const beats = () => Array.from(d.querySelectorAll('#surface button'))
     .map(b => b.getAttribute('aria-label') || '')
-    .filter(a => /syllable \d+, (beat|no beat)/.test(a))
+    .filter(a => /, (beat|no beat)(, phrase nucleus)?\. Activate/.test(a))
     .map(a => (/, beat/.test(a) ? 'S' : 'W')).join('');
   const syl = prefix => Array.from(d.querySelectorAll('#surface button'))
     .find(b => (b.getAttribute('aria-label') || '').startsWith(prefix));
@@ -56,7 +56,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
   const start = beats();
 
   // --- 1. edits are never discarded silently ---------------------------
-  syl('said syllable 1').click(); await sleep(50);
+  syl('said, ').click(); await sleep(50);
   const edited = beats();
   ok(edited !== start, 'the hand edit changed the reading');
 
@@ -145,7 +145,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     $('studyId').value = '@pilot, wave 1'; fire($('studyId'), 'input');
     $('input').value = 'Her friend left early, she said.';
     answer = true; $('analyzeBtn').click(); await sleep(100);
-    syl('said syllable 1').click(); await sleep(50);
+    syl('said, ').click(); await sleep(50);
     const csv = await exportText('research');
     const lines = csv.split('\n');
     const head = lines[0].split(',');
@@ -171,7 +171,7 @@ const sleep = ms => new Promise(r => setTimeout(r, ms));
     $('participantId').value = '../P 07/=x'; fire($('participantId'), 'input');
     await exportText('research');
     eq(name, 'research_session_P_07_x.csv', 'the file name keeps only characters safe in a file name');
-    syl('said syllable 1').click(); await sleep(50);      // a new event, logged under the new ID
+    syl('said, ').click(); await sleep(50);      // a new event, logged under the new ID
     const csv = await exportText('research');
     ok(csv.split('\n').pop().includes(',../P 07/=x,'), 'the ID inside the file is exactly as typed');
     $('participantId').value = 'P-07'; fire($('participantId'), 'input');

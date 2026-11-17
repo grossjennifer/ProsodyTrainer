@@ -166,7 +166,8 @@ footer a { color: var(--phrase); }
   your mind constructs when you read.</p>
 </header>
 
-<section class="card input">
+<section class="card input" aria-labelledby="textH">
+  <h2 id="textH" class="sr-only">Your text</h2>
   <label for="input" style="font-weight:600">Your text</label>
   <textarea id="input">Happy children running quickly. The sun arose above the quiet hill.</textarea>
   <div class="row">
@@ -201,7 +202,8 @@ footer a { color: var(--phrase); }
   </details>
 </section>
 
-<section class="card">
+<section class="card" aria-labelledby="beatH">
+  <h2 id="beatH" class="sr-only">The beat</h2>
   <div class="row" style="margin-top:0">
     <div class="seg" role="group" aria-label="How to show the beat" id="modes">
       <button data-mode="caps" aria-pressed="false">CAPS</button>
@@ -229,7 +231,7 @@ footer a { color: var(--phrase); }
     <button id="playBtn" aria-pressed="false"
       aria-describedby="playHelp">&#9654; Hear the beat</button>
     <label for="tempo">Tempo
-      <input type="range" id="tempo" min="60" max="180" step="5" value="120">
+      <input type="range" id="tempo" min="60" max="140" step="5" value="120">
       <output id="tempoVal" for="tempo">120</output><abbr title="beats per minute">bpm</abbr></label>
     <span id="playHelp" class="sr-only">Plays the beat as spoken syllables: a longer,
       louder DUM on every beat and a short, soft da on every weak syllable,
@@ -464,7 +466,12 @@ function render() {
       b.dataset.k = String(k);
       // which syllables this part covers — the tap track highlights by these
       b.dataset.syls = inSpan.join(',');
-      b.setAttribute('aria-label', wd.word + ' part, ' +
+      // The name starts with the letters shown, so that a voice-control user
+      // can say what they see (WCAG 2.5.3); the word follows when the part
+      // is not the whole word.
+      const shown = tok.text.slice(s, e);
+      b.setAttribute('aria-label', shown +
+        (shown.toLowerCase() !== tok.text.toLowerCase() ? ', in ' + tok.text : '') + ', ' +
         (strong ? 'has a beat' : 'no beat') + '. Tap to change.');
       b.addEventListener('click', () => {
         stopPlayback();
