@@ -83,4 +83,26 @@ const asSong = E.analyze(line, { textType: 'song' });
 eq(asSong.config.textType, 'verse');
 eq(beats(asSong), beats(E.analyze(line, { textType: 'verse' })));
 
+// 3.6.10: vowel digraphs, sounded -lle, and names the rules cannot divide.
+{
+  const div = w => E.analyze(w, { textType: 'prose' }).words[0].syllables.map(s => s.text).join('·');
+  const cases = [
+    ['Louisville', 'Lou·is·ville'], ['Louis', 'Lou·is'], ['Louisiana', 'Lou·i·si·an·a'],
+    ['Louise', 'Lou·ise'], ['Hawaii', 'Ha·wai·i'], ['paranoia', 'par·a·noi·a'],
+    ['agreeable', 'a·gree·a·ble'], ['sightseeing', 'sight·see·ing'], ['Bauer', 'Bau·er'],
+    ['sequoia', 'se·quoi·a'], ['plebeian', 'ple·bei·an'],
+    // pairs that often straddle a boundary are not treated as one vowel
+    ['coauthor', 'co·au·thor'], ['evacuees', 'e·vac·u·ees'],
+    // sounded -lle: the double l splits; -ouille is ou·ille
+    ['Achille', 'A·chil·le'], ['Lavalle', 'La·val·le'], ['DeMille', 'De·Mil·le'],
+    ['rattatouille', 'rat·ta·tou·ille'], ['grenouille', 'gre·nou·ille'],
+    // silent -lle and C+le are unchanged
+    ['Michelle', 'Mi·chelle'], ['Nashville', 'Nash·ville'], ['little', 'lit·tle'], ['table', 'ta·ble'],
+    // Mc- names that need the exception table
+    ['McBryar', 'Mc·Bry·ar'], ['McDyess', 'Mc·Dy·ess'], ['McNicholas', 'Mc·Nich·olas'],
+    ['McCarthyism', 'Mc·Car·thy·i·sm'], ['McDonald', 'Mc·Do·nald'],
+  ];
+  for (const [w, want] of cases) { assert.strictEqual(div(w), want.toLowerCase(), w); checks++; }
+}
+
 console.log(`test_text_handling.js: ${checks} checks passed.`);

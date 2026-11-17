@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.9';
+  const ENGINE_BUILD = '3.6.10';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -108,7 +108,15 @@
   // Affects hyphen DISPLAY only — never stress, templates, or rhythm.
   const HYPHEN_EXCEPTIONS = {
     'photographer': ['pho', 'tog', 'ra', 'pher'],
-    'unopened': ['un', 'o', 'pened']
+    'unopened': ['un', 'o', 'pened'],
+    // 3.6.10: names the general rules cannot divide. A -y- that is a vowel
+    // before another vowel (Bry·ar, Dy·ess), CMU syllable counts that drop a
+    // vowel (McNicholas as three), and a silent-looking final e that is not.
+    'mcbryar': ['mc', 'bry', 'ar'],
+    'mccarthyism': ['mc', 'car', 'thy', 'i', 'sm'],   // five, as CMU: -ism is two
+    'mcdyess': ['mc', 'dy', 'ess'],
+    'mcnicholas': ['mc', 'nich', 'olas'],
+    'louise': ['lou', 'ise']
   };
 
   // Confidence table (design §10). [HEUR] Scores are heuristic, not
@@ -434,6 +442,11 @@
   // structure]. Used by the closure rule in orthoSyllabify.
   const LAX_VOWELS = new Set(['IH', 'EH', 'AE', 'AH', 'UH']);
   const ORTHO_DIGRAPHS = new Set(['th', 'sh', 'ch', 'ph', 'wh', 'ck', 'ng']);
+  // Two vowel letters that reliably spell one vowel, used when a longer vowel
+  // group must be split (3.6.10). Pairs that often straddle a prefix or a
+  // syllable boundary (ea, oa, ue, ui: re·au·thor·ize, co·au·thor,
+  // e·vac·u·ees) are left out.
+  const VOWEL_DIGRAPHS = new Set(['ou', 'oo', 'ee', 'ai', 'au', 'oi', 'ei', 'eu']);
 
   // Split N-1 boundaries for a word given target syllable count N.
   // Returns array of N strings, or null on failure.
@@ -470,6 +483,17 @@
       if (word.slice(last[0], last[1]) === 'e' && last[1] === word.length)
         groups.pop();                 // the silent e is not a syllable
     }
+    // 3.6.10: a sounded -lle ending. `-ouille` is `ou·ille` (ra·ta·tou·ille);
+    // otherwise the double l is split as any double is (la·val·le,
+    // a·chil·le), where the C+le rule below gave `la·va·lle`.
+    if (/lle$/.test(word) && N >= 2 && !silentLle) {
+      const tailLen = /[aeiou]ouille$/.test(word) ? 0 : /ouille$/.test(word) ? 4 : 2;
+      if (tailLen) {
+        const head = word.slice(0, word.length - tailLen);
+        const headRes = orthoSyllabify(head, N - 1, sylInfo ? sylInfo.slice(0, N - 1) : null);
+        if (headRes && !headRes.forced) return { sylls: [...headRes.sylls, word.slice(-tailLen)], forced: false };
+      }
+    }
     if (/[^aeiou]le$/.test(word) && N >= 2 && !silentLle &&
         !(sylInfo && sylInfo[N - 1] && sylInfo[N - 1].stressed)) {
       cleTail = word.slice(-3); // e.g. "ble", "tle"
@@ -502,12 +526,19 @@
         drop(([s, e], gi) => word.slice(s, e) === 'e' && gi > 0 &&
                              e < word.length && !isVowelLetter(word[e])); // (c)
     }
-    // Too few groups: split a multi-letter group (qui·et).
+    // Too few groups: split a multi-letter group (qui·et). 3.6.10: a group of
+    // three or more letters that opens with a vowel digraph is split after
+    // the digraph, which is one vowel: `lou·is`, not `lo·uis`.
+    const keep = new Set();   // digraphs split off a longer group stay whole
     while (groups.length < N) {
-      const gi = groups.findIndex(([s, e]) => e - s > 1);
+      let gi = groups.findIndex(([s, e]) => e - s > 1 && !keep.has(s));
+      if (gi === -1) gi = groups.findIndex(([s, e]) => e - s > 1);
       if (gi === -1) { forced = true; break; }
       const [s, e] = groups[gi];
-      groups.splice(gi, 1, [s, s + 1], [s + 1, e]);
+      const digraph = e - s >= 3 && VOWEL_DIGRAPHS.has(word.slice(s, s + 2));
+      if (digraph) keep.add(s);
+      const at = digraph ? s + 2 : s + 1;
+      groups.splice(gi, 1, [s, at], [at, e]);
     }
     // Still mismatched: force-merge extras. [confidence penalty]
     while (groups.length > N) { groups.pop(); forced = true; }

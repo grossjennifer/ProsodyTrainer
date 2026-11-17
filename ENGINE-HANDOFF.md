@@ -1,6 +1,6 @@
 # Rhythm engine handoff
 
-Written 16 November 2026, at engine build **3.6.9**, for whoever works on the
+Written 16 November 2026, at engine build **3.6.10**, for whoever works on the
 engine next: a person, or an AI model with no memory of the work so far. Read
 this before changing `engine.js`. It records how the engine decides, what
 protects each decision, what is known to be wrong, and how to change things
@@ -397,10 +397,11 @@ motivated by the mechanism above.
 - `Our neighbors import furniture.`, `The company exports grain.`,
   `Anna exports wine to Canada.`; `compress` is not on the list.
 
-**Syllable division**
-- `Louisville` (`lo·uis·ville`) and `Louis`; five Mc- names (`McBryar`,
-  `McCarthyism`, `McDyess`, `McNicholas`, bare `Mc`); fourteen -lle words with
-  a sounded final vowel, among them `ratatouille`.
+**Syllable division** (display only)
+- Words ending in `-ism` / `-asm` have a syllable with no vowel letter and
+  are divided `ra·ci·sm`, `pri·sm`. Fixed in 3.6.10: vowel pairs inside
+  longer vowel groups (`Lou·is·ville`), sounded `-lle` (`La·val·le`), and the
+  Mc- names, via `VOWEL_DIGRAPHS` and `HYPHEN_EXCEPTIONS`.
 
 **Text handling**
 - Numerals are not expanded. A note tells the reader to spell them out.
@@ -451,5 +452,5 @@ and Verse metre prior; 3.6.2 meter labels; 3.6.3 homographs after a modifier;
 3.6.4 accents, hyphens, one verse choice, contact page; 3.6.5 `-lle` and
 `Mc-`; 3.6.6 Pro session integrity and export provenance; 3.6.7 CSV cells cannot
 become formulas; 3.6.8 quotation marks are not phrase boundaries, equal
-stimulus counts, annotated text as typed; 3.6.9 short comma lines. Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
+stimulus counts, annotated text as typed; 3.6.9 short comma lines; 3.6.10 syllable division. Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
 Learn pages, larger welcome-page type, and the prose scoring pipeline.
