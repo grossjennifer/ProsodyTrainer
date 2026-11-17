@@ -220,6 +220,7 @@ footer a { color: var(--phrase); }
     <button id="print">Print</button>
   </div>
   <p id="regimeNote" class="hint"></p>
+  <p id="unpunctNote" class="hint" role="note" hidden>Read as verse. If this is an ordinary sentence, end it with a full stop or choose Ordinary prose.</p>
   <div id="live" class="sr-only" role="status" aria-live="polite"></div>
   <div id="out" class="mode-bold"></div>
   <div id="readingChoices" class="reading-choices" hidden></div>
@@ -336,15 +337,34 @@ function beatCount() {
   return n;
 }
 
+/* A single line with no closing punctuation, read as verse under "Let it
+ * decide". The engine cannot tell such a line from an ordinary sentence typed
+ * without its full stop (measured 17 November 2026: every text-only rule that
+ * rescued unpunctuated prose cost about as many unpunctuated verse lines), so
+ * the reader is told how to settle it. Stored readings are approved and get no
+ * hint. */
+function unpunctuatedVerse(text, d) {
+  if (!d || !d.regime || d.regime.regime === 'prose') return false;
+  if (String(d.regime.reason || '').startsWith('user:')) return false;
+  if (d.analysisSource === 'registered-known-reading') return false;
+  const t = text.trim();
+  if (!t || /[\r\n]/.test(t)) return false;
+  return /[\p{L}\p{N}]$/u.test(t.replace(/["'”’)\]]+$/u, ''));
+}
+
 function analyze(prefix) {
   stopPlayback();
   doc = E.analyze(document.getElementById('input').value, { textType });
   document.getElementById('numberNote').hidden =
     !/\d/.test(document.getElementById('input').value);
+  document.getElementById('unpunctNote').hidden =
+    !unpunctuatedVerse(document.getElementById('input').value, doc);
   render();
   announce((typeof prefix === 'string' ? prefix : '') +
     'Analysis updated: ' + beatCount() + ' beats. ' +
-    document.getElementById('regimeNote').textContent);
+    document.getElementById('regimeNote').textContent +
+    (document.getElementById('unpunctNote').hidden ? '' :
+      ' ' + document.getElementById('unpunctNote').textContent));
 }
 
 let parts = 'none'; // 'none' | 'syll' | 'morph'

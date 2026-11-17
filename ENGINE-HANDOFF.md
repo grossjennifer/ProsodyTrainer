@@ -259,7 +259,7 @@ Protected by `test_pro_session.js` (drives the real page), `test_pro_polish.js`,
 | Group | Files | Protects |
 |---|---|---|
 | `test:engine` | `test_quotes_stimuli`, `test_known_readings`, `test_contextual_heteronyms`, `test_phrase_prominence`, `test_ternary_boundaries`, `test_engine_edits`, `eval/novel_heteronyms`, `test_learned_words`, `test_reading_features`, `test_discourse_focus`, `test_sentence_layout`, `test_meter_labels`, `test_modifier_heteronyms`, `test_text_handling` | Engine readings and labels |
-| `test:pages` | `test_asset_paths`, `test_exhibit`, `test_learn`, `test_interface`, `test_pro_polish`, `test_rhythm_audio`, `sound-spelling/test_onset_rime`, `test_remembered_words_page`, `test_reader_wording`, `test_contact_page`, `test_pro_session`, `test_audio_clips`, `test_beat_voice` | The pages, audio, wording |
+| `test:pages` | `test_asset_paths`, `test_exhibit`, `test_learn`, `test_interface`, `test_pro_polish`, `test_rhythm_audio`, `sound-spelling/test_onset_rime`, `test_remembered_words_page`, `test_reader_wording`, `test_contact_page`, `test_pro_session`, `test_audio_clips`, `test_unpunct_hint`, `test_beat_voice` | The pages, audio, wording |
 | `test:diagnostics` | `test_diagnostic_battery`, `test_export_provenance`, `test_prose_pending`, `test_prose_score` | The 16-case battery, exports, known pending errors, the prose scoring pipeline |
 | `test:rhythm-candidates` | `eval/rhythm_measure_diagnostic.js --assert` | The 40 rhythm-measure candidates under Verse (40 of 40) |
 | `test:acceptance` | `eval/acceptance.js` | Release gates |
@@ -365,7 +365,17 @@ motivated by the mechanism above.
 
 **Regime and labels**
 - A sentence typed without closing punctuation is still read as verse
-  (`Sam fell out of the canoe`).
+  (`Sam fell out of the canoe`). **Deliberately left in the engine.**
+  Measured 17 November 2026 on 107 unpunctuated verse lines and 71
+  unpunctuated prose sentences under auto: today's rule gets 104 verse and 20
+  prose right; treating an unpunctuated line as a sentence gets 47 and 56;
+  gating that by length (11+ syllables, 13+, 9+ words) trades about one verse
+  line per prose sentence gained. Both tools instead show a hint when a single
+  line with no closing punctuation is read as verse under auto and is not a
+  stored reading: "Read as verse. If this is an ordinary sentence, end it with
+  a full stop or choose Ordinary prose." (`unpunctuatedVerse` in each page;
+  `test_unpunct_hint.js`). Do not change this without a cue that separates
+  the two, measured the same way.
 - A punctuated single verse line not on the stored list reads as prose under
   auto (accepted cost, section 3.1).
 - Lines too short to establish a meter are labelled prose

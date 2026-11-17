@@ -473,6 +473,7 @@ dialog h3 { font-family: var(--serif); margin: 0 0 .3rem; font-size: 1.4rem; }
   </div>
 
   <div id="meterLine"></div>
+  <p id="unpunctNote" class="hint" role="note" hidden>Read as verse. If this is an ordinary sentence, end it with a full stop or choose prose.</p>
   <div id="readingChoices" class="reading-choices" hidden></div>
   <div id="ambigNotice" class="notice" hidden></div>
   <div id="live" class="sr-only" role="status" aria-live="polite"></div>
@@ -873,6 +874,21 @@ function logSetting(name, before, after) {
 }
 
 let lastAnalyzedText = null;
+/* A single line with no closing punctuation, read as verse under "Let it
+ * decide". The engine cannot tell such a line from an ordinary sentence typed
+ * without its full stop (measured 17 November 2026: every text-only rule that
+ * rescued unpunctuated prose cost about as many unpunctuated verse lines), so
+ * the reader is told how to settle it. Stored readings are approved and get no
+ * hint. */
+function unpunctuatedVerse(text, d) {
+  if (!d || !d.regime || d.regime.regime === 'prose') return false;
+  if (String(d.regime.reason || '').startsWith('user:')) return false;
+  if (d.analysisSource === 'registered-known-reading') return false;
+  const t = text.trim();
+  if (!t || /[\r\n]/.test(t)) return false;
+  return /[\p{L}\p{N}]$/u.test(t.replace(/["'”’)\]]+$/u, ''));
+}
+
 function analyze(prefix, opts) {
   const text = document.getElementById('input').value;
   const settingChange = !!(opts && opts.settingChange);
@@ -886,6 +902,7 @@ function analyze(prefix, opts) {
     clashSubordination: document.getElementById('clashSub').checked,
     textType: document.getElementById('textType').value });
   lastAnalyzedText = text;
+  document.getElementById('unpunctNote').hidden = !unpunctuatedVerse(text, doc);
   feetForced = false;
   ambigAccepted = false;
   ambigLogged = false;
@@ -899,7 +916,9 @@ function analyze(prefix, opts) {
   renderAll();
   announce((typeof prefix === 'string' ? prefix : '') +
     'Analysis updated: ' + beatCount() + ' beats, ' +
-    doc.meterSummary.label + '.');
+    doc.meterSummary.label + '.' +
+    (document.getElementById('unpunctNote').hidden ? '' :
+      ' ' + document.getElementById('unpunctNote').textContent));
 }
 
 /* ---------- rendering ---------- */
