@@ -47,15 +47,22 @@ is('There once was a man from Nantucket', 'predominantly amphibrachic');
 is('On the fifteenth of May in the jungle of Nool', 'predominantly anapestic');
 is('Because I could not stop for Death', 'predominantly iambic');
 
-// A real tie is still reported, with two candidates instead of three.
+// Owner ruling, 17 November 2026 (3.6.11): the anapestic/amphibrachic tie of
+// a triple-time line that opens weak-STRONG is settled as anapestic.
 for (const text of [
   'When Horton the elephant heard a small noise',
-  'The stockings were hung by the chimney with care'
+  'The stockings were hung by the chimney with care',
+  'In hopes that Saint Nicholas soon would be there',
+  'Oh solitude where are the charms'
 ]) {
   const m = label(text);
-  assert.strictEqual(m.ambiguous, true, text); checks++;
-  assert.deepStrictEqual(m.ambiguousTypes.slice().sort(),
-    ['amphibrach', 'anapest'], `${text} → ${m.ambiguousTypes}`); checks++;
+  assert.strictEqual(m.ambiguous, false, text); checks++;
+  assert.strictEqual(m.label, 'predominantly anapestic', text); checks++;
+}
+// Other ties are still reported.
+{
+  const m = label('The Assyrian came down like the wolf on the fold', { textType: 'verse' });
+  assert.strictEqual(m.ambiguous, true, 'a different tie is not settled by the ruling'); checks++;
 }
 
 // Prose keeps its prose label.

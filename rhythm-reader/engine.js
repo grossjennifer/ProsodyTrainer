@@ -33,7 +33,7 @@
   // Human-readable release identifier. The numeric `version` field on an
   // analysis remains the stable JSON schema version; this build identifies
   // the exact engine release that produced an analysis or export.
-  const ENGINE_BUILD = '3.6.10';
+  const ENGINE_BUILD = '3.6.11';
 
   /* ==========================================================================
    * SECTION 0 — Linguistic constants
@@ -3510,8 +3510,17 @@
      * reported as `alternating (trochaic/iambic scansions near-equivalent)`.
      * A scansion is now dropped when another costs no more and needs fewer
      * syllables set aside before its first foot. */
-    return near.filter(a => !near.some(b =>
+    const kept = near.filter(a => !near.some(b =>
       b !== a && b.cost <= a.cost + PROBE_TIE && b.lead < a.lead));
+    /* Owner ruling, 17 November 2026 (3.6.11): a triple-time line that opens
+     * weak-STRONG is anapestic. `the STOCKings were HUNG by the CHIMney with
+     * CARE` divides equally well into anapests with a short first foot or
+     * into amphibrachs; it is taught, and labelled here, as anapestic. Only
+     * this exact tie is settled; any other tie is still reported. */
+    if (kept.length === 2 && kept.some(a => a.type === 'anapest') &&
+        kept.some(a => a.type === 'amphibrach'))
+      return kept.filter(a => a.type === 'anapest');
+    return kept;
   }
 
   // Build the feet of the best "pure" scansion of one foot type over a
@@ -3960,15 +3969,22 @@
     words.forEach((wd, wi) => {
       const token = markedWords[wi] || '';
       wd.syllables.forEach((sy, i) => setRhythm(wd, i, 'W', source, 0.95));
-      const at = Array.from(token).findIndex(ch => ch >= 'A' && ch <= 'Z');
-      if (at < 0) return;
-      let off = 0, target = wd.syllables.length - 1;
-      for (let i = 0; i < wd.syllables.length; i++) {
-        const len = wd.syllables[i].text.replace(/[^A-Za-z']/g, '').length;
-        if (at < off + len) { target = i; break; }
-        off += len;
+      // 3.6.11: each run of capitals is a beat, on the syllable holding the
+      // run's first letter, so a word can carry two (`SUDdenLY`). Before,
+      // only the first capital in a word counted.
+      const chars = Array.from(token);
+      const starts = chars.map((ch, k) => (ch >= 'A' && ch <= 'Z') &&
+        !(k > 0 && chars[k - 1] >= 'A' && chars[k - 1] <= 'Z') ? k : -1).filter(k => k >= 0);
+      if (!starts.length) return;
+      for (const at of starts) {
+        let off = 0, target = wd.syllables.length - 1;
+        for (let i = 0; i < wd.syllables.length; i++) {
+          const len = wd.syllables[i].text.replace(/[^A-Za-z']/g, '').length;
+          if (at < off + len) { target = i; break; }
+          off += len;
+        }
+        setRhythm(wd, target, 'S', source, 0.95);
       }
-      setRhythm(wd, target, 'S', source, 0.95);
       wd.rhythmicPattern = wd.syllables.map(s => s.rhythmicStress).join('');
     });
   }

@@ -113,7 +113,7 @@
     {
       id: 'longfellow-lives', kind: 'familiar-verse', meter: 'trochee',
       text: 'Lives of great men all remind us we can make our lives sublime and, departing, leave behind us footprints on the sands of time.',
-      marked: 'LIVES of GREAT men ALL reMIND us WE can MAKE our LIVES subLIME AND dePARTing LEAVE beHIND us FOOTprints ON the SANDS of TIME',
+      marked: 'LIVES of GREAT men ALL reMIND us WE can MAKE our LIVES subLIME and dePARTing LEAVE beHIND us FOOTprints ON the SANDS of TIME',
       studyEvidence: {
         candidateId: 'QID54',
         role: 'strong congruent candidate',
@@ -123,7 +123,7 @@
     {
       id: 'poe-raven-full-opening', kind: 'familiar-verse', meter: 'trochee',
       text: 'once upon a midnight dreary, while I pondered, weak and weary, over many a quaint and curious volume of forgotten lore, while I nodded, nearly napping, suddenly there came a tapping, as of someone gently rapping, rapping at my chamber door.',
-      marked: 'ONCE upON a MIDnight DREARy WHILE i PONdered WEAK and WEARy OVer MANy a QUAINT and CURious VOLume OF forGOTten LORE WHILE i NODded NEARly NAPping SUDdenly THERE came A TAPping AS of SOMEone GENTly RAPping RAPping AT my CHAMber DOOR'
+      marked: 'ONCE upON a MIDnight DREARy WHILE i PONdered WEAK and WEARy OVer MANy a QUAINT and CURious VOLume OF forGOTten LORE WHILE i NODded NEARly NAPping SUDdenLY there CAME a TAPping AS of SOMEone GENTly RAPping RAPping AT my CHAMber DOOR'
     }
   ];
 

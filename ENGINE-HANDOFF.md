@@ -1,6 +1,6 @@
 # Rhythm engine handoff
 
-Written 16 November 2026, at engine build **3.6.10**, for whoever works on the
+Written 16 November 2026, at engine build **3.6.11**, for whoever works on the
 engine next: a person, or an AI model with no memory of the work so far. Read
 this before changing `engine.js`. It records how the engine decides, what
 protects each decision, what is known to be wrong, and how to change things
@@ -432,26 +432,24 @@ Chrome, plus keyboard, screen-reader, contrast, motion and 320 px checks)
 - Since 17 November the passage is one Tab stop in both tools (roving
   tabindex, `rovingFocus` in each page): the arrow keys move between
   syllables, Home and End jump to the ends, Tab leaves for Play.
-- Learn pages reviewed 17 November: two Play buttons whose names did not
-  begin with their visible text ("Hear DUM-da"), and long DOI links that
-  forced sideways scrolling at 320 px (now wrap). No other violations; every
-  control has a visible focus ring. Their type is now enlarged like the
-  welcome page (`html.learn`: 115%, 135% at 900 px and wider, 100% at 340 px
-  and narrower).
+- The Learn pages have not had this review.
 
 ---
 
-## 9. Decisions waiting on Prof. Gross
+## 9. Decisions by Prof. Gross
 
-1. The stored reading of the Raven line: `THERE came A TAPping`.
-2. The stored reading of the Longfellow line: `AND dePARTing`.
-3. Whether a triple-time line that opens weak-STRONG should be labelled
-   weak-weak-STRONG (anapestic) outright. At present four such corpus lines
-   are reported as a tie between anapestic and amphibrachic.
-4. *Answered 17 November 2026:* `fresh PROduce` is correct (one beat, on
-   the noun; no spondee). This is what the engine already reads, so nothing
-   changes. P32 of the 40 prose items.
-5. Whether to add an office and telephone number to the contact page.
+All answered 17 November 2026.
+
+1. Raven: `SUDdenLY there CAME a TAPping` (stored reading changed in 3.6.11;
+   matches measure item M08).
+2. Longfellow: `subLIME and dePARTing`, with "and" weak (stored reading
+   changed in 3.6.11). The ruling was given for the passage, where "and"
+   follows a beat. The corpus line `And departing leave behind us` stands
+   alone and keeps its gold `AND dePARTing` until she says otherwise.
+3. A triple-time line that opens weak-STRONG is labelled anapestic (3.6.11).
+4. `fresh PROduce` is correct (one beat, on the noun; no spondee). The engine
+   already reads it so. P32 of the 40 prose items.
+5. No office address or telephone number on the contact page.
 
 ---
 
@@ -477,5 +475,5 @@ and Verse metre prior; 3.6.2 meter labels; 3.6.3 homographs after a modifier;
 3.6.4 accents, hyphens, one verse choice, contact page; 3.6.5 `-lle` and
 `Mc-`; 3.6.6 Pro session integrity and export provenance; 3.6.7 CSV cells cannot
 become formulas; 3.6.8 quotation marks are not phrase boundaries, equal
-stimulus counts, annotated text as typed; 3.6.9 short comma lines; 3.6.10 syllable division. Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
+stimulus counts, annotated text as typed; 3.6.9 short comma lines; 3.6.10 syllable division; 3.6.11 owner rulings (Raven, Longfellow, anapestic label). Also in this period, with no engine change: recorded DUM and da in "Hear the beat", Play buttons on the
 Learn pages, larger welcome-page type, and the prose scoring pipeline.

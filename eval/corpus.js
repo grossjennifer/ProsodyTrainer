@@ -81,7 +81,8 @@ const PASSAGES = [
   { id: 'psalm-7', group: 'longfellow-psalm', split: 'dev', meter: 'trochee',
     source: 'Supplemental materials, Appendix C (congruent)',
     text: 'And departing leave behind us',
-    marked: 'AND dePARTing LEAVE beHIND us' },
+    // Owner ruling, 17 November 2026: "and" is weak (was AND dePARTing).
+    marked: 'and dePARTing LEAVE beHIND us' },
   { id: 'psalm-8', group: 'longfellow-psalm', split: 'dev', meter: 'trochee',
     source: 'Supplemental materials, Appendix C (congruent)',
     text: 'Footprints on the sands of time',

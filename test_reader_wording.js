@@ -49,10 +49,9 @@ const FOOT_NAMES = /troch|iamb|anap|dactyl|amphibrach|scansion|predominantly|nea
     ok(!FOOT_NAMES.test(got), `no foot name: ${got}`);
   }
 
-  // A real tie names both patterns.
+  // Owner ruling, 17 November 2026: this line was a tie; it is anapestic.
   let got = await note('The stockings were hung by the chimney with care');
-  eq(got, 'Read as having a regular beat. It fits two patterns about equally ' +
-    'well: weak-weak-STRONG and weak-STRONG-weak.');
+  eq(got, 'Read as having a regular beat: weak-weak-STRONG.');
 
   // Prose wording is unchanged.
   got = await note('Researchers measured reading times for each sentence.');
@@ -81,6 +80,11 @@ const FOOT_NAMES = /troch|iamb|anap|dactyl|amphibrach|scansion|predominantly|nea
             ambiguousTypes: ['trochee', 'iamb', 'amphibrach'] }, false),
     'Read as having a regular beat. It fits three patterns about equally well: ' +
     'STRONG-weak, weak-STRONG and weak-STRONG-weak.');
+  // A tie of two still names both patterns.
+  eq(line({ label: 'alternating (…)', ambiguous: true,
+            ambiguousTypes: ['iamb', 'anapest'] }, false),
+    'Read as having a regular beat. It fits two patterns about equally ' +
+    'well: weak-STRONG and weak-weak-STRONG.');
   for (const label of ['predominantly trochaic', 'predominantly iambic',
     'predominantly anapestic', 'predominantly dactylic',
     'predominantly amphibrachic', 'mixed', 'mixed with local anapestic sequences'])

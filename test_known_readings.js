@@ -70,10 +70,28 @@ doc = E.analyze('Lives of great men all remind us we can make our lives sublime 
 assert.strictEqual(doc.knownReading.studyEvidence.candidateId, 'QID54',
   'legacy provenance is carried through the analysis document');
 
+// Owner rulings, 17 November 2026 (engine 3.6.11).
+{
+  const show = d => d.words.map(w => w.syllables.map(sy => sy.rhythmicStress === 'S' ? sy.text.toUpperCase() : sy.text).join('')).join(' ');
+  const raven = window.PROSODY_KNOWN_READINGS.find(k => k.id === 'poe-raven-full-opening');
+  const r = E.analyze(raven.text);
+  assert.strictEqual(r.analysisSource, 'registered-known-reading');
+  assert.ok(show(r).includes('NEARly NAPping SUDdenLY there CAME a TAPping'),
+    'Raven: SUDdenLY there CAME a TAPping, matching measure item M08 (key came, foil there)');
+  const lives = window.PROSODY_KNOWN_READINGS.find(k => k.id === 'longfellow-lives');
+  assert.ok(show(E.analyze(lives.text)).includes('LIVES suBLIME and dePARTing LEAVE'),
+    'Longfellow: and stays weak after sublime (no clash)');
+  // A stored reading may give one word two beats: each run of capitals counts.
+  const suddenly = r.words.find(w => w.normalized === 'suddenly');
+  assert.strictEqual(suddenly.rhythmicPattern, 'SWS', 'two capital runs in one word are two beats');
+}
+
 doc = E.analyze('When Horton the elephant heard a small noise.');
 assert.strictEqual(doc.knownReading.preserveAmbiguity, true);
-assert.strictEqual(doc.meterSummary.ambiguous, true,
-  'the Horton template keeps its nearby alternative scansion visible');
+// Owner ruling, 17 November 2026: a triple-time line that opens weak-STRONG
+// is labelled anapestic (it was reported as an anapestic/amphibrachic tie).
+assert.strictEqual(doc.meterSummary.ambiguous, false, 'Horton: the tie is settled');
+assert.strictEqual(doc.meterSummary.label, 'predominantly anapestic', 'Horton is labelled anapestic');
 
 /* Ranked alternative readings per intonational phrase (handoff §1 and §4).
  * Each candidate must be a COMPLETE reading: its beats, its metrical template
