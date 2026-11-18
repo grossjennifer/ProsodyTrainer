@@ -81,6 +81,20 @@ assert.strictEqual(doc.knownReading.studyEvidence.candidateId, 'QID54',
   const lives = window.PROSODY_KNOWN_READINGS.find(k => k.id === 'longfellow-lives');
   assert.ok(show(E.analyze(lives.text)).includes('LIVES suBLIME and dePARTing LEAVE'),
     'Longfellow: and stays weak after sublime (no clash)');
+  // A coordinating conjunction that opens a line stays weak, the Raven
+  // included; a preposition there may still take the beat.
+  const opens = (t, i) => E.analyze(t, { textType: 'verse' }).words[i || 0].rhythmicPattern;
+  E.loadKnownReadings([]);
+  assert.strictEqual(opens('And departing leave behind us'), 'W', 'and dePARTing: and is weak');
+  assert.strictEqual(opens('And the Raven, never flitting, still is sitting, still is sitting'), 'W', 'and the RAven: and is weak');
+  assert.strictEqual(opens('And the only word there spoken was the whispered word, Lenore?'), 'W', 'and the ONly: and is weak');
+  assert.strictEqual(E.analyze('And the only word there spoken was the whispered word, Lenore?', { textType: 'verse' }).meterSummary.label,
+    'predominantly iambic', 'with and weak, the line is labelled iambic');
+  assert.strictEqual(opens('In the forests of the night'), 'S', 'IN the FORests: a preposition may take the beat');
+  assert.strictEqual(opens('While I nodded, nearly napping'), 'S', 'WHILE I NODded: while is unchanged');
+  assert.strictEqual(opens('to labor and to wait', 2), 'S', 'mid-line and may still be promoted (LAbor AND to WAIT)');
+  E.loadKnownReadings(window.PROSODY_KNOWN_READINGS);
+
   // A stored reading may give one word two beats: each run of capitals counts.
   const suddenly = r.words.find(w => w.normalized === 'suddenly');
   assert.strictEqual(suddenly.rhythmicPattern, 'SWS', 'two capital runs in one word are two beats');

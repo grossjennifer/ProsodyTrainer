@@ -63,7 +63,7 @@ const pair = (t, tt) => E.stimulusPair(A(t, tt || 'verse'));
 }
 {
   const p = pair('And departing leave behind us');
-  eq([p.congruentCount, p.incongruentCount, p.shortfall], [4, 4, 0], 'a second line that used to lose a mark');
+  eq([p.congruentCount, p.incongruentCount, p.shortfall], [3, 3, 0], 'a second line: equal counts (3 since the 3.6.11 ruling leaves "and" weak)');
 }
 {
   const p = pair('The mouse ran up the clock.');

@@ -442,10 +442,13 @@ All answered 17 November 2026.
 
 1. Raven: `SUDdenLY there CAME a TAPping` (stored reading changed in 3.6.11;
    matches measure item M08).
-2. Longfellow: `subLIME and dePARTing`, with "and" weak (stored reading
-   changed in 3.6.11). The ruling was given for the passage, where "and"
-   follows a beat. The corpus line `And departing leave behind us` stands
-   alone and keeps its gold `AND dePARTing` until she says otherwise.
+2. Longfellow: `subLIME and dePARTing`, with "and" weak, and the general
+   rule: a coordinating conjunction (and, but, or, nor) that opens a line
+   stays weak, the Raven included (`and the RAven`, `and the ONly WORD`,
+   the latter now labelled iambic); a preposition there may still take the
+   beat (`IN the FORests`). `LINE_INITIAL_CONJ_PROMOTE` (3.0) and
+   `wd.lineInitial` in 3.6.11. Corpus gold `psalm-7` and Appendix A draft
+   `appA-08` changed to match.
 3. A triple-time line that opens weak-STRONG is labelled anapestic (3.6.11).
 4. `fresh PROduce` is correct (one beat, on the noun; no spondee). The engine
    already reads it so. P32 of the 40 prose items.

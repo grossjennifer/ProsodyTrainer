@@ -1652,6 +1652,11 @@
     NEG: 0.40, ADV: 0.60
   };
   const DEFAULT_DEMOTE = 1.60;
+  // Cost of promoting and, but, or, nor at the start of a line (3.6.11).
+  // High enough that the metre does not take it; measured: 3.0 is the
+  // smallest round value that leaves `and dePARTing` weak.
+  const LINE_INITIAL_CONJ = new Set(['and', 'but', 'or', 'nor']);
+  const LINE_INITIAL_CONJ_PROMOTE = 3.0;
   const DEFAULT_PROMOTE = 1.00;
   // Cost of demoting the stressed syllable of a polysyllabic function word
   // (before, about, along, until...). Low on purpose: the beat is a default
@@ -1704,8 +1709,13 @@
                  source: 'rule:stranded-function-word' };
       }
       if (behavesAsFunctionWord(wd)) {
+        // Owner ruling, 17 November 2026 (3.6.11): a coordinating conjunction
+        // that opens a line stays weak (`and dePARTing LEAVE beHIND us`),
+        // while a preposition there may take the metre's beat (`IN the
+        // FORests OF the NIGHT`).
+        const lineConj = wd.lineInitial === true && LINE_INITIAL_CONJ.has(wd.normalized);
         return { value: 'W',
-                 weight: (tag && FN_PROMOTE[tag]) || DEFAULT_PROMOTE,
+                 weight: lineConj ? LINE_INITIAL_CONJ_PROMOTE : ((tag && FN_PROMOTE[tag]) || DEFAULT_PROMOTE),
                  confidence: CONF.FUNCTION_WORD,
                  source: 'rule:function-word-demotion' };
       }
@@ -2260,7 +2270,7 @@
   /* 3.6.9: does each phrase begin a line, and end one? Read from the line
    * breaks in the text. Used only to recognise a short line made of comma-
    * separated phrases and a beat that closes a line. */
-  function markLineEdges(tokens, ips) {
+  function markLineEdges(tokens, ips, words) {
     const lineOf = [];
     let line = 0;
     for (const tk of tokens) {
@@ -2272,6 +2282,10 @@
       ip.lineStart = a === 0 || lineOf[a - 1] !== lineOf[a];
       ip.lineEnd = b === lineOf.length - 1 || lineOf[b + 1] !== lineOf[b];
     }
+    // 3.6.11: whether each word opens a line. Not enumerable, so exports and
+    // the JSON document are unchanged.
+    if (words) words.forEach((wd, i) => Object.defineProperty(wd, 'lineInitial',
+      { value: i === 0 || lineOf[i - 1] !== lineOf[i], writable: true, configurable: true, enumerable: false }));
   }
 
   /* A weak punctuation boundary may end an intonational phrase without
@@ -3882,7 +3896,7 @@
     if (words.length)
       markStranded(words, new Set([...ipBreaksAfter, words.length - 1]));
     const ips = words.length ? chunk(words, ipBreaksAfter, boundaryStrengthAfter) : [];
-    markLineEdges(tokens, ips);
+    markLineEdges(tokens, ips, words);
     let regimeInfo = projectDocument(words, ips, config);
     regimeInfo = applyMetricalSyncope(words, ips, config, regimeInfo);
     const inferred = readingSnapshot(words, 'inferred',
