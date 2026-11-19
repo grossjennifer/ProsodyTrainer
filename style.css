@@ -285,6 +285,29 @@ body.exhibit-active .exhibit-controls { z-index: 61; }
   transition: fill 300ms var(--ease);
 }
 
+.sound-line { margin-top: 1.6rem; text-align: center; }
+
+.sound-button {
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: transparent;
+  border: 1px solid var(--boundary);
+  border-radius: 20px;
+  padding: 0.55em 1.1em;
+  min-height: 44px;
+  cursor: pointer;
+  transition: border-color 300ms var(--ease), box-shadow 300ms var(--ease);
+}
+
+.sound-button:hover,
+.sound-button:focus-visible {
+  border-color: var(--glow);
+  box-shadow: 0 0 0 4px var(--glow-halo);
+}
+
+.sound-button.is-on { border-color: var(--glow-deep); cursor: default; }
+
 .audio-label { display: inline-flex; align-items: center; gap: 0.5em; }
 
 .audio-button.was-played .contour-line,

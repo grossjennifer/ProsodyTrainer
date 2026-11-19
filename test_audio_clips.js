@@ -14,6 +14,14 @@ for (const name of ['really-statement.mp3', 'really-question.mp3', 'really-excla
   ok(home.includes('data-audio="' + name + '"'), 'homepage asks for ' + name);
   ok(fs.existsSync(at(name)) && fs.statSync(at(name)).size > 2000, name + ' exists');
 }
+// Browsers hold back sound until the visitor clicks; the first panel offers
+// that click, and the script reuses the clips that click started.
+ok(/<button id="sound-button"[^>]*>Play with sound/.test(home), 'first panel has a Play with sound button');
+ok(home.indexOf('id="sound-button"') < home.indexOf('data-panel="2"'), 'the sound button is on panel 1');
+const script = fs.readFileSync(at('script.js'), 'utf8');
+ok(/function clipFor\(src\)/.test(script) && /const clip = clipFor\(src\)/.test(script), 'playClip reuses the started clips');
+ok(!/new Audio\(src\);\s*\n\s*const promise/.test(script), 'no fresh, unstarted clip at play time');
+ok(/soundButton\.textContent = "Sound is on"/.test(script), 'the button confirms that sound is on');
 const page = fs.readFileSync(at('learn/intonation/index.html'), 'utf8');
 const buttons = page.match(/<button class="learn-audio"[^>]*>/g) || [];
 ok(buttons.length === 3, 'three Play buttons');

@@ -122,10 +122,42 @@
     });
   }
 
+  // Browsers will not play sound until the visitor clicks or presses a key on
+  // the page. "Play with sound" on the first panel is that click: it starts
+  // each Really clip silently and stops it at once, which also satisfies
+  // Safari's rule that a clip must first be started by a click. The same
+  // three clips are then reused when the audio panel plays them on its own.
+  const clips = {};
+  function clipFor(src) {
+    if (!clips[src]) clips[src] = new Audio(src);
+    return clips[src];
+  }
+
+  const soundButton = document.getElementById("sound-button");
+  if (soundButton) {
+    if (reducedMotion) soundButton.hidden = true;
+    soundButton.addEventListener("click", function () {
+      document.querySelectorAll(".audio-button").forEach(function (button) {
+        const clip = clipFor(button.getAttribute("data-audio"));
+        clip.muted = true;
+        try {
+          const promise = clip.play();
+          const done = function () { clip.pause(); clip.currentTime = 0; clip.muted = false; };
+          if (promise && typeof promise.then === "function") promise.then(done, function () { clip.muted = false; });
+          else done();
+        } catch (error) { clip.muted = false; }
+      });
+      soundButton.textContent = "Sound is on";
+      soundButton.classList.add("is-on");
+    });
+  }
+
   function playClip(button) {
     const src = button.getAttribute("data-audio");
     try {
-      const clip = new Audio(src);
+      const clip = clipFor(src);
+      clip.muted = false;
+      try { clip.currentTime = 0; } catch (ignored) {}
       const promise = clip.play();
       if (promise && typeof promise.catch === "function") promise.catch(function () {});
     } catch (error) {
